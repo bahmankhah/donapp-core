@@ -14,9 +14,10 @@ class Pipeline{
     }
 
     public function next($request){
-        (new $this->callable[0]())->{$this->callable[1]}($request);
-
+        print_r($this->middlewares);
+        die();
         if($this->callIndex == count($this->middlewares)){
+            (new $this->callable[0]())->{$this->callable[1]}($request);
         }else{
             (new $this->middlewares[$this->callIndex]())->handle($request, $this);
             $this->callIndex+=1;
