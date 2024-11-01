@@ -11,7 +11,8 @@ class AuthController {
     }
 
     public function checkAuth($request) {
-        echo is_user_logged_in();
+        
+        die('amir');
         return rest_ensure_response([
             'status' => 'success',
             'request'=>$request,
