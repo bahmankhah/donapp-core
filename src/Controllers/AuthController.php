@@ -1,7 +1,6 @@
 <?php
 namespace Donapp\Controllers;
 
-use WP_REST_Request;
 use Donapp\Container;
 
 class AuthController {
@@ -11,7 +10,7 @@ class AuthController {
         $this->authService = Container::resolve('AuthService');
     }
 
-    public function checkAuth(WP_REST_Request $request) {
+    public function checkAuth($request) {
         return rest_ensure_response([
             'status' => 'success',
             'request'=>$request,
