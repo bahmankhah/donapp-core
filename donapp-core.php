@@ -16,6 +16,7 @@ use Donapp\Routes\RouteServiceProvider;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
+require_once(__DIR__ . '/Kernel/autoload.php');
 spl_autoload_register(function ($class) {
     $prefix = 'Donapp\\';
     $base_dir = __DIR__ . '/src/';
