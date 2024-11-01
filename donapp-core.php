@@ -14,6 +14,8 @@ use Donapp\Container;
 use Donapp\Services\AuthService;
 use Donapp\Routes\RouteServiceProvider;
 
+require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
 spl_autoload_register(function ($class) {
     $prefix = 'Donapp\\';
     $base_dir = __DIR__ . '/src/';
