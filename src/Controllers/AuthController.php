@@ -10,8 +10,8 @@ class AuthController {
         $this->authService = Container::resolve('AuthService');
     }
 
-    public function checkAuth($request) {        
-        return rest_ensure_response([
+    public function checkAuth($request){        
+        return res([
             'status' => 'success',
             'request'=>$request,
             // 'message' => 'User is logged in.',

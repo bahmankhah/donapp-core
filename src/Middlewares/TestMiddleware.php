@@ -6,8 +6,7 @@ use Kernel\Pipeline;
 
 class TestMiddleware implements Middleware{
     public function handle($request,Pipeline $pipeline){
-        // die('amir');
-        $d=  $pipeline->next($request);
-         print_r($d);
+        print('hey');
+        return $pipeline->next($request);
     }
 }
