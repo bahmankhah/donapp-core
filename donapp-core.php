@@ -40,6 +40,5 @@ Container::bind('AuthService', function() {
 
 // Initialize routes
 add_action('plugins_loaded', function() {
-    echo is_user_logged_in();
     (new RouteServiceProvider)->register();
 });
