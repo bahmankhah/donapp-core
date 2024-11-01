@@ -11,7 +11,6 @@ class AuthController {
     }
 
     public function checkAuth($request){  
-        die('amir');      
         return res([
             'status' => 'success',
             'request'=>$request,
