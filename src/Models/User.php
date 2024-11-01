@@ -1,7 +1,9 @@
 <?php
 namespace Donapp\Models;
 
-class User extends BaseModel {
+use Kernel\Model;
+
+class User extends Model {
     protected $table;
     protected $primaryKey = 'ID';
 

@@ -6,7 +6,7 @@ class Route{
         'middlewares'=>[],
         'callable'=>null,
         'route'=>'',
-        'method'=>'',
+        'method'=>null,
     ];
     public function get($route,array $callable){
         $this->params['callable'] = $callable;
