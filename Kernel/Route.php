@@ -14,9 +14,9 @@ class Route{
         $params['route'] = $route;
         return $this;
     }
-    public function post(array $callable){
+    public function post($route, array $callable){
         $params['callable'] = $callable;
-        $params['method']= 'GET';
+        $params['method']= 'POST';
         $params['route'] = $route;
         return $this;
     }
