@@ -10,7 +10,8 @@ class AuthController {
         $this->authService = Container::resolve('AuthService');
     }
 
-    public function checkAuth($request){        
+    public function checkAuth($request){  
+        die('amir');      
         return res([
             'status' => 'success',
             'request'=>$request,
