@@ -1,11 +1,9 @@
 <?php
 namespace Donapp\Services;
 
-use Donapp\Models\User;
-
 class AuthService {
-    public function checkIfUserLoggedIn() {
+    public function currentUser() {
         
-        return is_user_logged_in();
+        return wp_get_current_user();
     }
 }
