@@ -13,9 +13,7 @@ class Pipeline{
     }
 
     public function next($request){
-        if($this->callIndex != 0){
-            die('amir2');
-        }
+
         if($this->callIndex === count($this->middlewares)){
             return (new $this->callable[0]())->{$this->callable[1]}($request);
         }else{
