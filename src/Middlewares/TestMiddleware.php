@@ -8,5 +8,6 @@ class TestMiddleware implements Middleware{
     public function handle($request,Pipeline $pipeline){
         // die('amir');
         $pipeline->next($request);
+        die('amir');
     }
 }
