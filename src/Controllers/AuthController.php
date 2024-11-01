@@ -12,7 +12,7 @@ class AuthController {
 
     public function checkAuth($request) {
         $is_logged_in = $this->authService->checkIfUserLoggedIn();
-
+        
         if ($is_logged_in) {
             $user = $this->authService->getCurrentUser();
             return rest_ensure_response([
