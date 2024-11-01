@@ -15,11 +15,11 @@ class Pipeline{
 
     public function next($request){
         if($this->callIndex == count($this->middlewares)){
-            (new $this->callable[0]())->{$this->callable[1]}($request);
+            $method = $this->callable[1];
+            (new $this->callable[0]())->$method($request);
         }else{
             (new $this->middlewares[$this->callIndex]())->handle($request, $this);
             $this->callIndex+=1;
         }
-        die('amir');
     }
 }
