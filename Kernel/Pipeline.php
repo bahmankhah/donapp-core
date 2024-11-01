@@ -14,9 +14,9 @@ class Pipeline{
     }
 
     public function next($request){
+        (new $this->callable[0]())->{$this->callable[1]}($request);
+
         if($this->callIndex == count($this->middlewares)){
-            $method = $this->callable[1];
-            (new $this->callable[0]())->$method($request);
         }else{
             (new $this->middlewares[$this->callIndex]())->handle($request, $this);
             $this->callIndex+=1;
