@@ -9,7 +9,7 @@ class RouteServiceProvider {
             register_rest_route('donapp/v1', '/auth-check', [
                 'methods' => 'GET',
                 'callback' => [(new AuthController()), 'checkAuth'],
-                'permission_callback' => '__return_true'
+                'permission_callback' => is_user_logged_in(),
             ]);
         });
     }
