@@ -14,11 +14,11 @@ class AuthController {
         $is_logged_in = $this->authService->checkIfUserLoggedIn();
         
         if ($is_logged_in) {
-            $user = $this->authService->getCurrentUser();
+            // $user = $this->authService->getCurrentUser();
             return rest_ensure_response([
                 'status' => 'success',
                 'message' => 'User is logged in.',
-                'user' => $user->getData()
+                // 'user' => $user->getData()
             ]);
         } else {
             return rest_ensure_response([
