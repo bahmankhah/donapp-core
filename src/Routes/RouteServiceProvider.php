@@ -15,6 +15,7 @@ class RouteServiceProvider {
     }
 
     public function permissionCheck(){
+        echo is_user_logged_in();
 
         return is_user_logged_in();
     }
