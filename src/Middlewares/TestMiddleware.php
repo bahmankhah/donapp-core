@@ -7,6 +7,6 @@ use Kernel\Pipeline;
 class TestMiddleware implements Middleware{
     public function handle($request,Pipeline $pipeline){
         // die('amir');
-        return $pipeline->next($request);
+        $pipeline->next($request);
     }
 }
