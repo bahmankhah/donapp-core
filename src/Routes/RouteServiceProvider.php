@@ -9,13 +9,12 @@ class RouteServiceProvider {
             register_rest_route('donapp/v1', '/auth-check', [
                 'methods' => 'GET',
                 'callback' => [(new AuthController()), 'checkAuth'],
-                'permission_callback' => [$this, 'permissionCheck'],
+                'permission_callback' => '__return_true',
             ]);
         });
     }
 
     public function permissionCheck(){
-        echo is_user_logged_in();
 
         return is_user_logged_in();
     }
