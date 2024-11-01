@@ -13,6 +13,7 @@ class AuthController {
     public function checkAuth($request) {
         return rest_ensure_response([
             'status' => 'success',
+            'request'=>$request,
             // 'message' => 'User is logged in.',
             'user' => $this->authService->currentUser(),
         ]);
