@@ -1,5 +1,18 @@
 <?php
 
-require_once __DIR__ . '/Middleware.php';
-require_once __DIR__ . '/Route.php';
-require_once __DIR__ . '/Pipeline.php';
+spl_autoload_register(function ($class) {
+    $prefix = 'Kernel\\';
+    $base_dir = __DIR__ . '/';
+
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+
+    if (file_exists($file)) {
+        require $file;
+    }
+});
