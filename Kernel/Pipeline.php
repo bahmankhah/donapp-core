@@ -18,7 +18,8 @@ class Pipeline{
         if($this->callIndex == count($this->middlewares)){
             $this->request = (new $this->callable[0]())->{$this->callable[1]}($this->request);
         }else{
-            $this->request = (new $this->middlewares[++$this->callIndex]())->handle($this);
+            $this->request = (new $this->middlewares[$this->callIndex]())->handle($this);
+            $this->callIndex++;
         }
     }
 }
