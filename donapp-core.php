@@ -37,6 +37,6 @@ Container::bind('AuthService', function() {
 });
 
 // Initialize routes
-add_action('init', function() {
+add_action('plugins_loaded', function() {
     (new RouteServiceProvider)->register();
 });
