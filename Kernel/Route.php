@@ -31,11 +31,9 @@ class Route{
         $params = $this->params;
 
         add_action('rest_api_init', function () use ($params) {
-            register_rest_route('core/v1', "/{$params['route']}", [
+            register_rest_route('dnp/v1', "/{$params['route']}", [
                 'methods' => $this->params['method'],
                 'callback' => function($request) use ($params) {
-                    // Directly call handleUserDataRequest with custom_arg set manually
-                     // Example value you want to pass
                     return (new Pipeline())->call($request, $params);
                 },
                 'permission_callback' => '__return_true',
