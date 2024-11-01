@@ -9,26 +9,27 @@ class Route{
         'method'=>'',
     ];
     public function get($route,array $callable){
-        $params['callable'] = $callable;
-        $params['method']= 'GET';
-        $params['route'] = $route;
+        $this->params['callable'] = $callable;
+        $this->params['method']= 'GET';
+        $this->params['route'] = $route;
         return $this;
     }
     public function post($route, array $callable){
-        $params['callable'] = $callable;
-        $params['method']= 'POST';
-        $params['route'] = $route;
+        $this->params['callable'] = $callable;
+        $this->params['method']= 'POST';
+        $this->params['route'] = $route;
         return $this;
     }
     public function middleware(...$args){
         foreach($args as $arg){
-            $params['middlewares'][] = $arg;
+            $this->params['middlewares'][] = $arg;
         }
         return $this;
     }
 
     public function make(){
         $params = $this->params;
+
         add_action('rest_api_init', function () use ($params) {
             register_rest_route('core/v1', "/{$params['route']}", [
                 'methods' => $this->params['method'],
