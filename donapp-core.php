@@ -45,3 +45,8 @@ Container::bind('AuthService', function() {
 add_action('plugins_loaded', function() {
     (new RouteServiceProvider)->register();
 });
+add_action('init', 'custom_api_rewrite');
+function custom_api_rewrite() {
+    add_rewrite_rule('^api/(.*)?', 'index.php?rest_route=/$1', 'top');
+    flush_rewrite_rules(false);
+}

@@ -8,6 +8,7 @@ use Kernel\Route;
 class RouteServiceProvider {
     public function register() {
         (new Route())->get('auth-check', [AuthController::class, 'checkAuth'])->middleware(TestMiddleware::class)->make();
-    }
+
+        (new Route())->post('product', [AuthController::class, 'product'])->middleware(TestMiddleware::class)->make();
     
 }

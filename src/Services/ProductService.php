@@ -2,24 +2,24 @@
 
 namespace Donapp\Controllers;
 
-use WC_Product_Simple;
-
 class ProductService{
 
-    public function createProduct() {
-    
+    public function createProduct(array $data) {
         $product = new WC_Product_Simple();
-    
-        $product->set_name('Sample Product');  // Product title
-        $product->set_regular_price('19.99');  // Product price
-        $product->set_description('This is a sample product description.');
-        $product->set_short_description('This is a short description.');
-        $product->set_sku('sample-sku-123');  // SKU (unique identifier)
-        $product->set_stock_quantity(100);    // Inventory quantity
+        $attachmentId = upload_image_from_url($data['image_url']);
+        $product->set_name($data['name']);  // Product title
+        $product->set_regular_price($data['price']);  // Product price
+        $product->set_description($data['description']);
+        $product->set_short_description($data['short_description']);
+        $product->set_sku($data['sku']);  // SKU (unique identifier)
+        $product->set_stock_quantity($data['quantity']);    // Inventory quantity
         $product->set_manage_stock(true);     // Enable stock management
         $product->set_stock_status('instock'); // Stock status (instock/outofstock)
-        $product->set_category_ids([15, 23]); // Array of category IDs
-        $product->set_image_id(attach_image_to_product()); // Attach an image (function to handle it below)
+        $product->set_category_ids($data['categories']); // Array of category IDs
+        if($attachmentId){
+            $product->set_image_id($attachmentId); // Attach an image (function to handle it below)
+            $product->set_gallery_image_ids( array( $attachmentId ) );
+        }
     
         // Set product visibility (e.g., 'visible', 'catalog', 'search', 'hidden')
         $product->set_catalog_visibility('visible');
@@ -28,9 +28,9 @@ class ProductService{
         $product_id = $product->save();
     
         if ( $product_id ) {
-            echo 'Product created successfully with ID: ' . $product_id;
+            res(wc_get_product($product), 'Product created successfully.');
         } else {
-            echo 'Product creation failed.';
+            res([], 'Failed to create product.', 406);
         }
     }
 }

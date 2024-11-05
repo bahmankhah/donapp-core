@@ -4,7 +4,6 @@
  * @see https://woocommerce.com
  * @see https://github.com/php-stubs/woocommerce-stubs
  */
-
 namespace {
     /**
      * Abstract WC Data Class

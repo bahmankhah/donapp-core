@@ -11,11 +11,6 @@ class AuthController {
     }
 
     public function checkAuth($request){  
-        return res([
-            'status' => 'success',
-            'request'=>$request,
-            // 'message' => 'User is logged in.',
-            'user' => $this->authService->currentUser(),
-        ]);
+        return res(true);
     }
 }
