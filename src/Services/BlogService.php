@@ -20,7 +20,7 @@ class BlogService{
         ->setTableAlias('p')
         ->select(['post_title',"MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count'"])
         ->limit($limit)
-        ->views(\)
+        ->views()
         // ->where('p.post_status','=','publish')
         ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
         ->orderBy($orderBy, $orderDirection)
