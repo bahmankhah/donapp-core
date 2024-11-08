@@ -12,7 +12,6 @@ class Post extends Model {
     }
 
     public function test(){
-        echo 'test method called';
         return $this->hasMany($this->wpdb->prefix.'postmeta', 'post_id', 'ID');
     }
 
