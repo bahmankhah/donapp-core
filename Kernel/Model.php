@@ -8,6 +8,7 @@ abstract class Model
     protected $primaryKey = 'id';
     protected $queryBuilder = [];
     protected $wpdb;
+    protected $tableAlias = '';
     protected $postType = null;
     protected $attributes = [];
 
@@ -37,6 +38,12 @@ abstract class Model
             $this->where('post_type', '=', $this->postType);
         }
 
+        return $this;
+    }
+
+    public function setTableAlias($alias)
+    {
+        $this->tableAlias = $alias;
         return $this;
     }
 
@@ -81,7 +88,7 @@ abstract class Model
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
 
-        $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
+        $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
 
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
         foreach ($results as &$result) {
