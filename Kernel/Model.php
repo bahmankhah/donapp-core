@@ -93,7 +93,6 @@ class Model
 
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
 
-        $this->newQuery(); // Reset the builder for a fresh start
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
 echo 'got result';
         foreach ($results as &$result) {
@@ -107,7 +106,7 @@ echo 'got result';
                 }
             }
         }
-
+        $this->newQuery(); // Reset the builder for a fresh start
         die();
         return $results;
     }
