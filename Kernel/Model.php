@@ -131,7 +131,7 @@ class Model
     {
         $localKey = $localKey ?: $this->primaryKey;
         $query = new static();
-        print($this->attributes[$localKey]. ' ');
+        print($this->attributes[$localKey]. ' '. $relatedTable . ' '. $foreignKey . ' ' . $localKey);
         $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null, '%d');
         $result = $query->get();
         print_r($result);
