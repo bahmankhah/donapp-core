@@ -13,6 +13,7 @@ abstract class Model {
     public function __call($name, $arguments)
     {   
         echo $name;
+        
     }
     public function __construct() {
         global $wpdb;
