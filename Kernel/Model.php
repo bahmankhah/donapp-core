@@ -178,8 +178,8 @@ abstract class Model
     public function hasOneMeta($relatedTable, $metaKey,$localKey, $foreignKey = null, $valueField = 'meta_value', $keyField = 'meta_key')
     {
         $name = $this->getCallingFunctionName();
-        $this->queryBuilder['relations']['belongsTo'] = array_merge(
-            $this->queryBuilder['relations']['belongsTo'] ?? [],
+        $this->queryBuilder['relations']['hasOneMeta'] = array_merge(
+            $this->queryBuilder['relations']['hasOneMeta'] ?? [],
             [$name => [$relatedTable, $metaKey,$localKey, $foreignKey]]
         );
         return $this;
