@@ -2,12 +2,30 @@
 
 namespace Kernel;
 
+use ReflectionMethod;
+
 class Model {
     protected $table;
     protected $primaryKey = 'id';
     protected $queryBuilder = [];
     protected $wpdb;
     protected $postType = null; // Default to null, set in derived classes if needed
+
+    public function __call($name, $arguments)
+    {
+        if (method_exists($this, $name)) {
+            // Use Reflection to invoke the actual method in the child class
+            echo 'intercepted';
+            call_user_func_array([$this, $name], $arguments);
+            echo 'after';
+            die();
+            // $reflector = new ReflectionMethod($this, $name);
+            // return $reflector->invokeArgs($this, $arguments);
+        } else {
+            // Handle as a non-existent method call
+            echo "Method '$name' does not exist in the child class. Handling as needed.\n";
+        }
+    }
 
     public function __construct() {
         global $wpdb;

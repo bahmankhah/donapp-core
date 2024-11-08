@@ -1,6 +1,7 @@
 <?php
 namespace Donapp\Controllers;
 
+use Donapp\Models\Post;
 use Exception;
 use Kernel\Container;
 
@@ -18,5 +19,8 @@ class BlogController
         }catch(Exception $e){
             echo $e->getMessage();
         }
+    }
+    public function test(){
+        (new Post())->test();
     }
 }

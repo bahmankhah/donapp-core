@@ -11,4 +11,8 @@ class Post extends Model {
         $this->table = $this->wpdb->prefix . 'posts';
     }
 
+    public function test(){
+        echo 'test';
+    }
+
 }

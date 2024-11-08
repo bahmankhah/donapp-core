@@ -9,4 +9,6 @@ class BlogService{
         $limit = $data['limit'] ?? 10;
         return (new Post())->limit($limit)->get();
     }
+
+
 }
