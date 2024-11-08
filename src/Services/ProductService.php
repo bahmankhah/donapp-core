@@ -1,6 +1,6 @@
 <?php
 
-namespace Donapp\Controllers;
+namespace Donapp\Services;
 
 class ProductService{
 
