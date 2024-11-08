@@ -85,6 +85,7 @@ abstract class Model
 
     public function get()
     {
+        print_r($this->queryBuilder);
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
 
