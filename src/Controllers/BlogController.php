@@ -11,10 +11,10 @@ class BlogController
     {
         $this->blogService = Container::resolve('BlogService');
     }
-    public function index()
+    public function index($request)
     {
         try{
-            return res($this->blogService->list([]));
+            return res($this->blogService->list($request->get_query_params()));
         }catch(Exception $e){
             echo $e->getMessage();
         }
