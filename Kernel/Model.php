@@ -129,8 +129,11 @@ echo 'got result';
     public function hasMany($relatedTable, $foreignKey, $localKey = null)
     {
         $name = $this->getCallingFunctionName();
-        echo $name;
-        $this->queryBuilder['relations']['hasMany'][$name] = [$relatedTable, $foreignKey, $localKey];
+        echo 'name is '. $name. ' ';
+        $this->queryBuilder['relations']['hasMany'] = array_merge(
+            $this->queryBuilder['relations']['hasMany'] ?? [],
+            [$name => [$relatedTable, $foreignKey, $localKey]]
+        );
         return $this;
     }
 
