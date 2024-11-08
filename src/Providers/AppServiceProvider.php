@@ -11,7 +11,6 @@ class AppServiceProvider {
 
     public function register() {
                 
-        // Register services in the container
         Container::bind('AuthService', function() {
             return new AuthService();
         });
@@ -21,7 +20,5 @@ class AppServiceProvider {
         Container::bind('BlogService', function() {
             return new BlogService();
         });
-
-
     }
 }
