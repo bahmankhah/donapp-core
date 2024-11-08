@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Donapp\Providers\AppServiceProvider;
+use Donapp\Routes\RouteServiceProvider;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -37,7 +38,7 @@ spl_autoload_register(function ($class) {
 (new AppServiceProvider())->register();
 
 add_action('plugins_loaded', function() {
-    (new RouteServiceProvider)->register();
+    (new RouteServiceProvider())->register();
 });
 add_action('init', 'custom_api_rewrite');
 function custom_api_rewrite() {
