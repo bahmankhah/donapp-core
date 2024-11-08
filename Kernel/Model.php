@@ -93,8 +93,9 @@ abstract class Model
 
         $this->newQuery(); // Reset the builder for a fresh start
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
-
+echo 'got result';
         foreach ($results as &$result) {
+            print_r($this->queryBuilder['relations']);
             $this->attributes = $result;
             foreach ($this->queryBuilder['relations'] as $type => $relations) {
                 echo "calling ".$type;
@@ -105,6 +106,7 @@ abstract class Model
             }
         }
 
+        die();
         return $results;
     }
 
