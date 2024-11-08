@@ -1,5 +1,5 @@
 <?php
-namespace Donapp;
+namespace Kernel;
 
 class Container {
     private static $instances = [];

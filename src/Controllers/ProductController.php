@@ -2,7 +2,7 @@
 
 namespace Donapp\Controllers;
 
-use Donapp\Container;
+use Kernel\Container;
 
 class ProductController{
 

@@ -2,6 +2,7 @@
 namespace Donapp\Routes;
 
 use Donapp\Controllers\AuthController;
+use Donapp\Controllers\ProductController;
 use Donapp\Middlewares\TestMiddleware;
 use Kernel\Route;
 
@@ -10,5 +11,7 @@ class RouteServiceProvider {
         (new Route())->get('auth-check', [AuthController::class, 'checkAuth'])->middleware(TestMiddleware::class)->make();
 
         (new Route())->post('product', [AuthController::class, 'product'])->middleware(TestMiddleware::class)->make();
-    
+        (new Route())->get('post', [ProductController::class, 'index'])->make();
+
+    }
 }

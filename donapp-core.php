@@ -10,9 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-use Donapp\Container;
-use Donapp\Services\AuthService;
-use Donapp\Routes\RouteServiceProvider;
+use Donapp\Providers\AppServiceProvider;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -36,17 +34,4 @@ spl_autoload_register(function ($class) {
     }
 });
 
-// Register services in the container
-Container::bind('AuthService', function() {
-    return new AuthService();
-});
-
-// Initialize routes
-add_action('plugins_loaded', function() {
-    (new RouteServiceProvider)->register();
-});
-add_action('init', 'custom_api_rewrite');
-function custom_api_rewrite() {
-    add_rewrite_rule('^api/(.*)?', 'index.php?rest_route=/$1', 'top');
-    flush_rewrite_rules(false);
-}
+(new AppServiceProvider())->register();
