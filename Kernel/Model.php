@@ -130,7 +130,7 @@ class Model
     private function hasManyMethod($relatedTable, $foreignKey, $localKey = null)
     {
         $localKey = $localKey ?: $this->primaryKey;
-        $query = new static();
+        $query = new self();
         print($this->attributes[$localKey]. ' '. $relatedTable . ' '. $foreignKey . ' ' . $localKey);
         $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null, '%d');
         $result = $query->get();
