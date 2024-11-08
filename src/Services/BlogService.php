@@ -12,13 +12,13 @@ class BlogService{
         $orderDirection = isset($data['orderDirection']) ? $data['orderDirection'] : 'DESC';
 
         if(!in_array($orderBy, ['post_date', 'post_views_count'])) $orderBy = 'post_date';
-        if(!in_array($data['orderDirection'], ['ASC', 'DESC'])) $data['orderDirection'] = 'DESC';
+        if(!in_array($orderDirection, ['ASC', 'DESC'])) $data['orderDirection'] = 'DESC';
 
         $limit = $data['limit'] ?? 10;
         
         return (new Post())
         ->setTableAlias('p')
-        ->select("MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count")
+        ->select('post_title',"MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count")
         ->limit($limit)
         ->views()
         // ->where('p.post_status','=','publish')
