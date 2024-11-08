@@ -14,5 +14,8 @@ class Post extends Model {
     public function test(){
         return $this->hasMany($this->wpdb->prefix.'postmeta', 'post_id', 'ID');
     }
+    public function views(){
+        return $this->hasOneMeta($this->wpdb->prefix.'postmeta', 'post_views_count','post_id', 'ID');
+    }
 
 }

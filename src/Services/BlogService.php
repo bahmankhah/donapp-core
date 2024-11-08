@@ -3,11 +3,25 @@
 namespace Donapp\Services;
 
 use Donapp\Models\Post;
+use Kernel\DB;
 
 class BlogService{
     public function list(array $data){
+
+        $orderBy = $data['orderBy'] ?? 'post_date';
+        $orderDirection = $data['orderDirection'] ?? 'DESC';
+
+        if(!in_array($orderBy, ['post_date', 'post_views_count'])) $orderBy = 'post_date';
+        if(!in_array($data['orderDirection'], ['ASC', 'DESC'])) $data['orderDirection'] = 'DESC';
+
         $limit = $data['limit'] ?? 10;
-        return (new Post())->limit($limit)->test()->get();
+        return (new Post())
+        ->select("MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count")
+        ->limit($limit)
+        ->views()->where('post_status','=','publish')
+        ->join(DB::wpdb()->prefix.'postmeta as pm', 'ID', '=', 'post_id')
+        ->orderBy($orderBy, $orderDirection)
+        ->get();
     }
 
 

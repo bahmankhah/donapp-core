@@ -2,14 +2,14 @@
 
 namespace Kernel;
 
-class Model
+abstract class Model
 {
     protected $table;
     protected $primaryKey = 'id';
     protected $queryBuilder = [];
     protected $wpdb;
-    protected $postType = null; // Default to null, set in derived classes if needed
-    protected $attributes = []; // Stores the current record's data
+    protected $postType = null;
+    protected $attributes = [];
 
     public function __construct()
     {
@@ -18,7 +18,6 @@ class Model
         $this->newQuery();
     }
 
-    // Start a new query
     public function newQuery()
     {
         $this->queryBuilder = [
@@ -29,6 +28,8 @@ class Model
             'limit' => '',
             'relations' => [
                 'hasMany' => [],
+                'hasOne' => [],
+                'belongsTo' => [],
             ],
         ];
 
@@ -39,49 +40,42 @@ class Model
         return $this;
     }
 
-    // Set the table name dynamically if needed
     public function setTable($table)
     {
         $this->table = $table;
         return $this;
     }
 
-    // Select specific columns
     public function select($columns)
     {
         $this->queryBuilder['select'] = is_array($columns) ? implode(',', $columns) : $columns;
         return $this;
     }
 
-    // Add a join clause
     public function join($table, $first, $operator, $second, $type = 'INNER')
     {
         $this->queryBuilder['joins'][] = "{$type} JOIN {$table} ON {$first} {$operator} {$second}";
         return $this;
     }
 
-    // Add a where clause
     public function where($column, $operator, $value, $type = '%s')
     {
         $this->queryBuilder['where'][] = $this->wpdb->prepare("{$column} {$operator} {$type}", $value);
         return $this;
     }
 
-    // Add an order by clause
     public function orderBy($column, $direction = 'ASC')
     {
         $this->queryBuilder['orderBy'] = "ORDER BY {$column} {$direction}";
         return $this;
     }
 
-    // Add a limit clause
     public function limit($limit)
     {
         $this->queryBuilder['limit'] = "LIMIT {$limit}";
         return $this;
     }
 
-    // Execute the built query and get all results
     public function get()
     {
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
@@ -94,16 +88,14 @@ class Model
             $this->attributes = $result;
             foreach ($this->queryBuilder['relations'] as $type => $relations) {
                 foreach ($relations as $name => $args) {
-                    print_r($args);
                     $result[$name] = call_user_func_array([$this, "{$type}Method"], $args);
                 }
             }
         }
-        $this->newQuery(); // Reset the builder for a fresh start
+        $this->newQuery();
         return $results;
     }
 
-    // Store the fetched data in attributes for access by relationships
     public function first()
     {
         $this->limit(1);
@@ -112,7 +104,8 @@ class Model
         return $this->attributes;
     }
 
-    private function getCallingFunctionName() {
+    private function getCallingFunctionName()
+    {
         $backtrace = debug_backtrace();
         return $backtrace[2]['function'];
     }
@@ -131,11 +124,69 @@ class Model
     {
         $localKey = $localKey ?: $this->primaryKey;
         $query = new self();
-        print($this->attributes[$localKey]. ' '. $relatedTable . ' '. $foreignKey . ' ' . $localKey);
         $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null, '%d');
         $result = $query->get();
-        print_r($result);
         return $result;
     }
-    
+
+    public function hasOne($relatedTable, $foreignKey, $localKey = null)
+    {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['hasOne'] = array_merge(
+            $this->queryBuilder['relations']['hasOne'] ?? [],
+            [$name => [$relatedTable, $foreignKey, $localKey]]
+        );
+        return $this;
+    }
+
+    private function hasOneMethod($relatedTable, $foreignKey, $localKey = null)
+    {
+        $localKey = $localKey ?: $this->primaryKey;
+        $query = new self();
+        $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null, '%d');
+        $result = $query->first(); // Only fetch the first record
+        return $result;
+    }
+
+    public function belongsTo($relatedTable, $localKey, $foreignKey = null)
+    {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['belongsTo'] = array_merge(
+            $this->queryBuilder['relations']['belongsTo'] ?? [],
+            [$name => [$relatedTable, $localKey, $foreignKey]]
+        );
+        return $this;
+    }
+
+    private function belongsToMethod($relatedTable, $localKey, $foreignKey = null)
+    {
+        $foreignKey = $foreignKey ?: $this->primaryKey;
+        $query = new self();
+        $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null, '%d');
+        $result = $query->first(); // Only fetch the first record
+        return $result;
+    }
+
+    public function hasOneMeta($relatedTable, $metaKey,$localKey, $foreignKey = null, $valueField = 'meta_value', $keyField = 'meta_key')
+    {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['belongsTo'] = array_merge(
+            $this->queryBuilder['relations']['belongsTo'] ?? [],
+            [$name => [$relatedTable, $metaKey,$localKey, $foreignKey]]
+        );
+        return $this;
+    }
+
+    private function hasOneMetaMethod($relatedTable, $metaKey,$localKey, $foreignKey = null, $valueField = 'meta_value', $keyField = 'meta_key')
+    {
+        $foreignKey = $foreignKey ?: $this->primaryKey;
+        $query = new self();
+        $query->setTable($relatedTable)->select($valueField)
+        ->where($foreignKey, '=', $this->attributes[$localKey] ?? null, '%d')
+        ->where($keyField, '=', $metaKey, '%s');
+        $result = $query->first();
+        return $result[$valueField];
+    }
+
+
 }
