@@ -2,9 +2,9 @@
 
 namespace Donapp\Providers;
 
-use Donapp\Controllers\ProductService;
 use Donapp\Services\AuthService;
 use Donapp\Services\BlogService;
+use Donapp\Services\ProductService;
 use Kernel\Container;
 
 class AppServiceProvider {
