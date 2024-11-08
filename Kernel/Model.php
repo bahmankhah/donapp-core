@@ -11,10 +11,6 @@ class Model
     protected $postType = null; // Default to null, set in derived classes if needed
     protected $attributes = []; // Stores the current record's data
 
-    public function __call($name, $arguments)
-    {
-        echo $name;
-    }
     public function __construct()
     {
         global $wpdb;
@@ -94,20 +90,15 @@ class Model
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
 
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
-echo 'got result';
         foreach ($results as &$result) {
-            print_r($this->queryBuilder['relations']);
             $this->attributes = $result;
             foreach ($this->queryBuilder['relations'] as $type => $relations) {
-                echo "calling ".$type;
                 foreach ($relations as $name => $args) {
-                    echo "calling ".$name;
                     $result[$name] = call_user_func_array([$this, "{$type}Method"], $args);
                 }
             }
         }
         $this->newQuery(); // Reset the builder for a fresh start
-        die();
         return $results;
     }
 
@@ -128,13 +119,10 @@ echo 'got result';
     public function hasMany($relatedTable, $foreignKey, $localKey = null)
     {
         $name = $this->getCallingFunctionName();
-        echo 'name is '. $name. ' ';
         $this->queryBuilder['relations']['hasMany'] = array_merge(
             $this->queryBuilder['relations']['hasMany'] ?? [],
             [$name => [$relatedTable, $foreignKey, $localKey]]
         );
-        print('see this');
-        print_r($this->queryBuilder['relations']);
         return $this;
     }
 
