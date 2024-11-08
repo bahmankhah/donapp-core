@@ -2,7 +2,8 @@
 
 namespace Kernel;
 
-abstract class Model {
+abstract class Model
+{
     protected $table;
     protected $primaryKey = 'id';
     protected $queryBuilder = [];
@@ -11,18 +12,19 @@ abstract class Model {
     protected $attributes = []; // Stores the current record's data
 
     public function __call($name, $arguments)
-    {   
+    {
         echo $name;
-        
     }
-    public function __construct() {
+    public function __construct()
+    {
         global $wpdb;
         $this->wpdb = $wpdb;
         $this->newQuery();
     }
 
     // Start a new query
-    public function newQuery() {
+    public function newQuery()
+    {
         $this->queryBuilder = [
             'select' => '*',
             'joins' => [],
@@ -40,51 +42,58 @@ abstract class Model {
     }
 
     // Set the table name dynamically if needed
-    public function setTable($table) {
+    public function setTable($table)
+    {
         $this->table = $table;
         return $this;
     }
 
     // Select specific columns
-    public function select($columns) {
+    public function select($columns)
+    {
         $this->queryBuilder['select'] = is_array($columns) ? implode(',', $columns) : $columns;
         return $this;
     }
 
     // Add a join clause
-    public function join($table, $first, $operator, $second, $type = 'INNER') {
+    public function join($table, $first, $operator, $second, $type = 'INNER')
+    {
         $this->queryBuilder['joins'][] = "{$type} JOIN {$table} ON {$first} {$operator} {$second}";
         return $this;
     }
 
     // Add a where clause
-    public function where($column, $operator, $value, $type = '%s') {
+    public function where($column, $operator, $value, $type = '%s')
+    {
         $this->queryBuilder['where'][] = $this->wpdb->prepare("{$column} {$operator} {$type}", $value);
         return $this;
     }
 
     // Add an order by clause
-    public function orderBy($column, $direction = 'ASC') {
+    public function orderBy($column, $direction = 'ASC')
+    {
         $this->queryBuilder['orderBy'] = "ORDER BY {$column} {$direction}";
         return $this;
     }
 
     // Add a limit clause
-    public function limit($limit) {
+    public function limit($limit)
+    {
         $this->queryBuilder['limit'] = "LIMIT {$limit}";
         return $this;
     }
 
     // Execute the built query and get all results
-    public function get() {
+    public function get()
+    {
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
-        
+
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
 
         $this->newQuery(); // Reset the builder for a fresh start
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
-        
+
         foreach ($results as &$result) {
             $this->attributes = $result;
             foreach ($this->queryBuilder['relations'] as $type => $relations) {
@@ -98,30 +107,32 @@ abstract class Model {
     }
 
     // Store the fetched data in attributes for access by relationships
-    public function first() {
+    public function first()
+    {
         $this->limit(1);
         $result = $this->get();
         $this->attributes = !empty($result) ? $result[0] : [];
         return $this->attributes;
     }
 
-   public function with($name,$method){
-        $this->queryBuilder['relations']['with'][$name] = [$method];
-        return $this;
-   }
-
-   private function withMethod($method){
-    $query = new static();
-    // $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
-    return $method($query);
-   }
-
-    // Helper method to get the name of the calling function
     private function getCallingFunctionName() {
         $backtrace = debug_backtrace();
         return $backtrace[2]['function'];
     }
 
-    // Private relationship methods using $this->attributes for field access
+    public function hasMany($relatedTable, $foreignKey, $localKey = null)
+    {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['hasMany'][$name] = [$relatedTable, $foreignKey, $localKey];
+        return $this;
+    }
+
+    private function hasManyMethod($relatedTable, $foreignKey, $localKey = null)
+    {
+        $localKey = $localKey ?: $this->primaryKey;
+        $query = new static();
+        $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
+        return $query->get();
+    }
     
 }
