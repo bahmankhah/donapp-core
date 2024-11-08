@@ -2,7 +2,7 @@
 
 namespace Kernel;
 
-abstract class Model
+class Model
 {
     protected $table;
     protected $primaryKey = 'id';
