@@ -13,6 +13,6 @@ class Post extends Model {
 
     public function test(){
         return $this->hasOneMeta($this->wpdb->prefix.'postmeta', '_post_views_count', 'post_id', 'ID');
-    }
+    }   
 
 }

@@ -10,6 +10,10 @@ abstract class Model {
     protected $postType = null; // Default to null, set in derived classes if needed
     protected $attributes = []; // Stores the current record's data
 
+    public function __call($name, $arguments)
+    {   
+        echo $name;
+    }
     public function __construct() {
         global $wpdb;
         $this->wpdb = $wpdb;
@@ -100,36 +104,16 @@ abstract class Model {
         return $this->attributes;
     }
 
-    // Define relationship methods with correct access to attributes
-    public function hasOne($relatedTable, $foreignKey, $localKey = null) {
-        $name = $this->getCallingFunctionName();
-        $this->queryBuilder['relations']['hasOne'][$name] = [$relatedTable, $foreignKey, $localKey];
+   public function with($name,$method){
+        $this->queryBuilder['relations']['with'][$name] = [$method];
         return $this;
-    }
+   }
 
-    public function hasMany($relatedTable, $foreignKey, $localKey = null) {
-        $name = $this->getCallingFunctionName();
-        $this->queryBuilder['relations']['hasMany'][$name] = [$relatedTable, $foreignKey, $localKey];
-        return $this;
-    }
-
-    public function belongsTo($relatedTable, $foreignKey, $ownerKey = 'id') {
-        $name = $this->getCallingFunctionName();
-        $this->queryBuilder['relations']['belongsTo'][$name] = [$relatedTable, $foreignKey, $ownerKey];
-        return $this;
-    }
-
-    public function hasManyMeta($metaTable, $foreignKey, $localKey = null) {
-        $name = $this->getCallingFunctionName();
-        $this->queryBuilder['relations']['hasManyMeta'][$name] = [$metaTable, $foreignKey, $localKey];
-        return $this;
-    }
-
-    public function hasOneMeta($metaTable, $metaKey, $foreignKey, $localKey = null) {
-        $name = $this->getCallingFunctionName();
-        $this->queryBuilder['relations']['hasOneMeta'][$name] = [$metaTable, $metaKey, $foreignKey, $localKey];
-        return $this;
-    }
+   private function withMethod($method){
+    $query = new static();
+    // $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
+    return $method($query);
+   }
 
     // Helper method to get the name of the calling function
     private function getCallingFunctionName() {
@@ -138,38 +122,5 @@ abstract class Model {
     }
 
     // Private relationship methods using $this->attributes for field access
-    private function hasOneMethod($relatedTable, $foreignKey, $localKey = null) {
-        $localKey = $localKey ?: $this->primaryKey;
-        $query = new static();
-        $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
-        return $query->first();
-    }
-
-    private function hasManyMethod($relatedTable, $foreignKey, $localKey = null) {
-        $localKey = $localKey ?: $this->primaryKey;
-        $query = new static();
-        $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
-        return $query->get();
-    }
-
-    private function belongsToMethod($relatedTable, $foreignKey, $ownerKey = 'id') {
-        $query = new static();
-        $query->setTable($relatedTable)->where($ownerKey, '=', $this->attributes[$foreignKey] ?? null);
-        return $query->first();
-    }
-
-    private function hasManyMetaMethod($metaTable, $foreignKey, $localKey = null) {
-        $localKey = $localKey ?: $this->primaryKey;
-        $query = new static();
-        $query->setTable($metaTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
-        return $query->get();
-    }
-
-    private function hasOneMetaMethod($metaTable, $metaKey, $foreignKey, $localKey = null) {
-        $localKey = $localKey ?: $this->primaryKey;
-        $query = new static();
-        $query->setTable($metaTable)->select('meta_value')->where($foreignKey, '=', $this->attributes[$localKey] ?? null)->where('meta_key', '=', $metaKey);
-        $result = $query->first();
-        return $result ? $result['meta_value'] : null;
-    }
+    
 }
