@@ -31,7 +31,9 @@ abstract class Model
             'where' => [],
             'orderBy' => '',
             'limit' => '',
-            'relations' => [],
+            'relations' => [
+                'hasMany' => [],
+            ],
         ];
 
         if ($this->postType) {
