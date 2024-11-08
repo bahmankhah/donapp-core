@@ -2,32 +2,13 @@
 
 namespace Kernel;
 
-use ReflectionMethod;
-
 abstract class Model {
     protected $table;
     protected $primaryKey = 'id';
     protected $queryBuilder = [];
     protected $wpdb;
     protected $postType = null; // Default to null, set in derived classes if needed
-
-    public function __call($name, $arguments)
-    {
-        echo 'intercepting';
-
-        if (method_exists($this, $name)) {
-            // Use Reflection to invoke the actual method in the child class
-            echo 'intercepted';
-            call_user_func_array([$this, $name], $arguments);
-            echo 'after';
-            die('died');
-            // $reflector = new ReflectionMethod($this, $name);
-            // return $reflector->invokeArgs($this, $arguments);
-        } else {
-            // Handle as a non-existent method call
-            echo "Method '$name' does not exist in the child class. Handling as needed.\n";
-        }
-    }
+    protected $attributes = []; // Stores the current record's data
 
     public function __construct() {
         global $wpdb;
@@ -43,9 +24,9 @@ abstract class Model {
             'where' => [],
             'orderBy' => '',
             'limit' => '',
+            'relations' => [],
         ];
 
-        // If a post type is defined, add it to the query
         if ($this->postType) {
             $this->where('post_type', '=', $this->postType);
         }
@@ -77,12 +58,6 @@ abstract class Model {
         return $this;
     }
 
-    // Add a where clause for meta values (for tables with meta data like posts and users)
-    public function whereMeta($metaKey, $operator, $value, $type = '%s') {
-        $this->queryBuilder['where'][] = $this->wpdb->prepare("ID IN (SELECT post_id FROM {$this->wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value {$operator} {$type})", $metaKey, $value);
-        return $this;
-    }
-
     // Add an order by clause
     public function orderBy($column, $direction = 'ASC') {
         $this->queryBuilder['orderBy'] = "ORDER BY {$column} {$direction}";
@@ -103,41 +78,98 @@ abstract class Model {
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
 
         $this->newQuery(); // Reset the builder for a fresh start
-        return $this->wpdb->get_results($sql);
+        $results = $this->wpdb->get_results($sql, 'ARRAY_A');
+        
+        foreach ($results as &$result) {
+            $this->attributes = $result;
+            foreach ($this->queryBuilder['relations'] as $type => $relations) {
+                foreach ($relations as $name => $args) {
+                    $result[$name] = call_user_func_array([$this, "{$type}Method"], $args);
+                }
+            }
+        }
+
+        return $results;
     }
 
-    // Execute the built query and get the first result
+    // Store the fetched data in attributes for access by relationships
     public function first() {
         $this->limit(1);
         $result = $this->get();
-        return !empty($result) ? $result[0] : null;
+        $this->attributes = !empty($result) ? $result[0] : [];
+        return $this->attributes;
     }
 
-    // Find a record by primary key
-    public function find($id) {
-        return $this->newQuery()->where($this->primaryKey, '=', $id)->first();
+    // Define relationship methods with correct access to attributes
+    public function hasOne($relatedTable, $foreignKey, $localKey = null) {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['hasOne'][$name] = [$relatedTable, $foreignKey, $localKey];
+        return $this;
     }
 
-    // Insert a new record
-    public function create(array $data) {
-        $inserted = $this->wpdb->insert($this->table, $data);
-        if ($inserted) {
-            return $this->find($this->wpdb->insert_id);
-        }
-        return false;
+    public function hasMany($relatedTable, $foreignKey, $localKey = null) {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['hasMany'][$name] = [$relatedTable, $foreignKey, $localKey];
+        return $this;
     }
 
-    // Update a record by primary key
-    public function update($id, array $data) {
-        $updated = $this->wpdb->update($this->table, $data, [$this->primaryKey => $id]);
-        if ($updated) {
-            return $this->find($id);
-        }
-        return false;
+    public function belongsTo($relatedTable, $foreignKey, $ownerKey = 'id') {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['belongsTo'][$name] = [$relatedTable, $foreignKey, $ownerKey];
+        return $this;
     }
 
-    // Delete a record by primary key
-    public function delete($id) {
-        return $this->wpdb->delete($this->table, [$this->primaryKey => $id]);
+    public function hasManyMeta($metaTable, $foreignKey, $localKey = null) {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['hasManyMeta'][$name] = [$metaTable, $foreignKey, $localKey];
+        return $this;
+    }
+
+    public function hasOneMeta($metaTable, $metaKey, $foreignKey, $localKey = null) {
+        $name = $this->getCallingFunctionName();
+        $this->queryBuilder['relations']['hasOneMeta'][$name] = [$metaTable, $metaKey, $foreignKey, $localKey];
+        return $this;
+    }
+
+    // Helper method to get the name of the calling function
+    private function getCallingFunctionName() {
+        $backtrace = debug_backtrace();
+        return $backtrace[2]['function'];
+    }
+
+    // Private relationship methods using $this->attributes for field access
+    private function hasOneMethod($relatedTable, $foreignKey, $localKey = null) {
+        $localKey = $localKey ?: $this->primaryKey;
+        $query = new static();
+        $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
+        return $query->first();
+    }
+
+    private function hasManyMethod($relatedTable, $foreignKey, $localKey = null) {
+        $localKey = $localKey ?: $this->primaryKey;
+        $query = new static();
+        $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
+        return $query->get();
+    }
+
+    private function belongsToMethod($relatedTable, $foreignKey, $ownerKey = 'id') {
+        $query = new static();
+        $query->setTable($relatedTable)->where($ownerKey, '=', $this->attributes[$foreignKey] ?? null);
+        return $query->first();
+    }
+
+    private function hasManyMetaMethod($metaTable, $foreignKey, $localKey = null) {
+        $localKey = $localKey ?: $this->primaryKey;
+        $query = new static();
+        $query->setTable($metaTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
+        return $query->get();
+    }
+
+    private function hasOneMetaMethod($metaTable, $metaKey, $foreignKey, $localKey = null) {
+        $localKey = $localKey ?: $this->primaryKey;
+        $query = new static();
+        $query->setTable($metaTable)->select('meta_value')->where($foreignKey, '=', $this->attributes[$localKey] ?? null)->where('meta_key', '=', $metaKey);
+        $result = $query->first();
+        return $result ? $result['meta_value'] : null;
     }
 }

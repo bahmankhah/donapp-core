@@ -21,6 +21,5 @@ class BlogController
         }
     }
     public function test(){
-        (new Post())->test();
     }
 }
