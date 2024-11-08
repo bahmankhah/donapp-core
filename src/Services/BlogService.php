@@ -21,7 +21,7 @@ class BlogService{
         ->with('image_url', function ($row) {
             return get_post_thumbnail_id($row['ID']);
         })
-        ->select(['post_title',"MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count'"])
+        ->select(['ID','post_title',"MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count'"])
         ->limit($limit)
         // ->views()
         ->where('p.post_status','=','publish')
