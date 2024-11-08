@@ -97,7 +97,9 @@ abstract class Model
         foreach ($results as &$result) {
             $this->attributes = $result;
             foreach ($this->queryBuilder['relations'] as $type => $relations) {
+                echo "calling ".$type;
                 foreach ($relations as $name => $args) {
+                    echo "calling ".$name;
                     $result[$name] = call_user_func_array([$this, "{$type}Method"], $args);
                 }
             }
@@ -123,6 +125,7 @@ abstract class Model
     public function hasMany($relatedTable, $foreignKey, $localKey = null)
     {
         $name = $this->getCallingFunctionName();
+        echo $name;
         $this->queryBuilder['relations']['hasMany'][$name] = [$relatedTable, $foreignKey, $localKey];
         return $this;
     }
