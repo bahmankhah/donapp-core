@@ -94,6 +94,7 @@ class Model
             $this->attributes = $result;
             foreach ($this->queryBuilder['relations'] as $type => $relations) {
                 foreach ($relations as $name => $args) {
+                    print_r($args);
                     $result[$name] = call_user_func_array([$this, "{$type}Method"], $args);
                 }
             }
@@ -130,6 +131,7 @@ class Model
     {
         $localKey = $localKey ?: $this->primaryKey;
         $query = new static();
+        print($this->attributes[$localKey]);
         $query->setTable($relatedTable)->where($foreignKey, '=', $this->attributes[$localKey] ?? null);
         return $query->get();
     }
