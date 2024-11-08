@@ -135,7 +135,7 @@ echo 'got result';
             [$name => [$relatedTable, $foreignKey, $localKey]]
         );
         print('see this');
-        print_r($this->queryBuilder['relations']['hasMany']);
+        print_r($this->queryBuilder['relations']);
         return $this;
     }
 
