@@ -3,8 +3,8 @@
 namespace Donapp\Providers;
 
 use Donapp\Controllers\ProductService;
-use Donapp\Routes\RouteServiceProvider;
 use Donapp\Services\AuthService;
+use Donapp\Services\BlogService;
 use Kernel\Container;
 
 class AppServiceProvider {
@@ -17,6 +17,9 @@ class AppServiceProvider {
         });
         Container::bind('ProductService', function() {
             return new ProductService();
+        });
+        Container::bind('BlogService', function() {
+            return new BlogService();
         });
 
 
