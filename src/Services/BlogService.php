@@ -15,6 +15,7 @@ class BlogService{
         if(!in_array($data['orderDirection'], ['ASC', 'DESC'])) $data['orderDirection'] = 'DESC';
 
         $limit = $data['limit'] ?? 10;
+        
         return (new Post())
         ->select("MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count")
         ->limit($limit)
