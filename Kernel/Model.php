@@ -85,7 +85,6 @@ class Model
 
     public function get()
     {
-        print_r($this->queryBuilder);
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
 
@@ -102,6 +101,14 @@ class Model
         }
         $this->newQuery();
         return $results;
+    }
+
+    public function with($name, $method){
+        $this->queryBuilder['relations']['with'][$name] = [$method];
+        return $this;
+    }
+    private function withMethod($method){
+        return call_user_func($method, $this->attributes);
     }
 
     public function first()
