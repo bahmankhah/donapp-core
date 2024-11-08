@@ -4,7 +4,7 @@ namespace Kernel;
 
 use ReflectionMethod;
 
-class Model {
+abstract class Model {
     protected $table;
     protected $primaryKey = 'id';
     protected $queryBuilder = [];
@@ -13,12 +13,14 @@ class Model {
 
     public function __call($name, $arguments)
     {
+        echo 'intercepting';
+
         if (method_exists($this, $name)) {
             // Use Reflection to invoke the actual method in the child class
             echo 'intercepted';
             call_user_func_array([$this, $name], $arguments);
             echo 'after';
-            die();
+            die('died');
             // $reflector = new ReflectionMethod($this, $name);
             // return $reflector->invokeArgs($this, $arguments);
         } else {
