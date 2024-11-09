@@ -24,7 +24,7 @@ class BlogService{
         ->with('post_url', function ($row) {
             return get_permalink($row['ID']);
         })
-        ->select(['ID','post_title',"MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count'"])
+        ->select(['ID','post_date','post_title',"MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count'"])
         ->limit($limit)
         // ->views()
         ->where('p.post_status','=','publish')
