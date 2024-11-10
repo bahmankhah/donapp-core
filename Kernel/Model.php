@@ -31,8 +31,8 @@ class Model
                 'hasMany' => [],
                 'hasOne' => [],
                 'belongsTo' => [],
-                'filter' => [],
             ],
+            'hide' => [],
         ];
 
         if ($this->postType) {
@@ -99,6 +99,9 @@ class Model
                     $result[$name] = call_user_func_array([$this, "{$type}Method"], $args);
                 }
             }
+            foreach ($this->queryBuilder['hide'] as $name) {
+                unset($result[$name]);
+            }
         }
         $this->newQuery();
         return $results;
@@ -110,13 +113,6 @@ class Model
     }
     private function withMethod($method){
         return call_user_func($method, $this->attributes);
-    }
-    public function filter($name, $method){
-        $this->queryBuilder['relations']['filter'][$name] = [$method, $name];
-        return $this;
-    }
-    private function filterMethod($method, $name){
-        return call_user_func($method, $this->attributes[$name]);
     }
 
     public function first()
@@ -131,6 +127,11 @@ class Model
     {
         $backtrace = debug_backtrace();
         return $backtrace[2]['function'];
+    }
+
+    public function hide($name){
+        $this->queryBuilder['hide'][] = $name;
+        return $this;
     }
 
     public function hasMany($relatedTable, $foreignKey, $localKey = null)
