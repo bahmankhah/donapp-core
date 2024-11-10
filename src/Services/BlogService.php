@@ -11,8 +11,8 @@ class BlogService{
         $orderBy = isset($data['orderBy']) ? $data['orderBy'] : 'post_date';
         $orderDirection = isset($data['orderDirection']) ? $data['orderDirection'] : 'DESC';
 
-        if(!in_array($orderBy, ['post_date', 'views'])) $orderBy = 'post_date';
-        if(!in_array($orderDirection, ['ASC', 'DESC', 'asc', 'desc'])) $data['orderDirection'] = 'DESC';
+        if(!in_array($orderBy, ['post_date', 'post_views_count'])) $orderBy = 'post_date';
+        if(!in_array($orderDirection, ['ASC', 'DESC'])) $data['orderDirection'] = 'DESC';
 
         $limit = $data['limit'] ?? 10;
         
@@ -21,7 +21,7 @@ class BlogService{
         ->with('image_url', function ($row) {
             return get_the_post_thumbnail_url($row['ID']);
         })
-        ->select(['ID','content','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
+        ->select(['ID','post_title',"MAX(CASE WHEN pm.meta_key = 'post_views_count' THEN pm.meta_value END) AS 'post_views_count'"])
         ->limit($limit)
         // ->views()
         ->where('p.post_status','=','publish')
