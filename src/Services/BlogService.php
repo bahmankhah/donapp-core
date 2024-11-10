@@ -25,7 +25,7 @@ class BlogService{
             return get_permalink($row['ID']);
         })
         ->filter('content', function ($old) {
-            return wp_strip_all_tags($old);
+            return '';
         })
         ->select(['ID','content','post_date','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
         ->limit($limit)
