@@ -20,15 +20,16 @@ class BlogService{
         ->setTableAlias('p')
         ->with('image_url', function ($row) {
             return get_the_post_thumbnail_url($row['ID']);
-        })->with('content', function ($row) {
-            return wp_strip_all_tags($row['content']);
         })
-        // ->select(['ID','content','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
+        ->with('post_url', function ($row) {
+            return get_permalink($row['ID']);
+        })
+        ->select(['ID','post_date','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
         ->limit($limit)
         // ->views()
-        // ->where('p.post_status','=','publish')
-        // ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
-        // ->orderBy($orderBy, $orderDirection)
+        ->where('p.post_status','=','publish')
+        ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
+        ->orderBy($orderBy, $orderDirection)
         ->get();
     }
 
