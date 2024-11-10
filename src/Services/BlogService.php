@@ -20,8 +20,6 @@ class BlogService{
         ->setTableAlias('p')
         ->with('image_url', function ($row) {
             return get_the_post_thumbnail_url($row['ID']);
-        })->with('content', function ($row) {
-            return wp_strip_all_tags($row['content']);
         })
         ->select(['ID','content','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
         ->limit($limit)
