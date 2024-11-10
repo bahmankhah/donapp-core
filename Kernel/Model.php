@@ -31,6 +31,7 @@ class Model
                 'hasMany' => [],
                 'hasOne' => [],
                 'belongsTo' => [],
+                'filter' => [],
             ],
         ];
 
@@ -109,6 +110,13 @@ class Model
     }
     private function withMethod($method){
         return call_user_func($method, $this->attributes);
+    }
+    public function filter($name, $method){
+        $this->queryBuilder['relations']['filter'][$name] = [$method, $name];
+        return $this;
+    }
+    private function filterMethod($method, $name){
+        return call_user_func($method, $this->attributes[$name]);
     }
 
     public function first()
