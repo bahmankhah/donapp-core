@@ -24,7 +24,10 @@ class BlogService{
         ->with('post_url', function ($row) {
             return get_permalink($row['ID']);
         })
-        ->select(['ID','post_date','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
+        ->with('content', function ($row) {
+            return wp_strip_all_tags($row['content']);
+        })
+        ->select(['ID','content','post_date','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
         ->limit($limit)
         // ->views()
         ->where('p.post_status','=','publish')
