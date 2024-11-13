@@ -26,6 +26,7 @@ class Model
             'joins' => [],
             'where' => [],
             'orderBy' => '',
+            'groupBy' => '',
             'limit' => '',
             'relations' => [
                 'hasMany' => [],
@@ -78,6 +79,11 @@ class Model
         return $this;
     }
 
+    public function groupBy($columns)
+    {
+        $this->queryBuilder['groupBy'] = is_array($columns) ? implode(',', $columns) : $columns;
+        return $this;
+    }
     public function limit($limit)
     {
         $this->queryBuilder['limit'] = "LIMIT {$limit}";
@@ -88,10 +94,8 @@ class Model
     {
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
-
-        $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
-        echo $sql;
-        echo "\n";
+        $groupBy = !empty($this->queryBuilder['where']) ? 'GROUP BY '. $this->queryBuilder['groupBy'] : '';
+        $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
         foreach ($results as &$result) {
             $this->attributes = $result;
