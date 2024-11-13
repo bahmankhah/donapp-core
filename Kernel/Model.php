@@ -94,9 +94,10 @@ class Model
     {
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
-        $groupBy = !empty($this->queryBuilder['where']) ? 'GROUP BY '. $this->queryBuilder['groupBy'] : '';
+        $groupBy = !empty($this->queryBuilder['groupBy']) ? 'GROUP BY '. $this->queryBuilder['groupBy'] : '';
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
+        
         foreach ($results as &$result) {
             $this->attributes = $result;
             foreach ($this->queryBuilder['relations'] as $type => $relations) {

@@ -33,7 +33,7 @@ class BlogService{
         ->where('p.post_status','=','publish')
         ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
         ->orderBy($orderBy, $orderDirection)
-        
+        ->groupBy(['p.ID'])
         ->get();
 
         
