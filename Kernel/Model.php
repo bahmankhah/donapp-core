@@ -90,7 +90,8 @@ class Model
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
 
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
-
+        echo $sql;
+        echo "\n";
         $results = $this->wpdb->get_results($sql, 'ARRAY_A');
         foreach ($results as &$result) {
             $this->attributes = $result;
@@ -104,6 +105,7 @@ class Model
             }
         }
         $this->newQuery();
+        
         return $results;
     }
 

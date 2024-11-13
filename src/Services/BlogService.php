@@ -34,7 +34,9 @@ class BlogService{
         ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
         ->orderBy($orderBy, $orderDirection)
         ->get();
+
+        
     }
 
-
+    
 }
