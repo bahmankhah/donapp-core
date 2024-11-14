@@ -10,7 +10,6 @@ use Kernel\Container;
 class AppServiceProvider {
 
     public function register() {
-                
         Container::bind('AuthService', function() {
             return new AuthService();
         });

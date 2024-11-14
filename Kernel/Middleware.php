@@ -2,6 +2,6 @@
 
 namespace Kernel;
 
-Interface Middleware {
+interface Middleware {
     public function handle($request, Pipeline $pipeline);
 }

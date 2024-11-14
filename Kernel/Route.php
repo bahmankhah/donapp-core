@@ -13,7 +13,7 @@ class Route{
         $this->params['method']= 'GET';
         $this->params['route'] = $route;
         return $this;
-    }
+    } 
     public function post($route, array $callable){
         $this->params['callable'] = $callable;
         $this->params['method']= 'POST';
