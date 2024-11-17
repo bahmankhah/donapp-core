@@ -5,6 +5,7 @@ namespace Donapp\Providers;
 use Donapp\Services\AuthService;
 use Donapp\Services\BlogService;
 use Donapp\Services\ProductService;
+use Donapp\Services\VideoService;
 use Kernel\Container;
 use Kernel\PostType;
 
@@ -19,6 +20,10 @@ class AppServiceProvider {
         });
         Container::bind('BlogService', function() {
             return new BlogService();
+        });
+
+        Container::bind('VideoService', function() {
+            return new VideoService();
         });
 
     }

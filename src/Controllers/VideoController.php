@@ -19,6 +19,4 @@ class VideoController
             echo $e->getMessage();
         }
     }
-    public function test(){
-    }
 }
