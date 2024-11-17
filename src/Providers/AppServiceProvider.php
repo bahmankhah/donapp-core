@@ -6,6 +6,7 @@ use Donapp\Services\AuthService;
 use Donapp\Services\BlogService;
 use Donapp\Services\ProductService;
 use Kernel\Container;
+use Kernel\PostType;
 
 class AppServiceProvider {
 
@@ -19,5 +20,7 @@ class AppServiceProvider {
         Container::bind('BlogService', function() {
             return new BlogService();
         });
+
+        new PostType();
     }
 }
