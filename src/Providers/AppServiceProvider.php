@@ -21,6 +21,5 @@ class AppServiceProvider {
             return new BlogService();
         });
 
-        new PostType();
     }
 }

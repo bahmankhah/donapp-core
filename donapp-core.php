@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 
 use Donapp\Providers\AppServiceProvider;
 use Donapp\Routes\RouteServiceProvider;
+use Kernel\PostType;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -42,6 +43,6 @@ add_action('plugins_loaded', function() {
 });
 add_action('init', 'custom_api_rewrite');
 function custom_api_rewrite() {
-    add_rewrite_rule('^api/(.*)?', 'index.php?rest_route=/$1', 'top');
-    flush_rewrite_rules(false);
+    new PostType();
+
 }
