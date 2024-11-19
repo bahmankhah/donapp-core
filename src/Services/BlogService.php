@@ -52,6 +52,8 @@ class BlogService{
         
         $categotyId = (new DB())->getCategoryId('dnp-videos');
 
+        if(!$categotyId) return [];
+
         return (new Post())
         ->setTableAlias('p')
         ->with('image_url', function ($row) {
