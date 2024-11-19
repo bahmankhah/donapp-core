@@ -49,9 +49,12 @@ class Model
         return $this;
     }
 
-    public function setTable($table)
+    public function setTable($table, $alias = null)
     {
         $this->table = $table;
+        if ($alias) {
+            $this->setTableAlias($alias);
+        }
         return $this;
     }
 
@@ -90,13 +93,15 @@ class Model
         return $this;
     }
 
-    public function get()
-    {
+    public function sql(){
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
         $groupBy = !empty($this->queryBuilder['groupBy']) ? 'GROUP BY '. $this->queryBuilder['groupBy'] : '';
-        $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
-        $results = $this->wpdb->get_results($sql, 'ARRAY_A');
+        return "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
+    }
+    public function get()
+    {
+        $results = $this->wpdb->get_results($this->sql(), 'ARRAY_A');
         
         foreach ($results as &$result) {
             $this->attributes = $result;
