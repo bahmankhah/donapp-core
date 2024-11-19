@@ -50,7 +50,7 @@ class BlogService{
 
         $limit = $data['limit'] ?? 10;
         
-        $categotyId = (new DB())->getCategoryId('dnp-videos');
+        $categotyId = (new DB())->getCategoryId('donap-videos');
 
         if(!$categotyId) return [];
 
