@@ -100,7 +100,7 @@ class Model
         
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
         echo $sql;
-        echo "<br>";
+        echo "\n";
         return $sql;
     }
     public function get()

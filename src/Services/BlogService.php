@@ -45,7 +45,7 @@ class BlogService{
         ->groupBy(['p.ID']);
 
         if($categotyId){
-            $query->where('p.ID', 'NOT IN', "($whereSql)");
+            $query->where('p.ID', 'NOT IN', "($whereSql)", '%i');
         }
 
         return $query->get();
