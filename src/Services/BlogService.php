@@ -23,7 +23,9 @@ class BlogService{
             $whereSql = (new Model)->select(['tr.object_id'])->setTable(DB::wpdb()->term_relationships, 'tr')
             ->join(DB::wpdb()->term_taxonomy.'as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
             ->where('tt.term_id', '=', $categotyId, '%d')
-            ->where('tt.taxonomy', '=', 'category')->sql();
+            ->where('tt.taxonomy', '=', 'category')->get();
+            var_dump($whereSql);
+            die();
         }
         $query = (new Post())
         ->setTableAlias('p')
@@ -45,7 +47,7 @@ class BlogService{
         ->groupBy(['p.ID']);
 
         if($categotyId){
-            // $query->where('p.ID', 'NOT IN', "($whereSql)", 'none');
+            $query->where('p.ID', 'NOT IN', "($whereSql)", 'none');
         }
 
         return $query->get();
