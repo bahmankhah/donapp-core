@@ -23,9 +23,10 @@ class DB {
     public function getCategoryId($slug){
         $category_id = $this->wpdbMain()->get_var($this->wpdbMain()->prepare("
             SELECT term_id 
-            FROM {wpdbMain()->terms} 
+            FROM {$this->wpdbMain()->terms} 
             WHERE slug = %s
         ", $slug));
+        echo 
         return $category_id;
     }
 
