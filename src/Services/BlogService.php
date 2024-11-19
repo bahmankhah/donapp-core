@@ -70,13 +70,13 @@ class BlogService{
         ->limit($limit)
         // ->views()
         ->where('p.post_status','=','publish')
-        ->where('tt.term_id', '=', '%d')
+        ->where('tt.term_id', '=', $categotyId, '%d')
         ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
         ->join(DB::wpdb()->term_relationships.' as tr', 'p.ID', '=', 'tr.object_id')
         ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
         ->orderBy($orderBy, $orderDirection)
         ->groupBy(['p.ID'])
-        ->get([(int) $categotyId]);
+        ->get();
 
         
     }
