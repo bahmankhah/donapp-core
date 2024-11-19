@@ -97,6 +97,7 @@ class Model
         $groupBy = !empty($this->queryBuilder['groupBy']) ? 'GROUP BY '. $this->queryBuilder['groupBy'] : '';
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
         $prepared_sql = $this->wpdb->prepare($sql, $binds);
+        echo $prepared_sql;
         $results = $this->wpdb->get_results($prepared_sql, 'ARRAY_A');
         
         foreach ($results as &$result) {
