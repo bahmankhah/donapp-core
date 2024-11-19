@@ -76,7 +76,7 @@ class BlogService{
         ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
         ->orderBy($orderBy, $orderDirection)
         ->groupBy(['p.ID'])
-        ->get([$categotyId]);
+        ->get([(int) $categotyId]);
 
         
     }
