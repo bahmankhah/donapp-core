@@ -71,8 +71,14 @@ class Model
     }
 
     public function where($column, $operator, $value, $type = '%s')
-    {
+    {  
+        if($type == 'none'){
+            $this->queryBuilder['where'][] = $this->wpdb->prepare("{$column} {$operator} {$value}");
+
+        }else{
         $this->queryBuilder['where'][] = $this->wpdb->prepare("{$column} {$operator} {$type}", $value);
+
+        }
         return $this;
     }
 
