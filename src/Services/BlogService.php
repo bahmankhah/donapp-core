@@ -51,7 +51,8 @@ class BlogService{
         $limit = $data['limit'] ?? 10;
         
         $categotyId = (new DB())->getCategoryId('donap-videos');
-
+        echo "CATEGORY ID: \n";
+        echo $categotyId."\n";
         if(!$categotyId) return [];
 
         return (new Post())
