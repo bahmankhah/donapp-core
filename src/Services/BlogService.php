@@ -21,9 +21,9 @@ class BlogService{
         $whereSql = '';
         if($categotyId){
             $whereSql = (new Model)->select(['tr.object_id'])->setTable(DB::wpdb()->term_relationships, 'tr')
-            ->join(DB::wpdb()->term_taxonomy.'as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
+            ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
             ->where('tt.term_id', '=', $categotyId, '%d')
-            ->get();
+            ->where('tt.taxonomy', '=', 'category')->get();
             var_dump($whereSql);
             die();
         }
