@@ -90,13 +90,14 @@ class Model
         return $this;
     }
 
-    public function get()
+    public function get($binds = [])
     {
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
         $groupBy = !empty($this->queryBuilder['groupBy']) ? 'GROUP BY '. $this->queryBuilder['groupBy'] : '';
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
-        $results = $this->wpdb->get_results($sql, 'ARRAY_A');
+        $prepared_sql = $this->wpdb->prepare($sql, $binds);
+        $results = $this->wpdb->get_results($prepared_sql, 'ARRAY_A');
         
         foreach ($results as &$result) {
             $this->attributes = $result;

@@ -20,6 +20,15 @@ class DB {
         return $this->wpdb;
     }
 
+    public function getCategoryId($slug){
+        $category_id = $this->wpdbMain()->get_var($this->wpdbMain()->prepare("
+            SELECT term_id 
+            FROM {wpdbMain()->terms} 
+            WHERE slug = %s
+        ", $slug));
+        return $category_id;
+    }
+
     public static function select($query){
         
     }

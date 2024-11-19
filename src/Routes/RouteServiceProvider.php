@@ -15,7 +15,7 @@ class RouteServiceProvider {
         (new Route())->post('product', [AuthController::class, 'product'])->middleware(TestMiddleware::class)->make();
         (new Route())->get('blog', [BlogController::class, 'index'])->make();
         (new Route())->get('video', [VideoController::class, 'index'])->make();
-        (new Route())->get('test', [BlogController::class, 'test'])->make();
+        (new Route())->get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
 
     }

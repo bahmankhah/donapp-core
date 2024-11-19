@@ -20,6 +20,16 @@ class BlogController
             echo $e->getMessage();
         }
     }
+
+    public function videoIndex($request)
+    {
+        try{
+            return res($this->blogService->videoList($request->get_query_params()));
+        }catch(Exception $e){
+            echo $e->getMessage();
+        }
+    }
+
     public function test(){
     }
 }
