@@ -97,7 +97,11 @@ class Model
         $joins = !empty($this->queryBuilder['joins']) ? implode(' ', $this->queryBuilder['joins']) : '';
         $where = !empty($this->queryBuilder['where']) ? 'WHERE ' . implode(' AND ', $this->queryBuilder['where']) : '';
         $groupBy = !empty($this->queryBuilder['groupBy']) ? 'GROUP BY '. $this->queryBuilder['groupBy'] : '';
-        return "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
+        
+        $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
+        echo $sql;
+        echo "<br>";
+        return $sql;
     }
     public function get()
     {
