@@ -26,7 +26,6 @@ class DB {
             FROM {$this->wpdbMain()->terms} 
             WHERE slug = %s
         ", $slug));
-        echo 
         return $category_id;
     }
 
