@@ -17,14 +17,9 @@ class BlogService{
 
         $limit = $data['limit'] ?? 10;
         
-        $categotyId = (new DB())->getCategoryId('donap-videos');
-        $whereSql = '';
-        if($categotyId){
-            $whereSql = (new Model)->select(['tr.object_id'])->setTable(DB::wpdb()->term_relationships, 'tr')
-            ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
-            ->where('tt.term_id', '=', $categotyId, '%d')
-            ->where('tt.taxonomy', '=', 'category')->sql();
-        }
+        $categotyId = (new DB())->getCategoryId('متن');
+        if(!$categotyId) return [];
+
         $query = (new Post())
         ->setTableAlias('p')
         ->with('image_url', function ($row) {
@@ -40,14 +35,12 @@ class BlogService{
         ->limit($limit)
         // ->views()
         ->where('p.post_status','=','publish')
+        ->where('tt.term_id', '=', $categotyId, '%d')
         ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
+        ->join(DB::wpdb()->term_relationships.' as tr', 'p.ID', '=', 'tr.object_id')
+        ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
         ->orderBy($orderBy, $orderDirection)
         ->groupBy(['p.ID']);
-
-        if($categotyId){
-            $query->where('p.ID', 'NOT IN', "($whereSql)", 'none');
-        }
-
         return $query->get();
 
         
@@ -64,7 +57,7 @@ class BlogService{
 
         $limit = $data['limit'] ?? 10;
         
-        $categotyId = (new DB())->getCategoryId('donap-videos');
+        $categotyId = (new DB())->getCategoryId('ویدیو');
         if(!$categotyId) return [];
 
         return (new Post())
