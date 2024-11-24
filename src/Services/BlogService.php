@@ -17,7 +17,7 @@ class BlogService{
 
         $limit = $data['limit'] ?? 10;
         
-        $categotyId = (new DB())->getCategoryId('متن');
+        $categotyId = (new DB())->getCategoryId('dnp-text');
         if(!$categotyId) return [];
 
         $query = (new Post())
@@ -57,7 +57,7 @@ class BlogService{
 
         $limit = $data['limit'] ?? 10;
         
-        $categotyId = (new DB())->getCategoryId('ویدیو');
+        $categotyId = (new DB())->getCategoryId('dnp-video');
         if(!$categotyId) return [];
 
         return (new Post())
