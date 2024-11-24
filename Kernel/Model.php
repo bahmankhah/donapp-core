@@ -109,6 +109,7 @@ class Model
     }
     public function get()
     {
+        die($this->sql());
         $results = $this->wpdb->get_results($this->sql(), 'ARRAY_A');
         
         foreach ($results as &$result) {
