@@ -19,6 +19,15 @@ class Model
         $this->newQuery();
     }
 
+    public function create($data, $dataTypes){
+        $inserted = $this->wpdb->insert(
+            $this->table,
+            $data,
+            $dataTypes,
+        );
+        return $inserted;
+    }
+
     public function newQuery()
     {
         $this->queryBuilder = [

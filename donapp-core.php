@@ -36,13 +36,16 @@ spl_autoload_register(function ($class) {
     }
 });
 
-(new AppServiceProvider())->register();
+register_activation_hook( __FILE__, function(){
+    (new AppServiceProvider())->register();
 
+});
+
+(new AppServiceProvider())->boot();
 add_action('plugins_loaded', function() {
     (new RouteServiceProvider())->register();
 });
 add_action('init', 'custom_api_rewrite');
 function custom_api_rewrite() {
-    new PostType();
-
+    // new PostType();
 }
