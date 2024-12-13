@@ -10,7 +10,7 @@ use Donapp\Middlewares\ApiKeyMiddleware;
 use Kernel\Route;
 
 class RouteServiceProvider {
-    public function register() {
+    public function boot() {
         (new Route())->get('auth-check', [AuthController::class, 'checkAuth'])->make();
 
         (new Route())->post('product', [AuthController::class, 'product'])->make();

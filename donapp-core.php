@@ -40,13 +40,10 @@ spl_autoload_register(function ($class) {
 register_activation_hook( __FILE__, function(){
     (new AppServiceProvider())->register();
 });
-
-
 add_action('plugins_loaded', function() {
-    (new RouteServiceProvider())->register();
 });
-add_action('init', 'donap_init');
-function donap_init() {
+add_action('init', function() {
+    (new RouteServiceProvider())->boot();
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
-}
+});
