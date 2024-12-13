@@ -21,7 +21,7 @@ class WooController{
                 return res(null, 'product and id are required', 400);
             }
             $result = $this->wooService->addToCart($data);
-            return res($result);
+            return res($result, "The product has been added to the user's cart successfully");
         }catch(Exception $e){
             return res(null, $e->getMessage(), 406);
         }

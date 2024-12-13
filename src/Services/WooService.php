@@ -43,8 +43,12 @@ class WooService
             ]);
         }
         
-        $cartID = $userCart->select('id')->where('identifier', '=',$data['id'])->first()['id'];
-        return ['cart_id'=>$cartID, 'identifier'=>$data['id']];
+        $theCart = $userCart->where('identifier', '=',$data['id'])->first();
+        return [
+                ...$theCart,
+                'cart'=>json_decode($theCart['cart'])
+        ];
+
     }
 
     public function deleteExpiredCarts(){
