@@ -10,10 +10,10 @@ class ApiKeyMiddleware implements Middleware{
         $key = 'amir';
         if (isset($headers['X-API-KEY'])) {
             if($headers['X-API-KEY'] !== $key){
-                return res([], 'unauthenticated', 401);
+                return res(null, 'unauthenticated', 401);
             }
         } else {
-            return res([], 'unauthenticated', 401);
+            return res(null, 'unauthenticated', 401);
         }
         return $pipeline->next($request);
     }

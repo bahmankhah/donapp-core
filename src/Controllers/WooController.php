@@ -2,6 +2,7 @@
 namespace Donapp\Controllers;
 
 use Donapp\Services\WooService;
+use Exception;
 use Kernel\Container;
 
 class WooController{
@@ -14,13 +15,16 @@ class WooController{
     }
 
     public function addToCart($request){
-        $data = $request->get_json_params();
-        if(!isset($data['product']) || !isset($data['id'])){
-            return res([], 'product and id are required', 400);
+        try{
+            $data = $request->get_json_params();
+            if(!isset($data['product']) || !isset($data['id'])){
+                return res(null, 'product and id are required', 400);
+            }
+            $result = $this->wooService->addToCart($data);
+            return res($result);
+        }catch(Exception $e){
+            return res(null, $e->getMessage(), 406);
         }
-        $result = $this->wooService->addToCart($data);
-        return res($result);
-
     }
 
 
