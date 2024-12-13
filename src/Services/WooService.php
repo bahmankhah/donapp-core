@@ -80,8 +80,8 @@ class WooService
             $product = new \WC_Product_Simple();
             $product->set_name($data['name']);
             $product->set_regular_price($data['price']);
-            $product->set_description($data['description']);
-            $product->set_short_description($data['short_description']);
+            $product->set_description($data['description'] ?? '');
+            $product->set_short_description($data['short_description'] ?? '');
             $product->set_status('publish');
             $product->save();
             $product_id = $product->get_id();

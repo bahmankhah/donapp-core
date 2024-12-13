@@ -28,7 +28,7 @@ class WooServiceProvider
             if ($cart) {
                 $cartDecoded = json_decode($cart['cart']);
                 foreach ($cartDecoded as $productId) {
-                    WC()->cart->add_to_cart($productId);
+                    \WC()->cart->add_to_cart($productId);
                 }
                 $userCart->delete(
                     [
