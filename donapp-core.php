@@ -50,6 +50,10 @@ if (class_exists('WooCommerce')) {
 }
 add_action('plugins_loaded', function() {
     (new RouteServiceProvider())->register();
+    
+});
+add_action('init', 'custom_api_rewrite');
+function custom_api_rewrite() {
     (new WooServiceProvider())->boot();
 
     if (class_exists('WooCommerce')) {
@@ -57,8 +61,5 @@ add_action('plugins_loaded', function() {
     }else{
         echo 'SECOND NOT EXISTS';
     }
-});
-add_action('init', 'custom_api_rewrite');
-function custom_api_rewrite() {
     // new PostType();
 }
