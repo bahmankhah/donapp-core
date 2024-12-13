@@ -24,25 +24,27 @@ class WooService
             if(!in_array($productId, $cart)){
                 $cart[] = $productId;
             }
-            $result = $userCart->update([
+            $userCart->update([
                 'cart'=>json_encode($cart),
                 'expired_at'=>date('Y-m-d H:i:s'),
             ],[
                 'identifier'=>$data['id'],
             ]);
-            return $result;
+            
+        }else{
+            $currentDate = new DateTime(); 
+            $currentDate->modify('+5 days'); 
+            $expireDate = $currentDate->format('Y-m-d H:i:s'); 
+            $result = $userCart->create([
+                'identifier'=> $data['id'],
+                'cart'=>json_encode([$productId]),
+                'created_at'=>date('Y-m-d H:i:s'),
+                'expired_at'=>$expireDate
+            ]);
         }
-        $currentDate = new DateTime(); 
-        $currentDate->modify('+5 days'); 
-        $expireDate = $currentDate->format('Y-m-d H:i:s'); 
-        $result = $userCart->create([
-            'identifier'=> $data['id'],
-            'cart'=>json_encode([$productId]),
-            'created_at'=>date('Y-m-d H:i:s'),
-            'expired_at'=>$expireDate
-        ]);
-        return $result;
-        // WC()->cart->add_to_cart($productId);
+        
+        $cartID = $userCart->select('id')->where('identifier', '=',$data['id'])->first()['id'];
+        return ['cart_id'=>$cartID, 'identifier'=>$data['id']];
     }
 
     public function deleteExpiredCarts(){
