@@ -65,8 +65,8 @@ class WooService
     
         if ($existing_product) {
             // Update the existing product with the new data
-            $product_id = $existing_product[0]->ID;
-            var_dump($existing_product);
+            $product_id = $existing_product[0]['ID'];
+            var_dump($product_id);
             die();
             $product = wc_get_product($product_id);
     
