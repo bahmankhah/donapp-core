@@ -7,9 +7,9 @@ use Kernel\Pipeline;
 class ApiKeyMiddleware implements Middleware{
     public function handle($request,Pipeline $pipeline){
         $headers = getallheaders();
-        $key = 'amir';
+        $apiKey = getenv( 'DONAPP_API_KEY' );
         if (isset($headers['X-API-KEY'])) {
-            if($headers['X-API-KEY'] !== $key){
+            if($headers['X-API-KEY'] !== $apiKey){
                 return res(null, 'unauthenticated', 401);
             }
         } else {
