@@ -42,10 +42,21 @@ register_activation_hook( __FILE__, function(){
 });
 
 (new AppServiceProvider())->boot();
-(new WooServiceProvider())->boot();
 
+if (class_exists('WooCommerce')) {
+    echo 'FIRST EXISTS';
+}else{
+    echo 'FIRST NOT EXISTS';
+}
 add_action('plugins_loaded', function() {
     (new RouteServiceProvider())->register();
+    (new WooServiceProvider())->boot();
+
+    if (class_exists('WooCommerce')) {
+        echo 'SECOND EXISTS';
+    }else{
+        echo 'SECOND NOT EXISTS';
+    }
 });
 add_action('init', 'custom_api_rewrite');
 function custom_api_rewrite() {
