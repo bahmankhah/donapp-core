@@ -12,8 +12,7 @@ class WooService
     public function addToCart($data){
         
         $productId = $this->createOrUpdateProduct($data['product']);
-        var_dump($productId);
-        die();
+        
         $this->deleteExpiredCarts();
         $userCart = new UserCart();
         $currentCart = $userCart->where('identifier', '=',$data['id'])->first();
@@ -67,6 +66,8 @@ class WooService
         if ($existing_product) {
             // Update the existing product with the new data
             $product_id = $existing_product[0]->ID;
+            var_dump($product_id);
+            die();
             $product = wc_get_product($product_id);
     
             if ($product) {
@@ -78,6 +79,8 @@ class WooService
                 return $product_id; // Return updated product ID
             }
         } else {
+            var_dump('new');
+            die();
             // Create a new product
             $product = new \WC_Product_Simple();
             $product->set_name($data['name']);
