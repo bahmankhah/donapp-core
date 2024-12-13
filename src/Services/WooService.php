@@ -76,7 +76,7 @@ class WooService
             }
         } else {
             // Create a new product
-            $product = new WC_Product_Simple();
+            $product = new \WC_Product_Simple();
             $product->set_name($data['name']);
             $product->set_regular_price($data['price']);
             $product->set_description($data['description']);

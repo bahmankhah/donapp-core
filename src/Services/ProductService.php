@@ -5,7 +5,7 @@ namespace Donapp\Services;
 class ProductService{
 
     public function createProduct(array $data) {
-        $product = new WC_Product_Simple();
+        $product = new \WC_Product_Simple();
         $attachmentId = upload_image_from_url($data['image_url']);
         $product->set_name($data['name']);  // Product title
         $product->set_regular_price($data['price']);  // Product price
