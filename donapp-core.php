@@ -41,25 +41,12 @@ register_activation_hook( __FILE__, function(){
     (new AppServiceProvider())->register();
 });
 
-(new AppServiceProvider())->boot();
 
-if (class_exists('WooCommerce')) {
-    echo 'FIRST EXISTS';
-}else{
-    echo 'FIRST NOT EXISTS';
-}
 add_action('plugins_loaded', function() {
     (new RouteServiceProvider())->register();
-    
 });
-add_action('init', 'custom_api_rewrite');
-function custom_api_rewrite() {
+add_action('init', 'donap_init');
+function donap_init() {
+    (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
-
-    if (class_exists('WooCommerce')) {
-        echo 'SECOND EXISTS';
-    }else{
-        echo 'SECOND NOT EXISTS';
-    }
-    // new PostType();
 }
