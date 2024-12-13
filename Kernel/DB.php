@@ -47,7 +47,7 @@ class DB
 
     public static function wpQuery($args)
     {
-        $query = new WP_Query($args);
+        $query = new \WP_Query($args);
 
         if ($query->have_posts()) {
             $list = array();
