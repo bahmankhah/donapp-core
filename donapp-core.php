@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Donapp\Providers\AppServiceProvider;
+use Donapp\Providers\WooServiceProvider;
 use Donapp\Routes\RouteServiceProvider;
 use Kernel\PostType;
 
@@ -38,10 +39,11 @@ spl_autoload_register(function ($class) {
 
 register_activation_hook( __FILE__, function(){
     (new AppServiceProvider())->register();
-
 });
 
 (new AppServiceProvider())->boot();
+(new WooServiceProvider())->boot();
+
 add_action('plugins_loaded', function() {
     (new RouteServiceProvider())->register();
 });

@@ -13,4 +13,5 @@ class UserCart extends Model {
     }
 
     
+
 }

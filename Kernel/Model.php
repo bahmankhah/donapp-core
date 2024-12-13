@@ -2,6 +2,8 @@
 
 namespace Kernel;
 
+use BadMethodCallException;
+
 class Model
 {
     protected $table;
@@ -12,6 +14,7 @@ class Model
     protected $postType = null;
     protected $attributes = [];
 
+
     public function __construct()
     {
         global $wpdb;
@@ -19,7 +22,7 @@ class Model
         $this->newQuery();
     }
 
-    public function create($data, $dataTypes){
+    public function create($data, $dataTypes = null){
         $inserted = $this->wpdb->insert(
             $this->table,
             $data,
@@ -115,6 +118,23 @@ class Model
         
         $sql = "SELECT {$this->queryBuilder['select']} FROM {$this->table} {$this->tableAlias} {$joins} {$where} {$groupBy} {$this->queryBuilder['orderBy']} {$this->queryBuilder['limit']}";
         return $sql;
+    }
+    public function update(array $data, array $where, $format = null, $where_format = null ){
+        return $this->wpdb->update(
+            $this->table,
+            $data,
+            $where,
+            $format,
+            $where_format
+        );
+    }
+
+    public function delete( array $where, $where_format = null ){
+        return $this->wpdb->delete(
+            $this->table,
+            $where,
+            $where_format,
+        );
     }
     public function get()
     {

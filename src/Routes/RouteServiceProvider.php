@@ -5,6 +5,7 @@ use Donapp\Controllers\AuthController;
 use Donapp\Controllers\BlogController;
 use Donapp\Controllers\ProductController;
 use Donapp\Controllers\VideoController;
+use Donapp\Controllers\WooController;
 use Donapp\Middlewares\TestMiddleware;
 use Kernel\Route;
 
@@ -17,6 +18,7 @@ class RouteServiceProvider {
         (new Route())->get('video', [VideoController::class, 'index'])->make();
         (new Route())->get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
+        (new Route())->get('cart', [WooController::class, 'addToCart'])->make();
 
     }
 }

@@ -27,8 +27,11 @@ class AppServiceProvider
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT, -- Primary ID
             identifier VARCHAR(255) NOT NULL UNIQUE,       -- Unique string identifier
             cart JSON DEFAULT NULL,                        -- JSON column for cart data
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Timestamp for record creation
+            expired_at DATETIME DEFAULT NULL,              -- Timestamp for record expiration
             PRIMARY KEY (id)
         ) $charset_collate";
+
 
         // Load WordPress's dbDelta function
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

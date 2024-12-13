@@ -17,6 +17,17 @@ class DB
         return (new DB())->{$name . 'Main'}(...$arguments);
     }
 
+    public static function query($sql, $args = null){}
+    public function queryMain($sql, $args= null){
+        $result = $this->wpdb->query(
+            $this->wpdb->prepare(
+                $sql,
+                $args
+            )
+        );
+        return $result;
+    }
+
     public function wpdbMain()
     {
         return $this->wpdb;
