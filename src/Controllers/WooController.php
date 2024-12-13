@@ -10,10 +10,13 @@ class WooController{
     public function __construct()
     {
         $this->wooService = Container::resolve('WooService');
+        
     }
 
     public function addToCart($request){
         $result = $this->wooService->addToCart($request->get_json_params());
+        return res($result);
+
     }
 
 

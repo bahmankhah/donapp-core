@@ -9,31 +9,34 @@ use Kernel\DB;
 class WooService
 {
 
-    public function addToCart($data) {
+    public function addToCart($data){
         $productId = $this->createOrUpdateProduct($data['product']);
         $this->deleteExpiredCarts();
         $userCart = new UserCart();
-        $currentCart = $userCart->select('id')->where('identifier', '=',$data['id'])->first();
+        $currentCart = $userCart->where('identifier', '=',$data['id'])->first();
         if($currentCart){
+            $cart = json_decode($currentCart['cart']);
             if(!in_array($productId, $cart)){
                 $cart[] = $productId;
             }
-            $userCart->update([
+            $result = $userCart->update([
                 'cart'=>json_encode($cart),
                 'expired_at'=>date('Y-m-d H:i:s'),
             ],[
                 'identifier'=>$data['id'],
             ]);
+            return $result;
         }
         $currentDate = new DateTime(); 
         $currentDate->modify('+5 days'); 
         $expireDate = $currentDate->format('Y-m-d H:i:s'); 
-        $userCart->create([
+        $result = $userCart->create([
             'identifier'=> $data['id'],
             'cart'=>json_encode([$productId]),
             'created_at'=>date('Y-m-d H:i:s'),
             'expired_at'=>$expireDate
         ]);
+        return $result;
         // WC()->cart->add_to_cart($productId);
     }
 
