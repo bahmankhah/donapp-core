@@ -14,7 +14,11 @@ class WooController{
     }
 
     public function addToCart($request){
-        $result = $this->wooService->addToCart($request->get_json_params());
+        $data = $request->get_json_params();
+        if(!isset($data['product']) || !isset($data['id'])){
+            return res([], 'product and id are required', 400);
+        }
+        $result = $this->wooService->addToCart($data);
         return res($result);
 
     }

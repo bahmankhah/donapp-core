@@ -10,6 +10,7 @@ class WooService
 {
 
     public function addToCart($data){
+        
         $productId = $this->createOrUpdateProduct($data['product']);
         $this->deleteExpiredCarts();
         $userCart = new UserCart();
