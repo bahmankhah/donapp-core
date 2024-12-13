@@ -18,7 +18,6 @@ class RouteServiceProvider {
         (new Route())->get('video', [VideoController::class, 'index'])->make();
         (new Route())->get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
-        (new Route())->get('cart', [WooController::class, 'addToCart'])->make();
-
+        (new Route())->post('cart', [WooController::class, 'addToCart'])->make();
     }
 }
