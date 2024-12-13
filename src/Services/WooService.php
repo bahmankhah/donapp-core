@@ -4,7 +4,6 @@ namespace Donapp\Services;
 
 use DateTime;
 use Donapp\Models\UserCart;
-use Exception;
 use Kernel\DB;
 
 class WooService
@@ -13,9 +12,7 @@ class WooService
     public function addToCart($data){
         
         $productId = $this->createOrUpdateProduct($data['product']);
-        if(!$productId){
-            throw new Exception('Service Not Available');
-        }
+
         $this->deleteExpiredCarts();
         $userCart = new UserCart();
         $currentCart = $userCart->where('identifier', '=',$data['id'])->first();
@@ -69,7 +66,8 @@ class WooService
         if ($existing_product) {
             // Update the existing product with the new data
             $product_id = $existing_product[0]['ID'];
-            var_dump($product_id);
+            $product = wc_get_product($product_id);
+    
             if ($product) {
                 $product->set_name($data['name']);
                 $product->set_regular_price($data['price']);
