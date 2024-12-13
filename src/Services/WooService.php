@@ -44,10 +44,9 @@ class WooService
         }
         
         $theCart = $userCart->where('identifier', '=',$data['id'])->first();
-        return [
-                ...$theCart,
-                'cart'=>json_decode($theCart['cart'])
-        ];
+        return array_merge(
+                $theCart,
+                ['cart'=>json_decode($theCart['cart'])]);
 
     }
 
