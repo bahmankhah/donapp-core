@@ -27,8 +27,9 @@ class WooServiceProvider
             $cart = $userCart->where('identifier', '=', $_GET['dnpuser'])->first();
             if ($cart) {
                 $cartDecoded = json_decode($cart['cart']);
+                $dnpUser = sanitize_text_field($_GET['dnpuser']); 
                 foreach ($cartDecoded as $productId) {
-                    \WC()->cart->add_to_cart($productId);
+                    \WC()->cart->add_to_cart($productId, 1, 0, [], ['dnpuser' => $dnpUser]);
                 }
                 $userCart->delete(
                     [

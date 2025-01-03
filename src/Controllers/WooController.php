@@ -11,7 +11,6 @@ class WooController{
     public function __construct()
     {
         $this->wooService = Container::resolve('WooService');
-        
     }
 
     public function addToCart($request){

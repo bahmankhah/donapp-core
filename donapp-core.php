@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Donapp\Providers\AppServiceProvider;
+use Donapp\Providers\HookFilterServiceProvider;
 use Donapp\Providers\WooServiceProvider;
 use Donapp\Routes\RouteServiceProvider;
 use Kernel\PostType;
@@ -48,4 +49,5 @@ add_action('init', function() {
     (new RouteServiceProvider())->boot();
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
+    (new HookFilterServiceProvider())->boot();
 });
