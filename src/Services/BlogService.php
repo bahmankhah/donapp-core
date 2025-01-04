@@ -41,6 +41,7 @@ class BlogService{
         ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
         ->orderBy($orderBy, $orderDirection)
         ->groupBy(['p.ID']);
+        file_put_contents('sql.txt', $query->sql());
         return $query->get();
 
         

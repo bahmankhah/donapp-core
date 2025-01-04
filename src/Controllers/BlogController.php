@@ -2,12 +2,13 @@
 namespace Donapp\Controllers;
 
 use Donapp\Models\Post;
+use Donapp\Services\BlogService;
 use Exception;
 use Kernel\Container;
 
 class BlogController
 {
-    private $blogService;
+    private BlogService $blogService;
     public function __construct()
     {
         $this->blogService = Container::resolve('BlogService');
