@@ -11,7 +11,9 @@ class BlogService{
 
         $orderBy = isset($data['orderBy']) ? $data['orderBy'] : 'post_date';
         $orderDirection = isset($data['orderDirection']) ? $data['orderDirection'] : 'DESC';
-
+        if($orderBy == 'post_views_count'){
+            $orderBy = 'views';
+        }
         if(!in_array($orderBy, ['post_date', 'views'])) $orderBy = 'post_date';
         if(!in_array($orderDirection, ['ASC', 'DESC', 'asc', 'desc'])) $data['orderDirection'] = 'DESC';
 
@@ -52,7 +54,9 @@ class BlogService{
 
         $orderBy = isset($data['orderBy']) ? $data['orderBy'] : 'post_date';
         $orderDirection = isset($data['orderDirection']) ? $data['orderDirection'] : 'DESC';
-
+        if($orderBy == 'post_views_count'){
+            $orderBy = 'views';
+        }
         if(!in_array($orderBy, ['post_date', 'views'])) $orderBy = 'post_date';
         if(!in_array($orderDirection, ['ASC', 'DESC', 'asc', 'desc'])) $data['orderDirection'] = 'DESC';
 
