@@ -9,7 +9,6 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-define('WP_DEBUG_LOG', true);
 
 use Donapp\Providers\AppServiceProvider;
 use Donapp\Providers\HookFilterServiceProvider;
