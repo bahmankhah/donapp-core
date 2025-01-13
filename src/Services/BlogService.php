@@ -31,7 +31,7 @@ class BlogService{
         ->with('excerpt', function ($row) {
             return get_the_excerpt($row['ID']);
         })
-        ->select(['ID','post_date','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value END) AS 'views'"])
+        ->select(['ID','post_date','post_title',"MAX(CASE WHEN pm.meta_key = 'views' THEN pm.meta_value + 0 END) AS 'views'"])
         ->limit($limit)
         // ->views()
         ->where('p.post_status','=','publish')
