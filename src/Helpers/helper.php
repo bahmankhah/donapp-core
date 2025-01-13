@@ -80,3 +80,14 @@ if (!function_exists('load_env_file')) {
         }
     }
 }
+
+if ( ! function_exists( 'my_plugin_log_error' ) ) {
+    function donappLog( $message ) {
+        $log_file = plugin_dir_path( __FILE__ ) . 'my-plugin-errors.log';
+        $time = date( 'Y-m-d H:i:s' );
+        $formatted_message = "[{$time}] {$message}\n";
+        
+        // Write to the log file.
+        file_put_contents( $log_file, $formatted_message, FILE_APPEND );
+    }
+}

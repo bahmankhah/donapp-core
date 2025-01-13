@@ -137,7 +137,7 @@ class WooService
     private function giveAccess(string $dnpId, array $productIds)
     {
         $apiKey = getenv('DONAPP_EXT_API_KEY');
-        $api_url = "https://api.nraymandev.donap.ir/external-services/donap-payment-status/";
+        $api_url = "https://api.nraymanstage.donap.ir/external-services/donap-payment-status/";
         $response = wp_remote_post($api_url, [
             'body' => json_encode([
                 'id' => $dnpId,

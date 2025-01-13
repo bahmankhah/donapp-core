@@ -9,12 +9,12 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+define('WP_DEBUG_LOG', true);
 
 use Donapp\Providers\AppServiceProvider;
 use Donapp\Providers\HookFilterServiceProvider;
 use Donapp\Providers\WooServiceProvider;
 use Donapp\Routes\RouteServiceProvider;
-use Kernel\PostType;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
