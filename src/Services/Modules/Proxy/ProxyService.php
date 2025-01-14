@@ -33,14 +33,14 @@ class ProxyService
         }
 
         // Set cURL options
-         echo 'https://'.$target_url . "\n";
+         echo $target_url . "\n";
          echo $method . "\n";
          
          var_dump($input_data);
 
          echo "\n";
          var_dump($proxy_headers);
-        curl_setopt($ch, CURLOPT_URL, 'https://'.$target_url);
+        curl_setopt($ch, CURLOPT_URL, $target_url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
