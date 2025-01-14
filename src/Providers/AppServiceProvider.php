@@ -4,6 +4,7 @@ namespace Donapp\Providers;
 
 use Donapp\Services\AuthService;
 use Donapp\Services\BlogService;
+use Donapp\Services\Modules\Proxy\ProxyService;
 use Donapp\Services\ProductService;
 use Donapp\Services\VideoService;
 use Donapp\Services\WooService;
@@ -58,6 +59,9 @@ class AppServiceProvider
 
         Container::bind('WooService', function () {
             return new WooService();
+        });
+        Container::bind('ProxyService', function () {
+            return new ProxyService();
         });
     }
 }

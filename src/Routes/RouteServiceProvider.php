@@ -1,6 +1,7 @@
 <?php
 namespace Donapp\Routes;
 
+use Doanpp\Controllers\Modules\Proxy\ProxyController;
 use Donapp\Controllers\AuthController;
 use Donapp\Controllers\BlogController;
 use Donapp\Controllers\ProductController;
@@ -19,5 +20,7 @@ class RouteServiceProvider {
         (new Route())->get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
         (new Route())->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
+
+        (new Route())->get('proxy', [ProxyController::class, 'proxy'])->make();
     }
 }
