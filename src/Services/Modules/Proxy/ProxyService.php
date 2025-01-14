@@ -8,7 +8,7 @@ class ProxyService
     {
         $headers = getallheaders();
         $target_url = $headers['X-Target-URL'] ?? null;
-die($target_url);
+
         if (!$target_url) {
             http_response_code(400);
             // echo "Missing X-Target-URL header.";
@@ -33,7 +33,7 @@ die($target_url);
         }
 
         // Set cURL options
-        curl_setopt($ch, CURLOPT_URL, $target_url);
+        curl_setopt($ch, CURLOPT_URL, 'https://'.$target_url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
