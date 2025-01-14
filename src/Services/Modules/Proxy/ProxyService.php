@@ -47,12 +47,14 @@ class ProxyService
         // Execute the request to the target URL
         $response = curl_exec($ch);
 
-        if (curl_errno($ch)) {
-            http_response_code(500);
-            // echo "Proxy Error: " . curl_error($ch);
-            curl_close($ch);
-            exit;
-        }
+        var_dump($response);
+        // die();
+        // if (curl_errno($ch)) {
+        //     http_response_code(500);
+        //     // echo "Proxy Error: " . curl_error($ch);
+        //     curl_close($ch);
+        //     exit;
+        // }
 
         // Get response details
         $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
