@@ -33,6 +33,13 @@ class ProxyService
         }
 
         // Set cURL options
+         echo 'https://'.$target_url . "\n";
+         echo $method . "\n";
+         
+         var_dump($input_data);
+
+         echo "\n";
+         var_dump($proxy_headers);
         curl_setopt($ch, CURLOPT_URL, 'https://'.$target_url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -47,7 +54,6 @@ class ProxyService
         // Execute the request to the target URL
         $response = curl_exec($ch);
 
-        var_dump($response);
         // die();
         // if (curl_errno($ch)) {
         //     http_response_code(500);
