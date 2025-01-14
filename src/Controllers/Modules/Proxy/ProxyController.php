@@ -1,6 +1,6 @@
 <?php
 
-namespace Doanpp\Controllers\Modules\Proxy;
+namespace Donapp\Controllers\Modules\Proxy;
 
 use Donapp\Services\Modules\Proxy\ProxyService;
 use Kernel\Container;

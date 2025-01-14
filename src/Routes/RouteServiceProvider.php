@@ -1,7 +1,7 @@
 <?php
 namespace Donapp\Routes;
 
-use Doanpp\Controllers\Modules\Proxy\ProxyController;
+use Donapp\Controllers\Modules\Proxy\ProxyController;
 use Donapp\Controllers\AuthController;
 use Donapp\Controllers\BlogController;
 use Donapp\Controllers\ProductController;

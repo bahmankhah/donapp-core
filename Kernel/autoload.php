@@ -16,3 +16,7 @@ spl_autoload_register(function ($class) {
         require $file;
     }
 });
+
+foreach (glob(__DIR__ . '/Helpers/*.php') as $file) {
+    require_once $file;
+}
