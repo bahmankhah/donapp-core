@@ -1,4 +1,5 @@
 <?php
+use Kernel\Config;
 
 spl_autoload_register(function ($class) {
     $prefix = 'Kernel\\';
@@ -20,3 +21,5 @@ spl_autoload_register(function ($class) {
 foreach (glob(__DIR__ . '/Helpers/*.php') as $file) {
     require_once $file;
 }
+
+new Config();

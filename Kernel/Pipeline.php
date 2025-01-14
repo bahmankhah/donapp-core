@@ -7,7 +7,8 @@ class Pipeline{
     private $callIndex = 0;
     private $callable = [];   
     public function call($request, $params){
-        $this->middlewares = $params['middlewares'];
+        $this->middlewares = appConfig('app.global_middlewares', []);
+        $this->middlewares = array_merge($this->middlewares, $params['middlewares']);
         $this->callable = $params['callable'];
         return $this->next($request);
     }

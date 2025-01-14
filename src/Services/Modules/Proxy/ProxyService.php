@@ -11,7 +11,7 @@ class ProxyService
 
         if (!$target_url) {
             http_response_code(400);
-            echo "Missing X-Target-URL header.";
+            // echo "Missing X-Target-URL header.";
             exit;
         }
 
@@ -49,7 +49,7 @@ class ProxyService
 
         if (curl_errno($ch)) {
             http_response_code(500);
-            echo "Proxy Error: " . curl_error($ch);
+            // echo "Proxy Error: " . curl_error($ch);
             curl_close($ch);
             exit;
         }
@@ -73,6 +73,6 @@ class ProxyService
 
         // Forward the HTTP status code and response body
         http_response_code($http_status);
-        echo $response_body;
+        return $response_body;
     }
 }
