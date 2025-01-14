@@ -24,6 +24,6 @@ class ProxyService
         ]);
         // Forward the HTTP status code and response body
         // http_response_code($http_status);
-        return json_decode($result['body']);
+        return json_decode($result->body);
     }
 }
