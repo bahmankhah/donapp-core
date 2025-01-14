@@ -63,16 +63,16 @@ class ProxyService
         // Close cURL
         curl_close($ch);
 
-        // Forward response headers to the client
-        $response_headers_array = explode("\r\n", $response_headers);
-        foreach ($response_headers_array as $header) {
-            if (!empty($header) && stripos($header, 'Content-Length') === false) {
-                header($header);
-            }
-        }
+        // // Forward response headers to the client
+        // $response_headers_array = explode("\r\n", $response_headers);
+        // foreach ($response_headers_array as $header) {
+        //     if (!empty($header) && stripos($header, 'Content-Length') === false) {
+        //         header($header);
+        //     }
+        // }
 
         // Forward the HTTP status code and response body
-        http_response_code($http_status);
+        // http_response_code($http_status);
         return $response_body;
     }
 }
