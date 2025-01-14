@@ -16,7 +16,6 @@ class ProxyController{
     }
     
     public function proxy(){
-        throw new Exception('Service Unavailable', 406);
         return $this->proxyService->proxy();
     }
 }

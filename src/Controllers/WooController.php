@@ -17,12 +17,12 @@ class WooController{
         try{
             $data = $request->get_json_params();
             if(!isset($data['product']) || !isset($data['id'])){
-                return res(null, 'product and id are required', 400);
+                throw new Exception('product and id are required', 400);
             }
             $result = $this->wooService->addToCart($data);
             return $result;
         }catch(Exception $e){
-            return res(null, $e->getMessage(), 406);
+            throw new Exception($e->getMessage(), $e->getCode());
         }
     }
 

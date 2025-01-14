@@ -1,7 +1,7 @@
 <?php
 
 namespace Donapp\Services;
-
+use Exception;
 class ProductService{
 
     public function createProduct(array $data) {
@@ -28,9 +28,9 @@ class ProductService{
         $product_id = $product->save();
     
         if ( $product_id ) {
-            res(wc_get_product($product), 'Product created successfully.');
+            return wc_get_product($product);
         } else {
-            res([], 'Failed to create product.', 406);
+            throw new Exception('Failed to create product.', 406);
         }
     }
 }
