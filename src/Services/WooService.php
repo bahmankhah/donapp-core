@@ -153,7 +153,7 @@ class WooService
         if (is_wp_error($response)) {
             error_log('API Error: ' . $response->get_error_message());
         } else {
-            error_log('Access granted successfully for User ID: ' . $dnpuser);
+            error_log('Access granted successfully for User ID: ' . $dnpId);
         }
     }
 }
