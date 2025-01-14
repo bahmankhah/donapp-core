@@ -7,6 +7,8 @@ class ProxyService
     public function proxy()
     {
         $headers = getallheaders();
+        var_dump($headers);
+        die();
         $target_url = $headers['X-Target-URL'] ?? null;
 
         if (!$target_url) {
