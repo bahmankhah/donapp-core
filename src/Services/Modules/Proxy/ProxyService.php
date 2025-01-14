@@ -7,10 +7,8 @@ class ProxyService
     public function proxy()
     {
         $headers = getallheaders();
-        var_dump($headers);
-        die();
         $target_url = $headers['X-Target-URL'] ?? null;
-
+die($target_url);
         if (!$target_url) {
             http_response_code(400);
             // echo "Missing X-Target-URL header.";
