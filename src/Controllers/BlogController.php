@@ -16,7 +16,7 @@ class BlogController
     public function index($request)
     {
         try{
-            return res($this->blogService->list($request->get_query_params()));
+            return $this->blogService->list($request->get_query_params());
         }catch(Exception $e){
             echo $e->getMessage();
         }
@@ -25,7 +25,7 @@ class BlogController
     public function videoIndex($request)
     {
         try{
-            return res($this->blogService->videoList($request->get_query_params()));
+            return $this->blogService->videoList($request->get_query_params());
         }catch(Exception $e){
             echo $e->getMessage();
         }
