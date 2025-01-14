@@ -35,6 +35,7 @@ spl_autoload_register(function ($class) {
     $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
 
     if (file_exists($file)) {
+        echo 'found'. $file;
         require $file;
     }else{
         die('File not found: ' . $file);
