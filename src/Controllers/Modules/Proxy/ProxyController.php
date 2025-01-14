@@ -3,6 +3,7 @@
 namespace Donapp\Controllers\Modules\Proxy;
 
 use Donapp\Services\Modules\Proxy\ProxyService;
+use Exception;
 use Kernel\Container;
 
 class ProxyController{
@@ -15,6 +16,7 @@ class ProxyController{
     }
     
     public function proxy(){
+        throw new Exception('Service Unavailable', 406);
         return $this->proxyService->proxy();
     }
 }
