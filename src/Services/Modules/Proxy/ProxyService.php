@@ -17,9 +17,11 @@ class ProxyService
                 $proxy_headers[] = "$key: $value";
             }
         }
-
+var_dump($proxy_headers);
+var_dump($input_data);
         $result = wp_remote_post($target_url, [
-            'body' => json_encode($input_data),
+            'method' => 'POST',
+            'body' => $input_data,
             'headers' => $proxy_headers,
         ]);
         // Forward the HTTP status code and response body
