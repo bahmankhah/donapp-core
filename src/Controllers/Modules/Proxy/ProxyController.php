@@ -15,6 +15,6 @@ class ProxyController{
     }
     
     public function proxy(){
-        return $this->proxyService->proxy();
+        return res($this->proxyService->proxy());
     }
 }
