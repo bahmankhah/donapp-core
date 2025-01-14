@@ -20,6 +20,7 @@ class ProxyService
 // var_dump($headers);
 // var_dump(json_decode($input_data));
         $result = wp_remote_post($target_url, [
+            'timeout'     => 45,
             'method' => 'POST',
             'body' => json_decode($input_data, true),
             'headers' => $headers,
