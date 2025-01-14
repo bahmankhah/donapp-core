@@ -7,7 +7,7 @@ class ProxyService
     public function proxy()
     {
         $headers = getallheaders();
-        $target_url = $headers['X-Target-URL'] ?? null;
+        $target_url = trim($headers['X-Target-URL'] ?? '');
 
         if (!$target_url) {
             http_response_code(400);
