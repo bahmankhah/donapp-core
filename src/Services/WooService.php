@@ -3,6 +3,7 @@
 namespace Donapp\Services;
 
 use DateTime;
+use Donapp\Facades\Vendor;
 use Donapp\Models\UserCart;
 use Exception;
 use Kernel\DB;
@@ -127,33 +128,34 @@ class WooService
             }
         }
         foreach ($productIds as $dnpuser => $productIds) {
-            $this->giveAccess($dnpuser, $productIds);
+            Vendor::donap()->giveAccess($dnpuser, $productIds);
+            // $this->giveAccess($dnpuser, $productIds);
         }
 
     }
 
 
 
-    private function giveAccess(string $dnpId, array $productIds)
-    {
-        $apiKey = getenv('DONAPP_EXT_API_KEY');
-        $api_url = "https://api.nraymanstage.donap.ir/external-services/donap-payment-status/";
-        $response = wp_remote_post($api_url, [
-            'body' => json_encode([
-                'id' => $dnpId,
-                'products' => $productIds,
-            ]),
-            'headers' => [
-                'Content-Type' => 'application/x-www-form-urlencoded',
-                'Accept' => 'application/json',
-                'x-api-key' => $apiKey,
-            ],
-        ]);
+    // private function giveAccess(string $dnpId, array $productIds)
+    // {
+    //     $apiKey = getenv('DONAPP_EXT_API_KEY');
+    //     $api_url = "https://api.nraymanstage.donap.ir/external-services/donap-payment-status/";
+    //     $response = wp_remote_post($api_url, [
+    //         'body' => json_encode([
+    //             'id' => $dnpId,
+    //             'products' => $productIds,
+    //         ]),
+    //         'headers' => [
+    //             'Content-Type' => 'application/x-www-form-urlencoded',
+    //             'Accept' => 'application/json',
+    //             'x-api-key' => $apiKey,
+    //         ],
+    //     ]);
 
-        if (is_wp_error($response)) {
-            error_log('API Error: ' . $response->get_error_message());
-        } else {
-            error_log('Access granted successfully for User ID: ' . $dnpId);
-        }
-    }
+    //     if (is_wp_error($response)) {
+    //         error_log('API Error: ' . $response->get_error_message());
+    //     } else {
+    //         error_log('Access granted successfully for User ID: ' . $dnpId);
+    //     }
+    // }
 }

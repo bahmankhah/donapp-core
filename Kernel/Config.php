@@ -3,8 +3,8 @@
 namespace Kernel;
 
 class Config{
-    public function __construct()
-    {
+
+    public function load(){
         $files = glob(__DIR__ . '/../src/configs/*.php');
         $configs = [];
         foreach ($files as $file) {
