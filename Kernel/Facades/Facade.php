@@ -22,7 +22,7 @@ abstract class Facade
         if(Container::has($name)){
             return static::$resolvedInstance[$name] = Container::resolve($name);
         }else{
-            $class = static::class;
+            // $class = static::class;
             return static::$resolvedInstance[$name] = new static();
         }
         
@@ -34,7 +34,7 @@ abstract class Facade
     public static function __callStatic($method, $args)
     {
         $instance = static::getFacadeRoot();
-
+        die(var_dump($instance));
         if (! $instance) {
             throw new RuntimeException('A facade root has not been set.');
         }
