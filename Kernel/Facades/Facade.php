@@ -23,7 +23,7 @@ abstract class Facade
             return static::$resolvedInstance[$name] = Container::resolve($name);
         }else{
             // $class = static::class;
-            return static::$resolvedInstance[$name] = new static();
+            return static::$resolvedInstance[$name] = new $name();
         }
         
     }
