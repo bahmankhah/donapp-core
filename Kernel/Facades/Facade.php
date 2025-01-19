@@ -20,9 +20,7 @@ abstract class Facade
             return static::$resolvedInstance[$name];
         }
 
-        if (static::$container) {
             return static::$resolvedInstance[$name] = Container::resolve($name);
-        }
     }
     public static function getFacadeRoot()
     {
