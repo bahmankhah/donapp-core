@@ -14,4 +14,8 @@ class Container {
         }
         throw new \Exception("Service {$name} not found in container");
     }
+
+    public static function has($name) {
+        return isset(self::$instances[$name]);
+    }
 }

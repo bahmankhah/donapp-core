@@ -19,8 +19,13 @@ abstract class Facade
         if (isset(static::$resolvedInstance[$name])) {
             return static::$resolvedInstance[$name];
         }
-
+        if(Container::has($name)){
             return static::$resolvedInstance[$name] = Container::resolve($name);
+        }else{
+            $class = static::class;
+            return static::$resolvedInstance[$name] = new static();
+        }
+        
     }
     public static function getFacadeRoot()
     {
