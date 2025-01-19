@@ -7,7 +7,7 @@ if (!function_exists('res')) {
                 'result' => $result,
                 'status' => $status,
                 'message' => $message,
-                'timestamp' => new DateTime(),
+                'timestamp' => (new DateTime())->format('Y-m-d H:i:s'),
                 'version' => appConfig('app.version'),
                 'path' => $_SERVER['REQUEST_URI'],
                 'ok' => $status >= 200 && $status < 300
