@@ -6,7 +6,11 @@ if (!function_exists('res')) {
             [
                 'result' => $result,
                 'status' => $status,
-                'message' => $message
+                'message' => $message,
+                'timestamp' => new DateTime(),
+                'version' => appConfig('app.version'),
+                'path' => $_SERVER['REQUEST_URI'],
+                'ok' => $status >= 200 && $status < 300
             ]
         );
     }

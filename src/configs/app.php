@@ -7,5 +7,6 @@ return [
     'global_middlewares'=>[
         ExceptionMiddleware::class,
         ResponseMiddleware::class
-    ]
+    ],
+    'version'=>'v1'
 ];
