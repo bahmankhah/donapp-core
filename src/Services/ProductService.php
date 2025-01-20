@@ -1,6 +1,6 @@
 <?php
 
-namespace Donapp\Services;
+namespace App\Services;
 use Exception;
 class ProductService{
 

@@ -1,5 +1,5 @@
 <?php
-namespace Donapp\Controllers;
+namespace App\Controllers;
 
 use Kernel\Container;
 

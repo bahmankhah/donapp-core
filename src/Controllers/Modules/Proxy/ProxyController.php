@@ -1,8 +1,8 @@
 <?php
 
-namespace Donapp\Controllers\Modules\Proxy;
+namespace App\Controllers\Modules\Proxy;
 
-use Donapp\Services\Modules\Proxy\ProxyService;
+use App\Services\Modules\Proxy\ProxyService;
 use Exception;
 use Kernel\Container;
 

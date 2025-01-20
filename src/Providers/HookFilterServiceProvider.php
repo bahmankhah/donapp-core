@@ -1,6 +1,6 @@
 <?php
 
-namespace Donapp\Providers;
+namespace App\Providers;
 
 use Kernel\Container;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Donapp\Middlewares;
+namespace App\Middlewares;
 use Kernel\Middleware;
 use Kernel\Pipeline;
 

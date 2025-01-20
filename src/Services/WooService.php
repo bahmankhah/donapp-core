@@ -1,10 +1,10 @@
 <?php
 
-namespace Donapp\Services;
+namespace App\Services;
 
 use DateTime;
-use Donapp\Facades\Vendor;
-use Donapp\Models\UserCart;
+use App\Facades\Vendor;
+use App\Models\UserCart;
 use Exception;
 use Kernel\DB;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Donapp\Services\Modules\Proxy;
+namespace App\Services\Modules\Proxy;
 
 class ProxyService
 {

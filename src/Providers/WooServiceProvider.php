@@ -1,14 +1,14 @@
 <?php
 
-namespace Donapp\Providers;
+namespace App\Providers;
 
 use DateTime;
-use Donapp\Models\UserCart;
-use Donapp\Services\AuthService;
-use Donapp\Services\BlogService;
-use Donapp\Services\ProductService;
-use Donapp\Services\VideoService;
-use Donapp\Services\WooService;
+use App\Models\UserCart;
+use App\Services\AuthService;
+use App\Services\BlogService;
+use App\Services\ProductService;
+use App\Services\VideoService;
+use App\Services\WooService;
 use Kernel\Container;
 use Kernel\PostType;
 

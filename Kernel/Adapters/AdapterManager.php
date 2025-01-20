@@ -9,8 +9,8 @@ abstract class AdapterManager{
     abstract public function getKey(): string;
     public function __call($method, $args){
         if(!method_exists($this, $method)){
-            if (!appConfig("services.{$this->getKey()}.adapters.{$method}")) {
-                $defaultAdapter = appConfig("services.{$this->getKey()}.default");
+            if (!appConfig("adapters.{$this->getKey()}.contexts.{$method}")) {
+                $defaultAdapter = appConfig("adapters.{$this->getKey()}.default");
                 $instance = $this->use($defaultAdapter);
                 if(!method_exists($instance, $method)){
                     throw new \InvalidArgumentException("Message adapter [{$defaultAdapter}] does not have method [{$method}].");
@@ -24,9 +24,9 @@ abstract class AdapterManager{
     }
     public function use(string $adapter = null){
         
-        if (!appConfig("services.{$this->getKey()}.adapters.{$adapter}")) {
+        if (!appConfig("adapters.{$this->getKey()}.contexts.{$adapter}")) {
             throw new \InvalidArgumentException("Message adapter [{$adapter}] is not defined.");
         }
-        return App::make(appConfig("services.{$this->getKey()}.adapters.{$adapter}.context"),['config'=>appConfig("services.{$this->getKey()}.adapters.{$adapter}")]);
+        return App::make(appConfig("adapters.{$this->getKey()}.contexts.{$adapter}.context"),['config'=>appConfig("adapters.{$this->getKey()}.contexts.{$adapter}")]);
     }
 }

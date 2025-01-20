@@ -1,6 +1,6 @@
 <?php
 
-namespace Donapp\Adapters\Vendor;
+namespace App\Adapters\Vendor;
 use Kernel\Adapters\AdapterManager;
 
 class VendorManager extends AdapterManager{

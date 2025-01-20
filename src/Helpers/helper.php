@@ -1,5 +1,6 @@
 <?php
 if (!function_exists('res')) {
+
     function res($result = null, $message = '', $status = 200): WP_REST_Response
     {
         return rest_ensure_response(

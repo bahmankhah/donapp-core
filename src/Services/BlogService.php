@@ -1,8 +1,8 @@
 <?php
 
-namespace Donapp\Services;
+namespace App\Services;
 
-use Donapp\Models\Post;
+use App\Models\Post;
 use Kernel\DB;
 use Kernel\Model;
 

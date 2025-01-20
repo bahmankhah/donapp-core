@@ -1,13 +1,13 @@
 <?php
 
-namespace Donapp\Providers;
+namespace App\Providers;
 
-use Donapp\Services\AuthService;
-use Donapp\Services\BlogService;
-use Donapp\Services\Modules\Proxy\ProxyService;
-use Donapp\Services\ProductService;
-use Donapp\Services\VideoService;
-use Donapp\Services\WooService;
+use App\Services\AuthService;
+use App\Services\BlogService;
+use App\Services\Modules\Proxy\ProxyService;
+use App\Services\ProductService;
+use App\Services\VideoService;
+use App\Services\WooService;
 use Kernel\Container;
 use Kernel\PostType;
 

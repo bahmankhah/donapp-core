@@ -1,14 +1,14 @@
 <?php
 
-namespace Donapp\Adapters\Vendor\Contexts;
+namespace App\Adapters\Vendor\Contexts;
 
-use Donapp\Adapters\Vendor\Vendor;
+use App\Adapters\Vendor\Vendor;
 
 class Donap extends Vendor{
     public function giveAccess($dnpId, array $productIds)
     {
         $apiKey = $this->config['key'];
-        $api_url = "https://api.nraymanstage.donap.ir/external-services/donap-payment-status/";
+        $api_url = $this->config['access_url'];
         $response = wp_remote_post($api_url, [
             'body' => json_encode([
                 'id' => $dnpId,

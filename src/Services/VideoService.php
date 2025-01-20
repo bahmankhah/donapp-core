@@ -1,9 +1,9 @@
 <?php
 
-namespace Donapp\Services;
+namespace App\Services;
 
-use Donapp\Models\Post;
-use Donapp\Models\VideoPost;
+use App\Models\Post;
+use App\Models\VideoPost;
 use Kernel\DB;
 
 class VideoService{

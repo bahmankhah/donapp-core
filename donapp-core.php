@@ -10,10 +10,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-use Donapp\Providers\AppServiceProvider;
-use Donapp\Providers\HookFilterServiceProvider;
-use Donapp\Providers\WooServiceProvider;
-use Donapp\Routes\RouteServiceProvider;
+use App\Providers\AppServiceProvider;
+use App\Providers\HookFilterServiceProvider;
+use App\Providers\WooServiceProvider;
+use App\Routes\RouteServiceProvider;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -23,7 +23,7 @@ require_once(__DIR__ . '/src/Helpers/helper.php');
 load_env_file( __DIR__ . '/.env' );
 
 spl_autoload_register(function ($class) {
-    $prefix = 'Donapp\\';
+    $prefix = 'App\\';
     $base_dir = __DIR__ . '/src/';
 
     $len = strlen($prefix);

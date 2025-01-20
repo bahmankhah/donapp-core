@@ -1,6 +1,6 @@
 <?php
 
-namespace Donapp\Middlewares;
+namespace App\Middlewares;
 
 use Exception;
 use Kernel\Middleware;

@@ -1,5 +1,5 @@
 <?php
-namespace Donapp\Services;
+namespace App\Services;
 
 class AuthService {
     public $user;

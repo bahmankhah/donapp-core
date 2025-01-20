@@ -1,28 +1,28 @@
 <?php
-namespace Donapp\Routes;
+namespace App\Routes;
 
-use Donapp\Controllers\Modules\Proxy\ProxyController;
-use Donapp\Controllers\AuthController;
-use Donapp\Controllers\BlogController;
-use Donapp\Controllers\ProductController;
-use Donapp\Controllers\VideoController;
-use Donapp\Controllers\WooController;
-use Donapp\Middlewares\ApiKeyMiddleware;
-use Kernel\Route;
+use App\Controllers\Modules\Proxy\ProxyController;
+use App\Controllers\AuthController;
+use App\Controllers\BlogController;
+use App\Controllers\ProductController;
+use App\Controllers\VideoController;
+use App\Controllers\WooController;
+use App\Middlewares\ApiKeyMiddleware;
+use Kernel\Facades\Route;
 
 class RouteServiceProvider {
     public function boot() {
-        (new Route())->get('auth-check', [AuthController::class, 'checkAuth'])->make();
+        Route::get('auth-check', [AuthController::class, 'checkAuth'])->make();
 
-        (new Route())->post('product', [AuthController::class, 'product'])->make();
-        (new Route())->get('blog', [BlogController::class, 'index'])->make();
-        (new Route())->get('video', [VideoController::class, 'index'])->make();
-        (new Route())->get('blog/video', [BlogController::class, 'videoIndex'])->make();
+        Route::post('product', [AuthController::class, 'product'])->make();
+        Route::get('blog', [BlogController::class, 'index'])->make();
+        Route::get('video', [VideoController::class, 'index'])->make();
+        Route::get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
-        (new Route())->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
+        Route::post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
-        (new Route())->post('proxy', [ProxyController::class, 'proxy'])->make();
-        (new Route())->get('proxy', [ProxyController::class, 'proxy'])->make();
+        Route::post('proxy', [ProxyController::class, 'proxy'])->make();
+        Route::get('proxy', [ProxyController::class, 'proxy'])->make();
 
     }
 }

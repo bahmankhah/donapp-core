@@ -1,5 +1,5 @@
 <?php
-namespace Donapp\Models;
+namespace App\Models;
 
 use Kernel\Model;
 

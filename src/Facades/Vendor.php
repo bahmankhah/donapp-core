@@ -1,8 +1,8 @@
 <?php
 
-namespace Donapp\Facades;
+namespace App\Facades;
 
-use Donapp\Adapters\Vendor\VendorManager;
+use App\Adapters\Vendor\VendorManager;
 use Kernel\Facades\Facade;
 
 class Vendor extends Facade

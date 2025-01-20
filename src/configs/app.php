@@ -1,7 +1,7 @@
 <?php
 
-use Donapp\Middlewares\ExceptionMiddleware;
-use Donapp\Middlewares\ResponseMiddleware;
+use App\Middlewares\ExceptionMiddleware;
+use App\Middlewares\ResponseMiddleware;
 
 return [
     'global_middlewares'=>[

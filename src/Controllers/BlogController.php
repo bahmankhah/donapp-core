@@ -1,8 +1,8 @@
 <?php
-namespace Donapp\Controllers;
+namespace App\Controllers;
 
-use Donapp\Models\Post;
-use Donapp\Services\BlogService;
+use App\Models\Post;
+use App\Services\BlogService;
 use Exception;
 use Kernel\Container;
 
