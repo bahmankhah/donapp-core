@@ -8,10 +8,10 @@ use Kernel\Container;
 
 class BlogController
 {
-    // private BlogService $blogService;
-    public function __construct(private readonly BlogService $blogService)
+    private BlogService $blogService;
+    public function __construct()
     {
-        // $this->blogService = Container::resolve('BlogService');
+        $this->blogService = Container::resolve('BlogService');
     }
     public function index($request)
     {
