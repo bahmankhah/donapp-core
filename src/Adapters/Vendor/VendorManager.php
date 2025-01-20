@@ -6,7 +6,7 @@ use Kernel\Adapters\AdapterManager;
 class VendorManager extends AdapterManager{
     
     public function getKey(): string{
-        return 'carrier';
+        return 'vendor';
     }
     
 }
