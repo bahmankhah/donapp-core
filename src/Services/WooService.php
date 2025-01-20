@@ -91,9 +91,9 @@ class WooService
             // Create a new product
             $product = new \WC_Product_Simple();
             // Add product image
-            if (isset($data['image_url'])) {
-                donappLog($data['image_url']);
-                $attachmentId = upload_image_from_url($data['image_url']);
+            if (isset($data['Image_url'])) {
+                donappLog($data['Image_url']);
+                $attachmentId = upload_image_from_url($data['Image_url']);
                 if ($attachmentId) {
                     $product->set_image_id($attachmentId);
                     donappLog($attachmentId);
