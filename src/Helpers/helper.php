@@ -3,6 +3,7 @@ if (!function_exists('res')) {
 
     function res($result = null, $message = '', $status = 200): WP_REST_Response
     {
+        donappLog($status);
         return rest_ensure_response(
             [
                 'result' => $result,
@@ -88,6 +89,7 @@ if (!function_exists('load_env_file')) {
 
 if ( ! function_exists( 'donappLog' ) ) {
     function donappLog( $message ) {
+        $message = (string) $message;
         $log_file = plugin_dir_path( __FILE__ ) . 'logs/donapp-errors.log';
         $time = date( 'Y-m-d H:i:s' );
         $formatted_message = "[{$time}] {$message}\n";
