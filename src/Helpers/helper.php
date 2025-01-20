@@ -91,8 +91,8 @@ if (! function_exists('donappLog')) {
     function donappLog($message)
     {
         $message = (string) $message;
-
-        $log_file = plugin_dir_path(__FILE__) . 'logs/donapp-errors.log';
+        $plugin_dir = WP_PLUGIN_DIR . '/' . appConfig('app.name');
+        $log_file = $plugin_dir . '/logs/donapp-errors.log';
         // Ensure the directory exists
         $directory = dirname($log_file);
         if (!is_dir($directory)) {

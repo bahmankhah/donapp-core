@@ -8,5 +8,6 @@ return [
         ExceptionMiddleware::class,
         ResponseMiddleware::class
     ],
-    'version'=>'v1'
+    'version'=>'v1',
+    'name'=>'donapp-core'
 ];
