@@ -22,7 +22,7 @@ class BlogService{
         $categotyId = (new DB())->getCategoryId('dnp-text');
         if(!$categotyId) return [];
 
-        $query = (new Post())
+        return (new Post())
         ->setTableAlias('p')
         ->with('image_url', function ($row) {
             return get_the_post_thumbnail_url($row['ID']);
@@ -42,8 +42,7 @@ class BlogService{
         ->join(DB::wpdb()->term_relationships.' as tr', 'p.ID', '=', 'tr.object_id')
         ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
         ->orderBy($orderBy, $orderDirection)
-        ->groupBy(['p.ID']);
-        return $query->get();
+        ->groupBy(['p.ID'])->get();
 
         
     }

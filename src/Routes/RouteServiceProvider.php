@@ -19,7 +19,7 @@ class RouteServiceProvider {
         Route::get('video', [VideoController::class, 'index'])->make();
         Route::get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
-        Route::post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
+        (new \Kernel\Route)->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
     }
 }
