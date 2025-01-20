@@ -27,4 +27,8 @@ class Donap extends Vendor{
             error_log('Access granted successfully for User ID: ' . $dnpId);
         }
     }
+
+    public function getUrl(){
+        return $this->config['main_url'];
+    }
 }
