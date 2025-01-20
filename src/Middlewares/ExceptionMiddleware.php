@@ -11,6 +11,7 @@ class ExceptionMiddleware implements Middleware{
         try{
             return $pipeline->next($request);
         }catch(Exception $e){
+            donappLog($e->getMessage());
             $code = $e->getCode() === 0 ? 500 : $e->getCode();
             return res(null, $e->getMessage(), $code);
         }

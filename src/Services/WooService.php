@@ -106,13 +106,15 @@ class WooService
 
     public function addUserIdToOrderItem($item, $cart_item_key, $values, $order)
     {
+
         if (isset($values['dnpuser'])) {
             $item->add_meta_data('dnpuser', $values['dnpuser']);
         }
     }
 
     public function processUserIdAfterPayment($orderId)
-    {
+    { 
+        donappLog('processUserIdAfterPayment: '. $orderId);
         $order = wc_get_order($orderId);
         $productIds = [];
         foreach ($order->get_items() as $item_id => $item) {
@@ -127,8 +129,8 @@ class WooService
                 }
             }
         }
-        foreach ($productIds as $dnpuser => $productIds) {
-            Vendor::donap()->giveAccess($dnpuser, $productIds);
+        foreach ($productIds as $dnpuser => $products) {
+            Vendor::donap()->giveAccess($dnpuser, $products);
             // $this->giveAccess($dnpuser, $productIds);
         }
 

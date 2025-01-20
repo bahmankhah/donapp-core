@@ -86,9 +86,9 @@ if (!function_exists('load_env_file')) {
     }
 }
 
-if ( ! function_exists( 'my_plugin_log_error' ) ) {
+if ( ! function_exists( 'donappLog' ) ) {
     function donappLog( $message ) {
-        $log_file = plugin_dir_path( __FILE__ ) . 'my-plugin-errors.log';
+        $log_file = plugin_dir_path( __FILE__ ) . 'logs/donapp-errors.log';
         $time = date( 'Y-m-d H:i:s' );
         $formatted_message = "[{$time}] {$message}\n";
         
