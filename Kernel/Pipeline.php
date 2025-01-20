@@ -17,9 +17,9 @@ class Pipeline{
 
     public function next($request){
         if($this->callIndex === count($this->middlewares)){
-            // return (new $this->callable[0]())->{$this->callable[1]}($request);
-            $controller = App::make($this->callable[0]);
-            return $controller->{$this->callable[1]}($request);
+            return (new $this->callable[0]())->{$this->callable[1]}($request);
+            // $controller = App::make($this->callable[0]);
+            // return $controller->{$this->callable[1]}($request);
         }else{
             return (new $this->middlewares[$this->callIndex++]())->handle($request, $this);
         }

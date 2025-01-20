@@ -51,7 +51,7 @@ class Application extends Container{
                 throw new Exception("Unable to resolve dependency [{$dependency->getName()}] for class [{$class}].");
             }
         }
-
+        
         return $reflection->newInstanceArgs($resolved);
     }
 }
