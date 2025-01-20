@@ -59,7 +59,6 @@ class WooService
 
     public function createOrUpdateProduct($data)
     {
-        donappLog(json_encode($data));
         // Search for an existing product with the given _dnp_product_id
         $existing_product = DB::wpQuery([
             'post_type'      => 'product',
@@ -92,11 +91,9 @@ class WooService
             $product = new \WC_Product_Simple();
             // Add product image
             if (isset($data['Image_url'])) {
-                donappLog($data['Image_url']);
                 $attachmentId = upload_image_from_url($data['Image_url']);
                 if ($attachmentId) {
                     $product->set_image_id($attachmentId);
-                    donappLog($attachmentId);
                 }
             }
             $product->set_name($data['name']);
