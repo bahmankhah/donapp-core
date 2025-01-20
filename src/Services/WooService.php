@@ -59,7 +59,7 @@ class WooService
 
     public function createOrUpdateProduct($data)
     {
-        donappLog(var_dump($data));
+        donappLog(json_encode($data));
         // Search for an existing product with the given _dnp_product_id
         $existing_product = DB::wpQuery([
             'post_type'      => 'product',
