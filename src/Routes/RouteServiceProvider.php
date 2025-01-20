@@ -21,8 +21,5 @@ class RouteServiceProvider {
 
         Route::post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
-        Route::post('proxy', [ProxyController::class, 'proxy'])->make();
-        Route::get('proxy', [ProxyController::class, 'proxy'])->make();
-
     }
 }
