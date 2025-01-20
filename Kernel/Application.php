@@ -41,6 +41,8 @@ class Application extends Container{
                 $resolved[] = $params[$dependency->getName()];
             } elseif ($dependency->getType() && !$dependency->getType()->isBuiltin()) {
                 // Resolve non-built-in type dependencies
+                donappLog($dependency->getName());
+                donappLog($dependency->getType()->getName());
                 $resolved[] = $this->resolve($dependency->getType()->getName());
             } elseif ($dependency->isDefaultValueAvailable()) {
                 // Use the default value if available
