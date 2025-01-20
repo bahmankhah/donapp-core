@@ -6,6 +6,16 @@ use Exception;
 use ReflectionClass;
 
 class Application extends Container{
+    /**
+     * Resolve a class instance from the container.
+     *
+     * @param string $class
+     * @param array $params
+     *
+     * @return object
+     *
+     * @throws Exception
+     */
     public function make($class, array $params = [])
     {
         if (!class_exists($class)) {
