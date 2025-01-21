@@ -22,5 +22,6 @@ spl_autoload_register(function ($class) {
 foreach (glob(__DIR__ . '/Helpers/*.php') as $file) {
     require_once $file;
 }
+load_env_file( __DIR__ . '/.env' );
 
 Config::load();
