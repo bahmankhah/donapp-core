@@ -81,7 +81,7 @@ if (!function_exists('load_env_file')) {
                 }
             }
         } else {
-            error_log("No .env file found at {$file_path}");
+            donappLog("No .env file found at {$file_path}");
         }
     }
 }
