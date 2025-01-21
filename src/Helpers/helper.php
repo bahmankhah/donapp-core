@@ -55,22 +55,4 @@ if (!function_exists('upload_image_from_url')) {
     }
 }
 
-if (! function_exists('donappLog')) {
-    function donappLog($message)
-    {
-        $message = (string) $message;
-        $plugin_dir = WP_PLUGIN_DIR . '/' . appConfig('app.name');
-        $log_file = $plugin_dir . '/logs/donapp-errors.log';
-        // Ensure the directory exists
-        $directory = dirname($log_file);
-        if (!is_dir($directory)) {
-            mkdir($directory, 0755, true); // Create the directory with permissions
-        }
 
-        $time = date('Y-m-d H:i:s');
-        $formatted_message = "[{$time}] {$message}". PHP_EOL;
-
-        // Write to the log file.
-        file_put_contents($log_file, $formatted_message, FILE_APPEND);
-    }
-}
