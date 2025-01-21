@@ -127,6 +127,7 @@ class WooService
         foreach ($order->get_items() as $item_id => $item) {
             // Retrieve the 'dnpuser' metadata from the order item
             $dnpuser = $item->get_meta('dnpuser');
+            donappLog('donappUser: '. $dnpuser);
             if ($dnpuser) {
                 $dnpProductId = get_post_meta($item->get_product_id(), '_dnp_product_id', true);
                 if (empty($productIds[(string) $dnpuser])) {
@@ -136,6 +137,7 @@ class WooService
                 }
             }
         }
+        donappLog('donappProducts: '. json_encode($productIds));
         foreach ($productIds as $dnpuser => $products) {
             Vendor::donap()->giveAccess($dnpuser, $products);
             // $this->giveAccess($dnpuser, $productIds);

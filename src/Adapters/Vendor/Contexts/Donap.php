@@ -21,10 +21,11 @@ class Donap extends Vendor{
             ],
         ]);
 
+        donappLog(var_dump($response));
         if (is_wp_error($response)) {
-            error_log('API Error: ' . $response->get_error_message());
+            donappLog('API Error: ' . $response->get_error_message());
         } else {
-            error_log('Access granted successfully for User ID: ' . $dnpId);
+            donappLog('Access granted successfully for User ID: ' . $dnpId);
         }
     }
 
