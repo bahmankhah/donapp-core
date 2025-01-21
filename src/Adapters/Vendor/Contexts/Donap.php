@@ -10,10 +10,10 @@ class Donap extends Vendor{
         $apiKey = $this->config['key'];
         $api_url = $this->config['access_url'];
         $response = wp_remote_post($api_url, [
-            'body' => json_encode([
+            'body' => [
                 'id' => $dnpId,
                 'products' => $productIds,
-            ]),
+            ],
             'headers' => [
                 'Content-Type' => 'application/x-www-form-urlencoded',
                 'Accept' => 'application/json',
@@ -21,7 +21,7 @@ class Donap extends Vendor{
             ],
         ]);
 
-        donappLog(var_dump($response));
+        donappLog(json_encode($response));
         if (is_wp_error($response)) {
             donappLog('API Error: ' . $response->get_error_message());
         } else {
