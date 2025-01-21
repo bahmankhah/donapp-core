@@ -121,13 +121,13 @@ class WooService
 
     public function processUserIdAfterPayment($orderId)
     {
-        logger('processUserIdAfterPayment: ' . $orderId);
+        appLogger('processUserIdAfterPayment: ' . $orderId);
         $order = wc_get_order($orderId);
         $productIds = [];
         foreach ($order->get_items() as $item_id => $item) {
             // Retrieve the 'dnpuser' metadata from the order item
             $dnpuser = $item->get_meta('dnpuser');
-            logger('donappUser: '. $dnpuser);
+            appLogger('donappUser: '. $dnpuser);
             if ($dnpuser) {
                 $dnpProductId = get_post_meta($item->get_product_id(), '_dnp_product_id', true);
                 if (empty($productIds[(string) $dnpuser])) {
@@ -137,7 +137,7 @@ class WooService
                 }
             }
         }
-        logger('donappProducts: '. json_encode($productIds));
+        appLogger('donappProducts: '. json_encode($productIds));
         foreach ($productIds as $dnpuser => $products) {
             Vendor::donap()->giveAccess($dnpuser, $products);
             // $this->giveAccess($dnpuser, $productIds);

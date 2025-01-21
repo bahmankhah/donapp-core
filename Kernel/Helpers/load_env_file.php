@@ -25,7 +25,7 @@ if (!function_exists('load_env_file')) {
                 }
             }
         } else {
-            logger("No .env file found at {$file_path}");
+            appLogger("No .env file found at {$file_path}");
         }
     }
 }

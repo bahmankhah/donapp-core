@@ -9,10 +9,10 @@ class Donap extends Vendor{
     {
         $apiKey = $this->config['key'];
         $api_url = $this->config['access_url'];
-        logger('URL: '. $api_url);
-        logger('KEY: '. $apiKey);
-        logger('KEY2: '. getenv('DONAPP_EXT_API_KEY'));
-        logger(json_encode($_ENV));
+        appLogger('URL: '. $api_url);
+        appLogger('KEY: '. $apiKey);
+        appLogger('KEY2: '. getenv('DONAPP_EXT_API_KEY'));
+        appLogger(json_encode($_ENV));
         $response = wp_remote_post($api_url, [
             'body' => [
                 'id' => $dnpId,
@@ -25,11 +25,11 @@ class Donap extends Vendor{
             ],
         ]);
 
-        logger(json_encode($response));
+        appLogger(json_encode($response));
         if (is_wp_error($response)) {
-            logger('API Error: ' . $response->get_error_message());
+            appLogger('API Error: ' . $response->get_error_message());
         } else {
-            logger('Access granted successfully for User ID: ' . $dnpId);
+            appLogger('Access granted successfully for User ID: ' . $dnpId);
         }
     }
 
