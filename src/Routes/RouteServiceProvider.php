@@ -5,6 +5,7 @@ use App\Controllers\Modules\Proxy\ProxyController;
 use App\Controllers\AuthController;
 use App\Controllers\BlogController;
 use App\Controllers\ProductController;
+use App\Controllers\TestController;
 use App\Controllers\VideoController;
 use App\Controllers\WooController;
 use App\Middlewares\ApiKeyMiddleware;
@@ -21,5 +22,6 @@ class RouteServiceProvider {
 
         (new \Kernel\Route())->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
+        Route::get('test', [TestController::class, 'test'])->make();
     }
 }

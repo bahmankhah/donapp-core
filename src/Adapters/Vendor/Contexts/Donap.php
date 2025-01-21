@@ -9,13 +9,15 @@ class Donap extends Vendor{
     {
         $apiKey = $this->config['key'];
         $api_url = $this->config['access_url'];
+        donappLog('URL: '. $api_url);
+        donappLog('KEY: '. $apiKey);
         $response = wp_remote_post($api_url, [
             'body' => [
                 'id' => $dnpId,
                 'products' => $productIds,
             ],
             'headers' => [
-                'Content-Type' => 'application/x-www-form-urlencoded',
+                // 'Content-Type' => 'application/x-www-form-urlencoded',
                 'Accept' => 'application/json',
                 'x-api-key' => $apiKey,
             ],
