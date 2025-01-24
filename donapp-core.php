@@ -49,5 +49,5 @@ add_action('init', function() {
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
-    (new AudioPlayerServiceProvider())->boot();
 });
+(new AudioPlayerServiceProvider())->boot();
