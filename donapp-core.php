@@ -50,6 +50,7 @@ add_action('init', function () {
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
 });
+die('hereeeee');
 // function custom_footer_script()
 // {
 //     // Register the script
@@ -64,15 +65,4 @@ add_action('init', function () {
 // }
 // add_action('wp_enqueue_scripts', 'custom_footer_script');
 
-add_action('wp_enqueue_scripts', 'ava_test_init');
 
-function ava_test_init()
-{
-    die('hereee');
-    wp_enqueue_script(
-        'ava-test-js',
-        WP_PLUGIN_DIR . '/' . appConfig('app.name') . '/' . 'resources/js/audioplayer.js',
-        ['jquery'],
-        time()
-    );
-}
