@@ -68,6 +68,7 @@ add_action('wp_enqueue_scripts', 'ava_test_init');
 
 function ava_test_init()
 {
+    die('hereee');
     wp_enqueue_script(
         'ava-test-js',
         WP_PLUGIN_DIR . '/' . appConfig('app.name') . '/' . 'resources/js/audioplayer.js',
