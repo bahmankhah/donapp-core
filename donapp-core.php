@@ -50,7 +50,6 @@ add_action('init', function () {
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
 });
-die('hereeeee');
 // function custom_footer_script()
 // {
 //     // Register the script
