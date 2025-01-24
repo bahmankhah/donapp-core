@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 use App\Providers\AppServiceProvider;
+use App\Providers\AudioPlayerServiceProvider;
 use App\Providers\HookFilterServiceProvider;
 use App\Providers\WooServiceProvider;
 use App\Routes\RouteServiceProvider;
@@ -48,4 +49,5 @@ add_action('init', function() {
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
+    (new AudioPlayerServiceProvider())->boot();
 });
