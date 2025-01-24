@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Donapp Core
  * Description: Donapp Core.
@@ -39,26 +40,38 @@ spl_autoload_register(function ($class) {
     }
 });
 
-register_activation_hook( __FILE__, function(){
+register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
-add_action('plugins_loaded', function() {
-});
-add_action('init', function() {
+add_action('plugins_loaded', function () {});
+add_action('init', function () {
     (new RouteServiceProvider())->boot();
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
 });
-function custom_footer_script() {
-    // Register the script
-    wp_register_script(
-        'custom-audioplayer', // Handle
-        WP_PLUGIN_DIR . '/' . appConfig('app.name') . '/'. 'resources/js/audioplayer.js', // Path to the script
-        array('jquery'), // Dependencies (e.g., jQuery)
-        time(), // Version
-        true // Load in footer
+// function custom_footer_script()
+// {
+//     // Register the script
+//     wp_register_script(
+//         'custom-audioplayer', // Handle
+//         WP_PLUGIN_DIR . '/' . appConfig('app.name') . '/' . 'resources/js/audioplayer.js', // Path to the script
+//         array('jquery'), // Dependencies (e.g., jQuery)
+//         time(), // Version
+//         true // Load in footer
+//     );
+//     wp_enqueue_script('custom-audioplayer');
+// }
+// add_action('wp_enqueue_scripts', 'custom_footer_script');
+
+add_action('wp_enqueue_scripts', 'ava_test_init');
+
+function ava_test_init()
+{
+    wp_enqueue_script(
+        'ava-test-js',
+        WP_PLUGIN_DIR . '/' . appConfig('app.name') . '/' . 'resources/js/audioplayer.js',
+        ['jquery'],
+        time()
     );
-    wp_enqueue_script('custom-audioplayer');
 }
-add_action('wp_enqueue_scripts', 'custom_footer_script');
