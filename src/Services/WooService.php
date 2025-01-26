@@ -124,10 +124,12 @@ class WooService
     {
         $order = wc_get_order($orderId);
         $productIds = [];
+        $slug = '';
         foreach ($order->get_items() as $item_id => $item) {
             // Retrieve the 'dnpuser' metadata from the order item
             $dnpuser = $item->get_meta('dnpuser');
             if ($dnpuser) {
+                $slug = get_post_meta($item->get_product_id(), '_dnp_product_slug', true);
                 $dnpProductId = get_post_meta($item->get_product_id(), '_dnp_product_id', true);
                 if (empty($productIds[(string) $dnpuser])) {
                     $productIds[(string) $dnpuser] = [(string) $dnpProductId];
@@ -141,7 +143,7 @@ class WooService
             // $this->giveAccess($dnpuser, $productIds);
         }
 
-        wp_redirect(Vendor::donap()->getUrl());
+        wp_redirect(Vendor::donap()->getPurchasedProductUrl($slug));
         exit;
     }
 

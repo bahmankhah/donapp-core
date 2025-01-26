@@ -71,3 +71,14 @@ if (!function_exists('load_env_file')) {
         }
     }
 }
+
+if (!function_exists('replacePlaceholders')) {
+    function replacePlaceholders(string $template, array $variables): string
+    {
+        foreach ($variables as $key => $value) {
+            // Replace placeholders in the format {key} with their corresponding values
+            $template = str_replace("{" . $key . "}", $value, $template);
+        }
+        return $template;
+    }
+}
