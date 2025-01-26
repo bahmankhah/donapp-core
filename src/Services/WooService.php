@@ -13,7 +13,7 @@ class WooService
 
     public function addToCart($data)
     {
-
+        appLogger(var_dump($data));
         $productId = $this->createOrUpdateProduct($data['product']);
         if (!$productId) {
             throw new Exception('Service Unavailable');

@@ -9,7 +9,6 @@ use App\Services\ProductService;
 use App\Services\VideoService;
 use App\Services\WooService;
 use Kernel\Container;
-use Kernel\PostType;
 
 class AppServiceProvider
 {
