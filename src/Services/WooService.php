@@ -106,6 +106,7 @@ class WooService
 
             // Save the custom meta field to track this product
             update_post_meta($product_id, '_dnp_product_id', $data['id']);
+            update_post_meta($product_id, '_dnp_product_slug', $data['slug']);
 
             return $product_id; // Return new product ID
         }
