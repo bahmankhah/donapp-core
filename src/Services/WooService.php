@@ -153,7 +153,7 @@ class WooService
         $product_id = $product->get_id(); 
         $slug = get_post_meta($product_id, '_dnp_product_slug', true);
         $url = Vendor::donap()->getProductPageUrl($slug);
-        echo "<a href='".$url."' class=button custom-button'>صفحه محصول در دناپ</a>";
+        echo "<br><a href='".$url."' class=button custom-button'>صفحه محصول در دناپ</a>";
     }
 
 
