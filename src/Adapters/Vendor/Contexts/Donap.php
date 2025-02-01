@@ -31,4 +31,8 @@ class Donap extends Vendor{
     public function getPurchasedProductUrl(string $slug){
         return replacePlaceholders($this->config['purchased_redirect_url'],['slug'=>$slug]);
     }
+
+    public function getProductPageUrl(string $slug){
+        return replacePlaceholders($this->config['product_page'],['slug'=>$slug]);
+    }
 }

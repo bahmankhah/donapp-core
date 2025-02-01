@@ -9,6 +9,7 @@ return [
                 'key' => getenv('DONAPP_EXT_API_KEY'),
                 'access_url'=>'https://api.nraymanstage.donap.ir/external-services/donap-payment-status/',
                 'purchased_redirect_url'=>'https://student.nraymanstage.donap.ir/myProducts/{slug}',
+                'product_page'=>'https://student.nraymanstage.donap.ir/products/details/{slug}',
                 'main_url'=>'https://student.nraymanstage.donap.ir'
             ]
         ]
