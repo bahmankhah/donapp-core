@@ -97,6 +97,7 @@ class WooService
                 }
             }
             $product->set_name($data['name']);
+            $product->set_category_ids(array());
             $product->set_regular_price($data['price']);
             $product->set_description($data['description'] ?? '');
             $product->set_short_description($data['short_description'] ?? '');
@@ -104,9 +105,17 @@ class WooService
             $product->save();
             $product_id = $product->get_id();
 
+            $category = get_term_by( 'slug', 'rayman', 'product_cat' );
+            if($category){
+                wp_set_object_terms( $product_id, array( $category->term_id ), 'product_cat' );
+            }
             // Save the custom meta field to track this product
             update_post_meta($product_id, '_dnp_product_id', $data['id']);
             update_post_meta($product_id, '_dnp_product_slug', $data['slug']);
+            update_post_meta($product_id, '_virtual', 'yes');
+            update_post_meta($product_id, '_stock_status', 'instock' );
+            update_post_meta($product_id, '_manage_stock', 'no' );
+
 
             return $product_id; // Return new product ID
         }
