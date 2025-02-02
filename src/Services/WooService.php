@@ -159,7 +159,7 @@ class WooService
             return;
         }
         $url = Vendor::donap()->getProductPageUrl($slug);
-        echo "&nbsp;<a style='background-color: #4fc800; color: white;' href='".$url."' class=button custom-button'>مشاهده این محصول در دناپ</a>";
+        echo "&nbsp;<a style='background-color: #4fc800; color: white;' href='".$url."' class='btn btn-sm'>مشاهده این محصول در دناپ</a>";
     }
 
 
