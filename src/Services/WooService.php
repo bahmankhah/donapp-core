@@ -115,6 +115,7 @@ class WooService
             update_post_meta($product_id, '_virtual', 'yes');
             update_post_meta($product_id, '_stock_status', 'instock' );
             update_post_meta($product_id, '_manage_stock', 'no' );
+            update_post_meta($product_id, '_sold_individually', 'yes' );
 
 
             return $product_id; // Return new product ID
