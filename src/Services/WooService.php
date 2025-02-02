@@ -143,6 +143,9 @@ class WooService
             // $this->giveAccess($dnpuser, $productIds);
         }
 
+        if(empty($productIds)){
+            return;
+        }
         wp_redirect(Vendor::donap()->getPurchasedProductUrl($slug));
         exit;
     }
@@ -152,8 +155,11 @@ class WooService
     
         $product_id = $product->get_id(); 
         $slug = get_post_meta($product_id, '_dnp_product_slug', true);
+        if(!$slug){
+            return;
+        }
         $url = Vendor::donap()->getProductPageUrl($slug);
-        echo "<br><a href='".$url."' class=button custom-button'>صفحه محصول در دناپ</a><br>";
+        echo "&nbsp;<a style='background-color: #4fc800; color: white;' href='".$url."' class=button custom-button'>مشاهده این محصول در دناپ</a>";
     }
 
 
