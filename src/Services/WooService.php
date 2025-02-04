@@ -169,7 +169,22 @@ class WooService
             return;
         }
         $url = Vendor::donap()->getProductPageUrl($slug);
-        echo "&nbsp;<a style='background-color: #4fc800; color: #fff; flex: none; width: 210px; display: block; border-radius: 5px;' href='".$url."' class=''>مشاهده این محصول در رایمن</a>";
+        echo "<a style='
+            background-color: #4fc800;
+            color: #fff;
+            flex: none;
+            text-align: center;
+            width: 210px;
+            display: flex; /* Change to flexbox */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            border-radius: 5px;
+            height: 50px; /* Optional: Define height if needed */
+            text-decoration: none; /* Remove underline */
+        '
+        href='".$url."' class=''>
+            مشاهده این محصول در رایمن
+        </a>";
     }
 
 
