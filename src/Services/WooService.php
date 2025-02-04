@@ -169,7 +169,9 @@ class WooService
             return;
         }
         $url = Vendor::donap()->getProductPageUrl($slug);
-        echo "<a style='
+        echo "<a 
+            target='_blank' 
+            style='
             background-color: #4fc800;
             color: #fff;
             flex: none;
