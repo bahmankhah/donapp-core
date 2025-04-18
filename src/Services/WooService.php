@@ -153,6 +153,8 @@ class WooService
             // $this->giveAccess($dnpuser, $productIds);
         }
 
+        WC()->cart->empty_cart();
+
         if(empty($productIds)){
             return;
         }

@@ -9,11 +9,16 @@ class ApiKeyMiddleware implements Middleware{
         $headers = getallheaders();
         $apiKey = getenv( 'DONAPP_API_KEY' );
 
+
         if (isset($headers['X-API-KEY'])) {
             if($headers['X-API-KEY'] !== $apiKey){
                 throw new Exception('unauthenticated', 401);
             }
-        } else {
+        }elseif(isset($headers['X-Api-Key'])) {
+            if($headers['X-Api-Key'] !== $apiKey){
+                throw new Exception('unauthenticated', 401);
+            }
+        }else {
             throw new Exception('unauthenticated', 401);
         }
         return $pipeline->next($request);
