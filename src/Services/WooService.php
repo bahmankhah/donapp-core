@@ -98,7 +98,15 @@ class WooService
             }
             $product->set_name($data['name']);
             $product->set_category_ids(array());
-            $product->set_regular_price($data['price']);
+            
+            $price = isset($data['price']) && is_numeric($data['price']) ? floatval($data['price']) : 0;
+            if ($price == 0) {
+                $product->set_regular_price(''); // Empty string for free products
+                $product->set_sale_price(''); // Clear sale price
+            } else {
+                $product->set_regular_price($price);
+            }
+            
             $product->set_description($data['description'] ?? '');
             $product->set_short_description($data['short_description'] ?? '');
             $product->set_status('publish');
@@ -161,6 +169,75 @@ class WooService
         wp_redirect(Vendor::donap()->getPurchasedProductUrl($slug));
         exit;
     }
+
+
+    public function isCartFree() {
+        if (!function_exists('WC') || !WC()->cart) {
+            return false;
+        }
+        $cart = WC()->cart;
+        $cart_items = $cart->get_cart();
+        if (empty($cart_items)) {
+            return false;
+        }
+        foreach ($cart_items as $cart_item) {
+            $product = wc_get_product($cart_item['product_id']);
+            if ($product && $product->get_price() > 0) {
+                return false; // Non-free product found
+            }
+        }
+        return true; // All products are free
+    }
+
+    // New method to handle free order processing
+    public function handleFreeCheckout() {
+        if (!$this->isCartFree()) {
+            return; // Only process if cart is free
+        }
+
+        // Create an order
+        $cart = WC()->cart;
+        $checkout = WC()->checkout();
+        $order_id = $checkout->create_order([
+            'billing_email' => wp_get_current_user()->user_email ?: 'free@order.com',
+            'payment_method' => 'none',
+        ]);
+
+        if (is_wp_error($order_id)) {
+            return; // Handle error if order creation fails
+        }
+
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+
+        // Copy cart items to order
+        foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
+            $item = new WC_Order_Item_Product();
+            $item->set_product(wc_get_product($cart_item['product_id']));
+            $item->set_quantity($cart_item['quantity']);
+            $item->set_subtotal($cart_item['line_subtotal']);
+            $item->set_total($cart_item['line_total']);
+            // Copy dnpuser meta if it exists
+            if (isset($cart_item['dnpuser'])) {
+                $item->add_meta_data('dnpuser', $cart_item['dnpuser']);
+            }
+            $order->add_item($item);
+        }
+
+        // Set order as completed
+        $order->set_status('completed');
+        $order->set_total(0);
+        $order->save();
+
+        // Trigger woocommerce_payment_complete hook
+        do_action('woocommerce_payment_complete', $order_id);
+
+        // Clear notices and redirect (handled by processUserIdAfterPayment)
+        wc_clear_notices();
+    }
+
 
     public function productPageButton(){
         global $product;  
