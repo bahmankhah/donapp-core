@@ -11,6 +11,80 @@ use Kernel\DB;
 class WooService
 {
 
+    public function beforeCheckout()
+    {
+        // Get the cart instance
+        $cart = WC()->cart;
+
+        // If cart is empty, nothing to do
+        if ($cart->is_empty()) {
+            return;
+        }
+
+        // Assume cart is free unless we find a paid item
+        $has_paid_item = false;
+
+        foreach ($cart->get_cart() as $cart_item) {
+            $product = $cart_item['data'];
+
+            // Get the product price as a float
+            $price = (float) $product->get_price();
+
+            // If any item has a price > 0, we allow checkout
+            if ($price > 0) {
+                $has_paid_item = true;
+                break;
+            }
+        }
+
+        // If no paid items found, block checkout and empty cart
+        if (! $has_paid_item) {
+            $productIds = [];
+            $slug       = '';
+
+            // 3) Build up the per‑user product list
+            foreach ($cart->get_cart() as $cart_item) {
+
+                // assume you added this when item was added to cart
+                $dnpuser = isset($cart_item['dnpuser'])
+                    ? $cart_item['dnpuser']
+                    : '';
+
+                if ($dnpuser) {
+                    $pid = $cart_item['product_id'];
+
+                    // pull your stored post‑meta
+                    $slug         = get_post_meta($pid, '_dnp_product_slug', true);
+                    $dnpProductId = get_post_meta($pid, '_dnp_product_id',   true);
+
+                    if (! isset($productIds[$dnpuser])) {
+                        $productIds[$dnpuser] = [(string) $dnpProductId];
+                    } else {
+                        $productIds[$dnpuser][] = (string) $dnpProductId;
+                    }
+                }
+            }
+
+            // if no dnpusers found, bail
+            if (empty($productIds)) {
+                return;
+            }
+
+            // 4) Grant access
+            foreach ($productIds as $dnpuser => $products) {
+                Vendor::donap()->giveAccess($dnpuser, $products);
+            }
+
+            // 5) Clear cart, redirect, and exit
+            $cart->empty_cart();
+
+            // if you want the last‐seen slug; adjust if you need to redirect per‐item or per‐user
+            $redirect_url = Vendor::donap()->getPurchasedProductUrl($slug);
+            wp_safe_redirect($redirect_url);
+            exit;
+        }
+    }
+
     public function addToCart($data)
     {
         appLogger(json_encode($data));
@@ -98,7 +172,7 @@ class WooService
             }
             $product->set_name($data['name']);
             $product->set_category_ids(array());
-            
+
             $price = isset($data['price']) && is_numeric($data['price']) ? floatval($data['price']) : 0;
             if ($price == 0) {
                 $product->set_regular_price(''); // Empty string for free products
@@ -106,24 +180,24 @@ class WooService
             } else {
                 $product->set_regular_price($price);
             }
-            
+
             $product->set_description($data['description'] ?? '');
             $product->set_short_description($data['short_description'] ?? '');
             $product->set_status('publish');
             $product->save();
             $product_id = $product->get_id();
 
-            $category = get_term_by( 'slug', 'rayman', 'product_cat' );
-            if($category){
-                wp_set_object_terms( $product_id, array( $category->term_id ), 'product_cat' );
+            $category = get_term_by('slug', 'rayman', 'product_cat');
+            if ($category) {
+                wp_set_object_terms($product_id, array($category->term_id), 'product_cat');
             }
             // Save the custom meta field to track this product
             update_post_meta($product_id, '_dnp_product_id', $data['id']);
             update_post_meta($product_id, '_dnp_product_slug', $data['slug']);
             update_post_meta($product_id, '_virtual', 'yes');
-            update_post_meta($product_id, '_stock_status', 'instock' );
-            update_post_meta($product_id, '_manage_stock', 'no' );
-            update_post_meta($product_id, '_sold_individually', 'yes' );
+            update_post_meta($product_id, '_stock_status', 'instock');
+            update_post_meta($product_id, '_manage_stock', 'no');
+            update_post_meta($product_id, '_sold_individually', 'yes');
 
 
             return $product_id; // Return new product ID
@@ -132,7 +206,6 @@ class WooService
 
     public function addUserIdToOrderItem($item, $cart_item_key, $values, $order)
     {
-
         if (isset($values['dnpuser'])) {
             $item->add_meta_data('dnpuser', $values['dnpuser']);
         }
@@ -163,7 +236,7 @@ class WooService
 
         WC()->cart->empty_cart();
 
-        if(empty($productIds)){
+        if (empty($productIds)) {
             return;
         }
         wp_redirect(Vendor::donap()->getPurchasedProductUrl($slug));
@@ -171,7 +244,8 @@ class WooService
     }
 
 
-    public function isCartFree() {
+    public function isCartFree()
+    {
         if (!function_exists('WC') || !WC()->cart) {
             return false;
         }
@@ -190,12 +264,13 @@ class WooService
     }
 
 
-    public function productPageButton(){
-        global $product;  
-    
-        $product_id = $product->get_id(); 
+    public function productPageButton()
+    {
+        global $product;
+
+        $product_id = $product->get_id();
         $slug = get_post_meta($product_id, '_dnp_product_slug', true);
-        if(!$slug){
+        if (!$slug) {
             return;
         }
         $url = Vendor::donap()->getProductPageUrl($slug);
@@ -214,7 +289,7 @@ class WooService
             height: 50px; /* Optional: Define height if needed */
             text-decoration: none; /* Remove underline */
         '
-        href='".$url."' class=''>
+        href='" . $url . "' class=''>
             مشاهده این محصول در رایمن
         </a>";
     }
