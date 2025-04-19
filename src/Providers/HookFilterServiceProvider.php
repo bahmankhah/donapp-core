@@ -10,14 +10,23 @@ class HookFilterServiceProvider
 
     public function boot()
     {
-        // 1) Load & register our Free Order gateway
-        add_action( 'plugins_loaded', [ Container::resolve('WooService'), 'initFreeOrderGateway' ] );
-        add_filter( 'woocommerce_payment_gateways', [ Container::resolve('WooService'), 'addFreeGateway' ] );
+        // 1) Register our Free Order gateway
+        add_filter(
+            'woocommerce_payment_gateways',
+            [ Container::resolve('WooService'), 'addFreeGateway' ]
+        );
 
-        // 2) Tell WC no payment is needed on zero‑total carts/orders
-        add_filter( 'woocommerce_cart_needs_payment',  [ Container::resolve('WooService'), 'allowFreeOrders' ], 10, 2 );
-        add_filter( 'woocommerce_order_needs_payment', [ Container::resolve('WooService'), 'allowFreeOrders' ], 10, 2 );
-
+        // 2) Skip payment validation on zero‑total carts/orders
+        add_filter(
+            'woocommerce_cart_needs_payment',
+            [ Container::resolve('WooService'), 'allowFreeOrders' ],
+            10, 2
+        );
+        add_filter(
+            'woocommerce_order_needs_payment',
+            [ Container::resolve('WooService'), 'allowFreeOrders' ],
+            10, 2
+        );
         // 3) Usual Donap hooks
         add_action(
             'woocommerce_checkout_create_order_line_item',

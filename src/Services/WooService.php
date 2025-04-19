@@ -7,70 +7,66 @@ use App\Facades\Vendor;
 use App\Models\UserCart;
 use Exception;
 use Kernel\DB;
+use WC_Payment_Gateway;   // make sure WooCommerce is loaded first
+use WC()->cart;
+use WC()->checkout;
 
-class WooService
-{
+/**
+ * ------------------------------------------------------------
+ * 0) Define the Free‑Order Gateway at top‑level (not inside a method)
+ * ------------------------------------------------------------
+ */
+if ( ! class_exists( 'WC_Gateway_Free_Order' ) ) {
 
-    // ─────────────────────────────────────────────────────────
-    // 1) REGISTER A “FREE ORDER” PAYMENT GATEWAY
-    // ─────────────────────────────────────────────────────────
-
-    public function initFreeOrderGateway()
+    class WC_Gateway_Free_Order extends WC_Payment_Gateway
     {
-        if ( class_exists('WC_Gateway_Free_Order') ) {
-            return;
+        public function __construct()
+        {
+            $this->id                 = 'free_order';
+            $this->method_title       = __( 'Free Order', 'woocommerce' );
+            $this->has_fields         = false;
+            $this->method_description = __( 'Allows checkout when order total is zero.', 'woocommerce' );
+
+            $this->init_form_fields();
+            $this->init_settings();
+
+            add_action(
+                'woocommerce_update_options_payment_gateways_' . $this->id,
+                [ $this, 'process_admin_options' ]
+            );
         }
 
-        class WC_Gateway_Free_Order extends \WC_Payment_Gateway
+        public function init_form_fields()
         {
-            public function __construct()
-            {
-                $this->id                 = 'free_order';
-                $this->method_title       = __( 'Free Order', 'woocommerce' );
-                $this->has_fields         = false;
-                $this->method_description = __( 'Allows checkout when order total is zero.', 'woocommerce' );
+            $this->form_fields = [
+                'enabled' => [
+                    'title'   => __( 'Enable/Disable', 'woocommerce' ),
+                    'type'    => 'checkbox',
+                    'label'   => __( 'Enable Free Order gateway', 'woocommerce' ),
+                    'default' => 'yes',
+                ],
+            ];
+        }
 
-                $this->init_form_fields();
-                $this->init_settings();
+        public function is_available()
+        {
+            // only show when cart total is exactly zero
+            return ( WC()->cart && WC()->cart->get_total( 'edit' ) == 0 );
+        }
 
-                add_action(
-                    'woocommerce_update_options_payment_gateways_' . $this->id,
-                    [ $this, 'process_admin_options' ]
-                );
-            }
-
-            public function init_form_fields()
-            {
-                $this->form_fields = [
-                    'enabled' => [
-                        'title'   => __( 'Enable/Disable', 'woocommerce' ),
-                        'type'    => 'checkbox',
-                        'label'   => __( 'Enable Free Order gateway', 'woocommerce' ),
-                        'default' => 'yes',
-                    ],
-                ];
-            }
-
-            public function is_available()
-            {
-                // Only show if cart total is exactly zero
-                if ( WC()->cart && WC()->cart->get_total( 'edit' ) == 0 ) {
-                    return true;
-                }
-                return false;
-            }
-
-            public function process_payment( $order_id )
-            {
-                $order = wc_get_order( $order_id );
-                $order->payment_complete(); // mark paid
-                return [
-                    'result'   => 'success',
-                    'redirect' => $this->get_return_url( $order ),
-                ];
-            }
+        public function process_payment( $order_id )
+        {
+            $order = wc_get_order( $order_id );
+            $order->payment_complete(); // mark as paid
+            return [
+                'result'   => 'success',
+                'redirect' => $this->get_return_url( $order ),
+            ];
         }
     }
+}
+class WooService
+{
 
     public function addFreeGateway( $gateways )
     {
