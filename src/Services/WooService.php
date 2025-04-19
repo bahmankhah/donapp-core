@@ -7,94 +7,9 @@ use App\Facades\Vendor;
 use App\Models\UserCart;
 use Exception;
 use Kernel\DB;
-use WC_Payment_Gateway;   // make sure WooCommerce is loaded first
 
-/**
- * ------------------------------------------------------------
- * 0) Define the Free‑Order Gateway at top‑level (not inside a method)
- * ------------------------------------------------------------
- */
-if ( ! class_exists( 'WC_Gateway_Free_Order' ) ) {
-
-    class WC_Gateway_Free_Order extends WC_Payment_Gateway
-    {
-        public function __construct()
-        {
-            $this->id                 = 'free_order';
-            $this->method_title       = __( 'Free Order', 'woocommerce' );
-            $this->has_fields         = false;
-            $this->method_description = __( 'Allows checkout when order total is zero.', 'woocommerce' );
-
-            $this->init_form_fields();
-            $this->init_settings();
-
-            add_action(
-                'woocommerce_update_options_payment_gateways_' . $this->id,
-                [ $this, 'process_admin_options' ]
-            );
-        }
-
-        public function init_form_fields()
-        {
-            $this->form_fields = [
-                'enabled' => [
-                    'title'   => __( 'Enable/Disable', 'woocommerce' ),
-                    'type'    => 'checkbox',
-                    'label'   => __( 'Enable Free Order gateway', 'woocommerce' ),
-                    'default' => 'yes',
-                ],
-            ];
-        }
-
-        public function is_available()
-        {
-            // only show when cart total is exactly zero
-            return ( WC()->cart && WC()->cart->get_total( 'edit' ) == 0 );
-        }
-
-        public function process_payment( $order_id )
-        {
-            $order = wc_get_order( $order_id );
-            $order->payment_complete(); // mark as paid
-            return [
-                'result'   => 'success',
-                'redirect' => $this->get_return_url( $order ),
-            ];
-        }
-    }
-}
 class WooService
 {
-
-    public function addFreeGateway( $gateways )
-    {
-        $gateways[] = 'WC_Gateway_Free_Order';
-        return $gateways;
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // 2) SKIP PAYMENT VALIDATION ON ZERO‑TOTAL
-    // ─────────────────────────────────────────────────────────
-
-    /**
-     * @param bool                   $needs_payment
-     * @param \WC_Order|null         $order
-     * @return bool
-     */
-    public function allowFreeOrders( $needs_payment, $order = null )
-    {
-        // Cart‑level check
-        if ( WC()->cart && WC()->cart->get_total( 'edit' ) == 0 ) {
-            return false;
-        }
-        // Order‑level check
-        if ( $order && $order->get_total() == 0 ) {
-            return false;
-        }
-        return $needs_payment;
-    }
-
-
 
     public function addToCart($data)
     {
@@ -274,55 +189,6 @@ class WooService
         return true; // All products are free
     }
 
-    // New method to handle free order processing
-    public function handleFreeCheckout() {
-        if (!$this->isCartFree()) {
-            return; // Only process if cart is free
-        }
-
-        // Create an order
-        $cart = WC()->cart;
-        $checkout = WC()->checkout();
-        $order_id = $checkout->create_order([
-            'billing_email' => wp_get_current_user()->user_email ?: 'free@order.com',
-            'payment_method' => 'none',
-        ]);
-
-        if (is_wp_error($order_id)) {
-            return; // Handle error if order creation fails
-        }
-
-        $order = wc_get_order($order_id);
-        if (!$order) {
-            return;
-        }
-
-        // Copy cart items to order
-        foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
-            $item = new WC_Order_Item_Product();
-            $item->set_product(wc_get_product($cart_item['product_id']));
-            $item->set_quantity($cart_item['quantity']);
-            $item->set_subtotal($cart_item['line_subtotal']);
-            $item->set_total($cart_item['line_total']);
-            // Copy dnpuser meta if it exists
-            if (isset($cart_item['dnpuser'])) {
-                $item->add_meta_data('dnpuser', $cart_item['dnpuser']);
-            }
-            $order->add_item($item);
-        }
-
-        // Set order as completed
-        $order->set_status('completed');
-        $order->set_total(0);
-        $order->save();
-
-        // Trigger woocommerce_payment_complete hook
-        do_action('woocommerce_payment_complete', $order_id);
-
-        // Clear notices and redirect (handled by processUserIdAfterPayment)
-        wc_clear_notices();
-    }
-
 
     public function productPageButton(){
         global $product;  
@@ -353,4 +219,28 @@ class WooService
         </a>";
     }
 
+
+
+    // private function giveAccess(string $dnpId, array $productIds)
+    // {
+    //     $apiKey = getenv('DONAPP_EXT_API_KEY');
+    //     $api_url = "https://api.nraymanstage.donap.ir/external-services/donap-payment-status/";
+    //     $response = wp_remote_post($api_url, [
+    //         'body' => json_encode([
+    //             'id' => $dnpId,
+    //             'products' => $productIds,
+    //         ]),
+    //         'headers' => [
+    //             'Content-Type' => 'application/x-www-form-urlencoded',
+    //             'Accept' => 'application/json',
+    //             'x-api-key' => $apiKey,
+    //         ],
+    //     ]);
+
+    //     if (is_wp_error($response)) {
+    //         error_log('API Error: ' . $response->get_error_message());
+    //     } else {
+    //         error_log('Access granted successfully for User ID: ' . $dnpId);
+    //     }
+    // }
 }
