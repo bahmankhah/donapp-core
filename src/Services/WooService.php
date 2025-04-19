@@ -8,8 +8,6 @@ use App\Models\UserCart;
 use Exception;
 use Kernel\DB;
 use WC_Payment_Gateway;   // make sure WooCommerce is loaded first
-use WC()->cart;
-use WC()->checkout;
 
 /**
  * ------------------------------------------------------------
