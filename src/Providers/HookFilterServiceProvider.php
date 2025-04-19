@@ -6,24 +6,33 @@ use Kernel\Container;
 
 class HookFilterServiceProvider
 {
-
     public function register() {}
 
     public function boot()
     {
-        add_action('woocommerce_checkout_create_order_line_item', [Container::resolve('WooService'), 'addUserIdToOrderItem'], 10, 4);
-        add_action('woocommerce_payment_complete', [Container::resolve('WooService'), 'processUserIdAfterPayment'], 10, 1);
-        add_action('woocommerce_after_add_to_cart_button', [Container::resolve('WooService'), 'productPageButton'], 35);
+        // 1) Load & register our Free Order gateway
+        add_action( 'plugins_loaded', [ Container::resolve('WooService'), 'initFreeOrderGateway' ] );
+        add_filter( 'woocommerce_payment_gateways', [ Container::resolve('WooService'), 'addFreeGateway' ] );
 
-        add_action('woocommerce_checkout_process', [Container::resolve('WooService'), 'handleFreeCheckout'], 5);
+        // 2) Tell WC no payment is needed on zero‑total carts/orders
+        add_filter( 'woocommerce_cart_needs_payment',  [ Container::resolve('WooService'), 'allowFreeOrders' ], 10, 2 );
+        add_filter( 'woocommerce_order_needs_payment', [ Container::resolve('WooService'), 'allowFreeOrders' ], 10, 2 );
 
-        // Remove payment gateways for free orders
-        add_filter('woocommerce_available_payment_gateways', function ($gateways) {
-            if (Container::resolve('WooService')->isCartFree()) {
-                return []; // No payment gateways for free orders
-            }
-            return $gateways;
-        }, 100);
-
+        // 3) Usual Donap hooks
+        add_action(
+            'woocommerce_checkout_create_order_line_item',
+            [ Container::resolve('WooService'), 'addUserIdToOrderItem' ],
+            10, 4
+        );
+        add_action(
+            'woocommerce_payment_complete',
+            [ Container::resolve('WooService'), 'processUserIdAfterPayment' ],
+            10, 1
+        );
+        add_action(
+            'woocommerce_after_add_to_cart_button',
+            [ Container::resolve('WooService'), 'productPageButton' ],
+            35
+        );
     }
 }

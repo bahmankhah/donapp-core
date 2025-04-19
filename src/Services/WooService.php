@@ -11,6 +11,97 @@ use Kernel\DB;
 class WooService
 {
 
+    // ─────────────────────────────────────────────────────────
+    // 1) REGISTER A “FREE ORDER” PAYMENT GATEWAY
+    // ─────────────────────────────────────────────────────────
+
+    public function initFreeOrderGateway()
+    {
+        if ( class_exists('WC_Gateway_Free_Order') ) {
+            return;
+        }
+
+        class WC_Gateway_Free_Order extends \WC_Payment_Gateway
+        {
+            public function __construct()
+            {
+                $this->id                 = 'free_order';
+                $this->method_title       = __( 'Free Order', 'woocommerce' );
+                $this->has_fields         = false;
+                $this->method_description = __( 'Allows checkout when order total is zero.', 'woocommerce' );
+
+                $this->init_form_fields();
+                $this->init_settings();
+
+                add_action(
+                    'woocommerce_update_options_payment_gateways_' . $this->id,
+                    [ $this, 'process_admin_options' ]
+                );
+            }
+
+            public function init_form_fields()
+            {
+                $this->form_fields = [
+                    'enabled' => [
+                        'title'   => __( 'Enable/Disable', 'woocommerce' ),
+                        'type'    => 'checkbox',
+                        'label'   => __( 'Enable Free Order gateway', 'woocommerce' ),
+                        'default' => 'yes',
+                    ],
+                ];
+            }
+
+            public function is_available()
+            {
+                // Only show if cart total is exactly zero
+                if ( WC()->cart && WC()->cart->get_total( 'edit' ) == 0 ) {
+                    return true;
+                }
+                return false;
+            }
+
+            public function process_payment( $order_id )
+            {
+                $order = wc_get_order( $order_id );
+                $order->payment_complete(); // mark paid
+                return [
+                    'result'   => 'success',
+                    'redirect' => $this->get_return_url( $order ),
+                ];
+            }
+        }
+    }
+
+    public function addFreeGateway( $gateways )
+    {
+        $gateways[] = 'WC_Gateway_Free_Order';
+        return $gateways;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // 2) SKIP PAYMENT VALIDATION ON ZERO‑TOTAL
+    // ─────────────────────────────────────────────────────────
+
+    /**
+     * @param bool                   $needs_payment
+     * @param \WC_Order|null         $order
+     * @return bool
+     */
+    public function allowFreeOrders( $needs_payment, $order = null )
+    {
+        // Cart‑level check
+        if ( WC()->cart && WC()->cart->get_total( 'edit' ) == 0 ) {
+            return false;
+        }
+        // Order‑level check
+        if ( $order && $order->get_total() == 0 ) {
+            return false;
+        }
+        return $needs_payment;
+    }
+
+
+
     public function addToCart($data)
     {
         appLogger(json_encode($data));
@@ -268,28 +359,4 @@ class WooService
         </a>";
     }
 
-
-
-    // private function giveAccess(string $dnpId, array $productIds)
-    // {
-    //     $apiKey = getenv('DONAPP_EXT_API_KEY');
-    //     $api_url = "https://api.nraymanstage.donap.ir/external-services/donap-payment-status/";
-    //     $response = wp_remote_post($api_url, [
-    //         'body' => json_encode([
-    //             'id' => $dnpId,
-    //             'products' => $productIds,
-    //         ]),
-    //         'headers' => [
-    //             'Content-Type' => 'application/x-www-form-urlencoded',
-    //             'Accept' => 'application/json',
-    //             'x-api-key' => $apiKey,
-    //         ],
-    //     ]);
-
-    //     if (is_wp_error($response)) {
-    //         error_log('API Error: ' . $response->get_error_message());
-    //     } else {
-    //         error_log('Access granted successfully for User ID: ' . $dnpId);
-    //     }
-    // }
 }
