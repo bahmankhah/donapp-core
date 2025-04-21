@@ -18,6 +18,7 @@ class WooService
 
         // If cart is empty, nothing to do
         if ($cart->is_empty()) {
+            appLogger('Empty Cart');
             return;
         }
 
@@ -39,19 +40,23 @@ class WooService
 
         // If no paid items found, block checkout and empty cart
         if (! $has_paid_item) {
+            appLogger('no paid item');
             $productIds = [];
             $slug       = '';
 
             // 3) Build up the per‑user product list
             foreach ($cart->get_cart() as $cart_item) {
-
+                appLogger('Cart Item: '.json_encode($cart_item));
                 // assume you added this when item was added to cart
                 $dnpuser = isset($cart_item['dnpuser'])
                     ? $cart_item['dnpuser']
                     : '';
-
+                    
+                appLogger('Donapp User: '.$dnpuser);
+                
                 if ($dnpuser) {
                     $pid = $cart_item['product_id'];
+                    appLogger('Product Id: '.$dnpuser);
 
                     // pull your stored post‑meta
                     $slug         = get_post_meta($pid, '_dnp_product_slug', true);
@@ -72,6 +77,8 @@ class WooService
 
             // 4) Grant access
             foreach ($productIds as $dnpuser => $products) {
+                appLogger('Giving access to '.$dnpuser . ' for products '. json_encode($products));
+
                 Vendor::donap()->giveAccess($dnpuser, $products);
             }
 
@@ -83,6 +90,7 @@ class WooService
             wp_safe_redirect($redirect_url);
             exit;
         }
+        appLogger('Paying items');
     }
 
     public function addToCart($data)
