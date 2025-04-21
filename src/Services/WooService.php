@@ -87,7 +87,7 @@ class WooService
 
             // if you want the last‐seen slug; adjust if you need to redirect per‐item or per‐user
             $redirect_url = Vendor::donap()->getPurchasedProductUrl($slug);
-            wp_safe_redirect($redirect_url);
+            wp_redirect($redirect_url);
             exit;
         }
         appLogger('Paying items');
