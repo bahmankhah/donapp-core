@@ -46,17 +46,17 @@ class WooService
 
             // 3) Build up the per‑user product list
             foreach ($cart->get_cart() as $cart_item) {
-                appLogger('Cart Item: '.json_encode($cart_item));
+                appLogger('Cart Item: ' . json_encode($cart_item));
                 // assume you added this when item was added to cart
                 $dnpuser = isset($cart_item['dnpuser'])
                     ? $cart_item['dnpuser']
                     : '';
-                    
-                appLogger('Donapp User: '.$dnpuser);
-                
+
+                appLogger('Donapp User: ' . $dnpuser);
+
                 if ($dnpuser) {
                     $pid = $cart_item['product_id'];
-                    appLogger('Product Id: '.$dnpuser);
+                    appLogger('Product Id: ' . $dnpuser);
 
                     // pull your stored post‑meta
                     $slug         = get_post_meta($pid, '_dnp_product_slug', true);
@@ -75,14 +75,14 @@ class WooService
                 return;
             }
 
-            // 4) Grant access
+            // 5) Grant access
             foreach ($productIds as $dnpuser => $products) {
-                appLogger('Giving access to '.$dnpuser . ' for products '. json_encode($products));
-
+                $order = $this->createWooOrder($dnpuser ,$slug, $products );
+                appLogger('Giving access to ' . $dnpuser . ' for products ' . json_encode($products));
                 Vendor::donap()->giveAccess($dnpuser, $products);
             }
 
-            // 5) Clear cart, redirect, and exit
+            // 6) Clear cart, redirect, and exit
             $cart->empty_cart();
 
             // if you want the last‐seen slug; adjust if you need to redirect per‐item or per‐user
@@ -91,6 +91,42 @@ class WooService
             exit;
         }
         appLogger('Paying items');
+    }
+
+    private function createWooOrder($dnpuser, $slug, array $dnpProductIds ) {
+        $user_id = get_current_user_id();
+    
+        // If logged in, attach to that user; otherwise leave customer_id=0
+        $order_args = [ 'status' => 'completed' ];
+        if ( $user_id ) {
+            $order_args['customer_id'] = $user_id;
+        }
+    
+        /** @var WC_Order $order */
+        $order = wc_create_order( $order_args );
+    
+        // Add the same products from the cart
+        foreach ( WC()->cart->get_cart() as $item ) {
+            $order->add_product( $item['data'], $item['quantity'] );
+        }
+    
+        // Zero total, mark paid/completed
+        $order->set_total( 0 );
+        $order->calculate_totals();
+        $order->payment_complete();
+    
+        // Store our DNP meta
+        $order->update_meta_data( '_dnp_user',          $dnpuser );
+        $order->update_meta_data( '_dnp_product_slug',  $slug );
+        $order->update_meta_data( '_dnp_product_ids',   wp_json_encode( $dnpProductIds ) );
+        if ( ! $user_id ) {
+            $order->update_meta_data( '_dnp_guest_order', 'yes' );
+        }
+    
+        $order->add_order_note( 'Auto‑generated free digital order.' );
+        $order->save();
+    
+        return $order;
     }
 
     public function addToCart($data)

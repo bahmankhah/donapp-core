@@ -8,7 +8,7 @@ class AudioPlayerServiceProvider
 
     public function boot()
     {
-        
+          
         add_action('wp_enqueue_scripts', function(){
             wp_register_script(
                 'custom-audioplayer', // Handle
