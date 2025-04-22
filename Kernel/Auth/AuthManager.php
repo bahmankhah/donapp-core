@@ -59,9 +59,9 @@ class AuthManager extends AdapterManager
 
         // Add logic to return different guard types based on the driver.
         if ($driver === 'session') {
-            return new SessionGuard(new AuthService());
+            // return new SessionGuard(new AuthService());
         } elseif ($driver === 'token') {
-            return new TokenGuard(new AuthService());
+            // return new TokenGuard(new AuthService());
         }
 
         throw new \Exception("Driver [$driver] not supported.");

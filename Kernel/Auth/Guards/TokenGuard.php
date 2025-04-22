@@ -9,6 +9,7 @@ class TokenGuard extends Adapter implements Guard{
 
     public function check(): bool
     {
+        return true;
         // Implement the logic to check if the user is authenticated
         // Return true if authenticated, false otherwise
     }
