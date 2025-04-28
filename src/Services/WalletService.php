@@ -22,7 +22,7 @@ class WalletService{
         ]);
         $wallet = $this->findWallet($identifier, $walletType);
         if(!$wallet){
-            throw new Exception('Could not create Wallet at this moment', 404);
+            throw new Exception('Could not create Wallet at this moment', 406);
         }
         return $wallet;
     }
@@ -55,7 +55,7 @@ class WalletService{
         $wallet = $this->findOrCreateWallet($identifier, $walletType);
         $updatedBalance = $wallet['balance'] + $amount;
         if($updatedBalance < 0){
-            throw new Exception('Wallet can not have negative balance');
+            throw new Exception('Wallet can not have negative balance', 400);
         }
         (new Wallet())->update(
             [
