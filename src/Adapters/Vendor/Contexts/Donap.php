@@ -20,7 +20,17 @@ class Donap extends Vendor{
                 'x-api-key' => $apiKey,
             ],
         ]);
-        appLogger('API Response: ' . wp_remote_retrieve_body( $response ));
+        appLogger('API Response: $response = wp_remote_post($api_url, [
+            'body' => [
+                'id' => $dnpId,
+                'products' => $productIds,
+            ],
+            'headers' => [
+                // 'Content-Type' => 'application/x-www-form-urlencoded',
+                'Accept' => 'application/json',
+                'x-api-key' => $apiKey,
+            ],
+        ]);' . wp_remote_retrieve_body( $response ));
 
         if (is_wp_error($response)) {
             appLogger('API Error: ' . $response->get_error_message());

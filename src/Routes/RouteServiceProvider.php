@@ -7,8 +7,10 @@ use App\Controllers\BlogController;
 use App\Controllers\ProductController;
 use App\Controllers\TestController;
 use App\Controllers\VideoController;
+use App\Controllers\WalletController;
 use App\Controllers\WooController;
 use App\Middlewares\ApiKeyMiddleware;
+use App\Services\WalletService;
 use Kernel\Facades\Route;
 
 class RouteServiceProvider {
@@ -21,6 +23,8 @@ class RouteServiceProvider {
         Route::get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
         (new \Kernel\Route())->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
+
+        Route::post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make();
 
         Route::get('test', [TestController::class, 'test'])->make();
     }

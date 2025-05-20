@@ -16,11 +16,13 @@ return [
     ],
 
     'auth' => [
-        'default' => 'token',
+        'default' => 'sso',
         'contexts' => [
-            'token' => [
-                'context' => Kernel\Auth\Guards\TokenGuard::class,
-                'provider'=> null,
+            'sso' => [
+                'context' => Kernel\Auth\Guards\SSOGuard::class,
+                'login_url' => 'https://auth.platform.donap.ir/realms/donap/protocol/openid-connect/auth?client_id={clientId}&response_type=code&scope=openid profile&redirectUri={redirectUri}',
+                'client_id' => 'platform',
+                'validate_url'=>'https://auth.platform.donap.ir/realms/donap/protocol/openid-connect/token'
             ]
         ]
     ],

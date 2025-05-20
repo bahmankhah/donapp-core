@@ -40,5 +40,5 @@ interface Guard
      * @param  string  $password
      * @return mixed
      */
-    public function attempt(string $identifier, string $password);
+    public function attempt(array $credential);
 }

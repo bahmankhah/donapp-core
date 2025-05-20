@@ -52,4 +52,14 @@ class Application extends Container{
         
         return $reflection->newInstanceArgs($resolved);
     }
+
+    public function setRequest($request){
+        Container::bind('request', function() use ($request) {
+            return $request;
+        });
+    }
+
+    public function request(){
+        return Container::resolve('request');
+    }
 }

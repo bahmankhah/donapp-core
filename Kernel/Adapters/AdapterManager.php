@@ -22,7 +22,7 @@ abstract class AdapterManager{
             return call_user_func_array([$this, $method], $args);
         }
     }
-    public function use(string $adapter = null){
+    public function use(?string $adapter = null){
         
         if (!appConfig("adapters.{$this->getKey()}.contexts.{$adapter}")) {
             throw new \InvalidArgumentException("Message adapter [{$adapter}] is not defined.");

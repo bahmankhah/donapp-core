@@ -2,9 +2,11 @@
 
 use App\Middlewares\ExceptionMiddleware;
 use App\Middlewares\ResponseMiddleware;
+use Kernel\Middlewares\AppMiddleware;
 
 return [
     'global_middlewares'=>[
+        AppMiddleware::class,
         ExceptionMiddleware::class,
         ResponseMiddleware::class
     ],

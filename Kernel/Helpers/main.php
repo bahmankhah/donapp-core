@@ -1,4 +1,5 @@
 <?php
+
 if (!function_exists('appConfig')) {
     function appConfig($key = null, $default = null)
     {
