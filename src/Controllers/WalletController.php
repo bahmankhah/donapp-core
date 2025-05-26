@@ -14,9 +14,15 @@ class WalletController{
 
     public function addToWallet($request, $type){
         $data = $request->get_json_params();
+        if(!isset($data['amount']) || !isset($data['identifier'])){
+            throw new \Exception('amount and id are required', 400);
+        }
+        if(!in_array($type, ['coin', 'credit'])){
+            throw new \Exception('allowed wallets: coin, credit', 400);
+        }
         $updatedBalance = $this->walletService->updateBalance($data['identifier'], $data['amount'], $type);
-        res([
+        return [
             'balance'=>$updatedBalance
-        ]);
+        ];
     }
 }
