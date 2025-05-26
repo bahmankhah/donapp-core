@@ -24,6 +24,7 @@ class RouteServiceProvider {
 
         (new \Kernel\Route())->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
-        (new \Kernel\Route())->post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make();
+        Route::post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make();
+
     }
 }
