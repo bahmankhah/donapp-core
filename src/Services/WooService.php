@@ -4,8 +4,12 @@ namespace App\Services;
 
 use DateTime;
 use App\Facades\Vendor;
+use App\Helpers\TransactionType;
+use App\Helpers\WalletType;
 use App\Models\UserCart;
 use Exception;
+use Kernel\Container;
+use App\Models\Wallet;
 use Kernel\DB;
 
 class WooService
@@ -77,7 +81,7 @@ class WooService
 
             // 5) Grant access
             foreach ($productIds as $dnpuser => $products) {
-                $order = $this->createWooOrder($dnpuser ,$slug, $products );
+                $order = $this->createWooOrder($dnpuser, $slug, $products);
                 appLogger('Giving access to ' . $dnpuser . ' for products ' . json_encode($products));
                 Vendor::donap()->giveAccess($dnpuser, $products);
             }
@@ -93,39 +97,40 @@ class WooService
         appLogger('Paying items');
     }
 
-    private function createWooOrder($dnpuser, $slug, array $dnpProductIds ) {
+    private function createWooOrder($dnpuser, $slug, array $dnpProductIds)
+    {
         $user_id = get_current_user_id();
-    
+
         // If logged in, attach to that user; otherwise leave customer_id=0
-        $order_args = [ 'status' => 'completed' ];
-        if ( $user_id ) {
+        $order_args = ['status' => 'completed'];
+        if ($user_id) {
             $order_args['customer_id'] = $user_id;
         }
-    
+
         /** @var WC_Order $order */
-        $order = wc_create_order( $order_args );
-    
+        $order = wc_create_order($order_args);
+
         // Add the same products from the cart
-        foreach ( WC()->cart->get_cart() as $item ) {
-            $order->add_product( $item['data'], $item['quantity'] );
+        foreach (WC()->cart->get_cart() as $item) {
+            $order->add_product($item['data'], $item['quantity']);
         }
-    
+
         // Zero total, mark paid/completed
-        $order->set_total( 0 );
+        $order->set_total(0);
         $order->calculate_totals();
         $order->payment_complete();
-    
+
         // Store our DNP meta
-        $order->update_meta_data( '_dnp_user',          $dnpuser );
-        $order->update_meta_data( '_dnp_product_slug',  $slug );
-        $order->update_meta_data( '_dnp_product_ids',   wp_json_encode( $dnpProductIds ) );
-        if ( ! $user_id ) {
-            $order->update_meta_data( '_dnp_guest_order', 'yes' );
+        $order->update_meta_data('_dnp_user',          $dnpuser);
+        $order->update_meta_data('_dnp_product_slug',  $slug);
+        $order->update_meta_data('_dnp_product_ids',   wp_json_encode($dnpProductIds));
+        if (! $user_id) {
+            $order->update_meta_data('_dnp_guest_order', 'yes');
         }
-    
-        $order->add_order_note( 'Auto‑generated free digital order.' );
+
+        $order->add_order_note('Auto‑generated free digital order.');
         $order->save();
-    
+
         return $order;
     }
 
@@ -162,11 +167,39 @@ class WooService
             ]);
         }
 
+        $this->handleDonapCoin($data);
+
         $theCart = $userCart->where('identifier', '=', $data['id'])->first();
         return array_merge(
             $theCart,
             ['cart' => json_decode($theCart['cart'])]
         );
+    }
+
+    private function handleDonapCoin($data)
+    {
+        if (!empty($data['amount'])) {
+            /**
+             * @var WalletService
+             */
+            $walletService = Container::resolve('WalletService');
+            $wallet = $walletService->findOrCreateWallet($data['id'], WalletType::COIN);
+            $params = json_decode($wallet['params']);
+            $lastUpdateAmount = $params['last_donap_coin'] ?? 0;
+            $updateAmount = intval($data['amount']) - intval($lastUpdateAmount);
+            if ($updateAmount > 0) {
+                $walletService->updateBalance($data['id'], 'coin', $updateAmount, TransactionType::DONAP_COIN);
+                $params['last_donap_coin'] = $data['amount'];
+                (new Wallet())->update(
+                    [
+                        'params' => json_encode($params),
+                    ],
+                    [
+                        'id' => $wallet['id']
+                    ]
+                );
+            }
+        }
     }
 
     public function deleteExpiredCarts()

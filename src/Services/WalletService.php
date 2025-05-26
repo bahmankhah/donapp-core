@@ -48,6 +48,9 @@ class WalletService{
     }
 
     public function updateBalance($identifier, $walletType, $amount, $transactionType = null){
+        if(!in_array($walletType, ['coin', 'credit'])){
+            throw new \Exception('allowed wallets: coin, credit', 400);
+        }
         $amount = intval($amount);
         if($amount == 0){
             return;
@@ -68,5 +71,5 @@ class WalletService{
         $this->trasnactionService->create($wallet, $amount, $updatedBalance, $transactionType);
         return $updatedBalance;
     }
-    
+
 }

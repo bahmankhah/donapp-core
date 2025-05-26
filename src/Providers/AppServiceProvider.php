@@ -40,6 +40,7 @@ class AppServiceProvider
         identifier VARCHAR(255) NOT NULL,
         type VARCHAR(255)   NOT NULL,
         balance BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+        params JSON DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY unique_identifier_type (identifier, type)
@@ -54,6 +55,7 @@ class AppServiceProvider
         credit BIGINT(20) UNSIGNED DEFAULT NULL,
         debit  BIGINT(20) UNSIGNED DEFAULT NULL,
         remain BIGINT(20) UNSIGNED DEFAULT 0,
+        params JSON DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         KEY idx_wallet_id (wallet_id),
