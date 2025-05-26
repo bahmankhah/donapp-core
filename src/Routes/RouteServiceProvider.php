@@ -15,17 +15,15 @@ use Kernel\Facades\Route;
 
 class RouteServiceProvider {
     public function boot() {
-        Route::get('auth-check', [AuthController::class, 'checkAuth'])->make();
+        // Route::get('auth-check', [AuthController::class, 'checkAuth'])->make();
 
         Route::post('product', [AuthController::class, 'product'])->make();
         (new \Kernel\Route())->get('blog', [BlogController::class, 'index'])->make();
-        Route::get('video', [VideoController::class, 'index'])->make();
+        // Route::get('video', [VideoController::class, 'index'])->make();
         Route::get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
         (new \Kernel\Route())->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
-        Route::post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make();
-
-        Route::get('test', [TestController::class, 'test'])->make();
+        (new \Kernel\Route())->post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make();
     }
 }
