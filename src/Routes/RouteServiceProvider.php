@@ -18,11 +18,11 @@ class RouteServiceProvider {
         // Route::get('auth-check', [AuthController::class, 'checkAuth'])->make();
 
         Route::post('product', [AuthController::class, 'product'])->make();
-        (new \Kernel\RouteManager())->get('blog', [BlogController::class, 'index'])->make();
+        Route::get('blog', [BlogController::class, 'index'])->make();
         // Route::get('video', [VideoController::class, 'index'])->make();
         Route::get('blog/video', [BlogController::class, 'videoIndex'])->make();
 
-        (new \Kernel\RouteManager())->post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
+        Route::post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
         Route::post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make();
 

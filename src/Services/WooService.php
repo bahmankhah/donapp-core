@@ -15,6 +15,12 @@ use Kernel\DB;
 class WooService
 {
 
+    private WalletService $walletService;
+    public function __construct()
+    {
+        $this->walletService = Container::resolve('WalletService');
+    }
+
     public function beforeCheckout()
     {
         // Get the cart instance
@@ -179,16 +185,12 @@ class WooService
     private function handleDonapCoin($data)
     {
         if (!empty($data['amount'])) {
-            /**
-             * @var WalletService
-             */
-            $walletService = Container::resolve('WalletService');
-            $wallet = $walletService->findOrCreateWallet($data['id'], WalletType::COIN);
+            $wallet = $this->walletService->findOrCreateWallet($data['id'], WalletType::COIN);
             $params = json_decode($wallet['params']);
             $lastUpdateAmount = $params['last_donap_coin'] ?? 0;
             $updateAmount = intval($data['amount']) - intval($lastUpdateAmount);
             if ($updateAmount > 0) {
-                $walletService->updateBalance($data['id'], 'coin', $updateAmount, TransactionType::DONAP_COIN);
+                $this->walletService->updateBalance($data['id'], 'coin', $updateAmount, TransactionType::DONAP_COIN);
                 $params['last_donap_coin'] = $data['amount'];
                 (new Wallet())->update(
                     [
@@ -271,6 +273,12 @@ class WooService
             // Save the custom meta field to track this product
             update_post_meta($product_id, '_dnp_product_id', $data['id']);
             update_post_meta($product_id, '_dnp_product_slug', $data['slug']);
+            if (!empty($data['owner_identifier'])) {
+                update_post_meta($product_id, '_dnp_product_owner_identifier', $data['owner_identifier']);
+            }
+            if (!empty($data['is_income_shared'])) {
+                update_post_meta($product_id, '_dnp_product_is_income_shared', $data['is_income_shared']);
+            }
             update_post_meta($product_id, '_virtual', 'yes');
             update_post_meta($product_id, '_stock_status', 'instock');
             update_post_meta($product_id, '_manage_stock', 'no');
@@ -299,6 +307,13 @@ class WooService
             if ($dnpuser) {
                 $slug = get_post_meta($item->get_product_id(), '_dnp_product_slug', true);
                 $dnpProductId = get_post_meta($item->get_product_id(), '_dnp_product_id', true);
+                $ownerId = get_post_meta($item->get_product_id(), '_dnp_product_owner_identifier');
+                $isIncomeShared = get_post_meta($item->get_product_id(), '_dnp_product_is_income_shared');
+                if ($ownerId && $isIncomeShared) {
+                    $product = $item->get_product();
+                    $regular_price = $product ? $product->get_regular_price() : 0;
+                    // $this->walletService->updateBalance($ownerId, WalletType::CREDIT, $regular_price * (2/10) );
+                }
                 if (empty($productIds[(string) $dnpuser])) {
                     $productIds[(string) $dnpuser] = [(string) $dnpProductId];
                 } else {
