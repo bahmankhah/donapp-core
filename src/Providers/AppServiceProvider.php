@@ -8,6 +8,7 @@ use App\Services\Modules\Proxy\ProxyService;
 use App\Services\ProductService;
 use App\Services\VideoService;
 use App\Services\WalletService;
+use App\Services\TrasnactionService;
 use App\Services\WooService;
 use Kernel\Container;
 
