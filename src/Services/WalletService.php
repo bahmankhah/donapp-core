@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Facades\Wallet as FacadesWallet;
+use App\Helpers\TransactionType;
 use App\Models\Wallet;
 use Exception;
 use Kernel\Container;
@@ -22,6 +23,10 @@ class WalletService{
         }
         return FacadesWallet::virtualCreditCash()->getBalance($identifier);
 
+    }
+
+    public function increaseCredit($identifier, $amount){
+        return $this->updateBalance($identifier, 'credit', abs($amount), TransactionType::CREDIT_CHARGE);
     }
 
     public function decreaseCredit($identifier, $amount, $useCash = true){

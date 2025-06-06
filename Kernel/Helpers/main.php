@@ -1,5 +1,8 @@
 <?php
 
+use Kernel\Facades\Route;
+use Kernel\Facades\View;
+
 if (!function_exists('appConfig')) {
     function appConfig($key = null, $default = null)
     {
@@ -83,3 +86,26 @@ if (!function_exists('replacePlaceholders')) {
         return $template;
     }
 }
+if(!function_exists('view')){
+    function view($path, $data = []){
+        return View::render($path, $data);
+    }
+}
+if(!function_exists(('reverse'))){
+    function reverse($routeName, $params = [], $prefix = null){
+        /**
+         * @var Kernel\RouteDefinition $routeDef
+         */
+        $routeDef = Route::getName($routeName);
+        if(!$routeDef){
+            throw new \Exception("Route with name {$routeName} not found");
+        }
+        $prefix = appConfig('api.namespace', 'dnp/v1');
+        $url = trim($routeDef->buildRoute($params), '/');
+        if($prefix === null){
+            return rest_url(trim($prefix . '/' . $url, '/'));
+        }
+        return $prefix. trim($prefix . '/' . $url, '/');
+    }
+}
+

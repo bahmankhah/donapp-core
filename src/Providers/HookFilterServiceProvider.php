@@ -31,5 +31,28 @@ class HookFilterServiceProvider
             }
             return $items;
         }, 10, 2);
+
+        add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
+            if (!empty($cart_item['wallet_topup'])) {
+                $item_data[] = [
+                    'name'  => 'نوع محصول',
+                    'value' => 'افزایش موجودی کیف پول',
+                ];
+            }
+            return $item_data;
+        }, 10, 2);
+
+        add_action('woocommerce_order_status_completed', function ($order_id) {
+            $order = wc_get_order($order_id);
+            foreach ($order->get_items() as $item) {
+                $is_wallet_topup = $item->get_meta('wallet_topup', true);
+                if ($is_wallet_topup) {
+                    $user_id = get_donap_user_id($order->get_user_id());
+                    $amount = $item->get_total() ; // assuming wallet in rials
+                    Container::resolve('WalletService')->increaseCredit($user_id, $amount);
+                    $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
+                }
+            }
+        });
     }
 }

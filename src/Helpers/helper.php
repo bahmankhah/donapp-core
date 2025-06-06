@@ -1,5 +1,6 @@
 <?php
 
+use Kernel\Facades\Route;
 use Kernel\Facades\View;
 
 if (!function_exists('res')) {
@@ -72,12 +73,6 @@ if(!function_exists('get_donap_user_id')){
             }
         }
         return null;
-    }
-}
-
-if(!function_exists('view')){
-    function view($path, $data = []){
-        return View::render($path, $data);
     }
 }
 

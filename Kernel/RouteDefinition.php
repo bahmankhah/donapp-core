@@ -1,6 +1,8 @@
 <?php
 namespace Kernel;
 
+use Kernel\Facades\Route;
+
 class RouteDefinition
 {
     private $middlewares = [];
@@ -31,13 +33,26 @@ class RouteDefinition
             return '(?P<' . $matches[1] . '>\w+)';
         }, $route);
     }
+    public function name(string $name): self
+    {
+        Route::setName($this, $name);
+        return $this;   
+    }
+
+    public function buildRoute(array $params = []): string{
+        $route = $this->route;
+        foreach ($params as $key => $value) {
+            $route = preg_replace('/\{' . preg_quote($key, '/') . '\}/', $value, $route);
+        }
+        return $route;
+    }
 
     public function make()
     {
         $route = $this->generateDynamicRoute($this->route);
-
         add_action('rest_api_init', function () use ($route) {
-            register_rest_route('dnp/v1', "/{$route}", [
+            $namespace = appConfig('api.namespace', 'dnp/v1');
+            register_rest_route($namespace, "/{$route}", [
                 'methods' => $this->method,
                 'callback' => function ($request) {
                     $args = $request->get_params();
@@ -51,5 +66,6 @@ class RouteDefinition
                 'permission_callback' => '__return_true',
             ]);
         });
+        return $this;
     }
 }
