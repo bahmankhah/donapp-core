@@ -26,4 +26,25 @@ return [
             ]
         ]
     ],
+    'wallet'=>[
+        'default'=>'credit',
+        'contexts'=>[
+            'credit'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Credit::class,
+                'type'=>App\Helpers\WalletType::CREDIT,
+            ],
+            'coin'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Coin::class,
+                'type'=>App\Helpers\WalletType::COIN,
+            ],
+            'cash'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Cash::class,
+                'type'=>App\Helpers\WalletType::CASH,
+            ],
+            'virtualCreditCash'=>[
+                'context'=>App\Adapters\Wallet\Contexts\VirtualCreditCash::class,
+                'type'=> null, // virtual
+            ]
+        ]
+    ]
 ];

@@ -3,9 +3,8 @@
 namespace App\Services;
 
 use App\Models\Transaction;
-use App\Models\Wallet;
 
-class TrasnactionService{
+class TransactionService{
     public function create($wallet, $amount, $remain, $type = null){
         $data = [];
         if(!is_numeric($amount) || intval($amount) == 0){

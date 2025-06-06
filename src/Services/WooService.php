@@ -312,7 +312,7 @@ class WooService
                 if ($ownerId && $isIncomeShared) {
                     $product = $item->get_product();
                     $regular_price = $product ? $product->get_regular_price() : 0;
-                    // $this->walletService->updateBalance($ownerId, WalletType::CREDIT, $regular_price * (2/10) );
+                    $this->walletService->updateBalance($ownerId, WalletType::CREDIT, $regular_price * (2/10), TransactionType::SHARED_INCOME);
                 }
                 if (empty($productIds[(string) $dnpuser])) {
                     $productIds[(string) $dnpuser] = [(string) $dnpProductId];

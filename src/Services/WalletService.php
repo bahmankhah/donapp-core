@@ -2,44 +2,12 @@
 
 namespace App\Services;
 
+use App\Facades\Wallet as FacadesWallet;
 use App\Models\Wallet;
 use Exception;
 use Kernel\Container;
 
 class WalletService{
-
-    private TrasnactionService $trasnactionService;
-    public function __construct()
-    {
-        $this->trasnactionService = Container::resolve('TrasnactionService');
-    }
-
-    public function createWalllet($identifier, $walletType){
-        (new Wallet())->create([
-            'identifiter' => $identifier,
-            'type' => $walletType,
-            'balance' => 0,
-        ]);
-        $wallet = $this->findWallet($identifier, $walletType);
-        if(!$wallet){
-            throw new Exception('Could not create Wallet at this moment', 406);
-        }
-        return $wallet;
-    }
-
-    public function findOrCreateWallet($identifier, $walletType){
-        $wallet = $this->findWallet($identifier, $walletType);
-        if(!$wallet){
-            $wallet = $this->createWalllet($identifier, $walletType);
-        }
-        return $wallet;
-    }
-
-    public function findWallet($identifier, $walletType){
-        $wallet = (new Wallet())->where('identifiter', '=', $identifier)
-        ->where('type', '=', $walletType)->first();
-        return $wallet;
-    }
 
     public function findUserWallets($identifier)
     {
@@ -47,29 +15,28 @@ class WalletService{
         return $wallets;
     }
 
+    public function getAvailableCredit($identifier, $useCash = true)
+    {
+        if(!$useCash) {
+            return FacadesWallet::credit()->getBalance($identifier);
+        }
+        return FacadesWallet::virtualCreditCash()->getBalance($identifier);
+
+    }
+
+    public function decreaseCredit($identifier, $amount, $useCash = true){
+        if(!$useCash) {
+            return FacadesWallet::credit()->updateBalance($identifier, -$amount);
+        }
+        return FacadesWallet::virtualCreditCash()->decreaseBalance($identifier, $amount);
+    }
+
     public function updateBalance($identifier, $walletType, $amount, $transactionType = null){
-        if(!in_array($walletType, ['coin', 'credit'])){
-            throw new \Exception('allowed wallets: coin, credit', 400);
+        if(!in_array($walletType, ['coin', 'credit', 'cash'])){
+            throw new \Exception('allowed wallets: coin, credit, cash', 400);
         }
-        $amount = intval($amount);
-        if($amount == 0){
-            return;
-        }
-        $wallet = $this->findOrCreateWallet($identifier, $walletType);
-        $updatedBalance = $wallet['balance'] + $amount;
-        if($updatedBalance < 0){
-            throw new Exception('Wallet can not have negative balance', 400);
-        }
-        (new Wallet())->update(
-            [
-                'balance' => $updatedBalance,
-            ],
-            [
-                'id'=>$wallet['id']
-            ]
-        );
-        $this->trasnactionService->create($wallet, $amount, $updatedBalance, $transactionType);
-        return $updatedBalance;
+        $updated = FacadesWallet::$walletType()->updateBalance($identifier, $amount, $transactionType);
+        return $updated;
     }
 
 }

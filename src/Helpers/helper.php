@@ -1,4 +1,7 @@
 <?php
+
+use Kernel\Facades\View;
+
 if (!function_exists('res')) {
 
     function res($result = null, $message = '', $status = 200): WP_REST_Response
@@ -55,4 +58,26 @@ if (!function_exists('upload_image_from_url')) {
     }
 }
 
+if(!function_exists('get_donap_user_id')){
+    function get_donap_user_id($wp_user_id = null){
+        if($wp_user_id === null){
+            $user_id = get_current_user_id();
+        }else{
+            $user_id = $wp_user_id;
+        }
+        if($user_id){
+            $ssoId = get_user_meta( $user_id, 'sso_global_id', true );
+            if($ssoId){
+                return $ssoId;
+            }
+        }
+        return null;
+    }
+}
+
+if(!function_exists('view')){
+    function view($path, $data = []){
+        return View::render($path, $data);
+    }
+}
 

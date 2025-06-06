@@ -1,0 +1,1 @@
+<li class="menu-item wallet-balance"><a href="#">موجودی: <?php echo wc_price($balance) ?> </a></li>

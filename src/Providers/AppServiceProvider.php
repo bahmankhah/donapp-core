@@ -6,9 +6,9 @@ use App\Services\AuthService;
 use App\Services\BlogService;
 use App\Services\Modules\Proxy\ProxyService;
 use App\Services\ProductService;
+use App\Services\TransactionService;
 use App\Services\VideoService;
 use App\Services\WalletService;
-use App\Services\TrasnactionService;
 use App\Services\WooService;
 use Kernel\Container;
 
@@ -99,7 +99,7 @@ class AppServiceProvider
             return new ProxyService();
         });
         Container::bind('TrasnactionService', function () {
-            return new TrasnactionService();
+            return new TransactionService();
         });
         Container::bind('WalletService', function () {
             return new WalletService();
