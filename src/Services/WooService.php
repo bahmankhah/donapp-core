@@ -207,7 +207,7 @@ class WooService
     public function deleteExpiredCarts()
     {
         $table = DB::wpdb()->prefix . 'dnp_user_carts';
-        DB::query("DELETE FROM '$table  WHERE expired_at < now()");
+        DB::query("DELETE FROM $table  WHERE expired_at < now()");
     }
 
     public function createOrUpdateProduct($data)

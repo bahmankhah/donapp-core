@@ -98,7 +98,7 @@ class AppServiceProvider
         Container::bind('ProxyService', function () {
             return new ProxyService();
         });
-        Container::bind('TrasnactionService', function () {
+        Container::bind('TransactionService', function () {
             return new TransactionService();
         });
         Container::bind('WalletService', function () {

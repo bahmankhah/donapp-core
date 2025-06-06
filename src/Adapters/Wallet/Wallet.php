@@ -6,15 +6,16 @@ use App\Models\Wallet as ModelsWallet;
 use App\Services\TransactionService;
 use Exception;
 use Kernel\Adapters\Adapter;
+use Kernel\Container;
 
 abstract class Wallet extends Adapter {
     private TransactionService $trasnactionService;
     public function __construct(array $config = []){
         parent::__construct($config);
-        $this->trasnactionService = $this->getAdapter('TransactionService');
+        $this->trasnactionService = Container::resolve('TransactionService');
     }
 
-    public function getBlance($identifier){
+    public function getBalance($identifier){
         $wallet = $this->findWallet($identifier, $this->config['type']);
         if(!$wallet){
             return 0;
