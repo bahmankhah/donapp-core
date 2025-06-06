@@ -4,6 +4,7 @@ namespace App\Services;
 
 use DateTime;
 use App\Facades\Vendor;
+use App\Facades\Wallet as FacadesWallet;
 use App\Helpers\TransactionType;
 use App\Helpers\WalletType;
 use App\Models\UserCart;
@@ -185,7 +186,7 @@ class WooService
     private function handleDonapCoin($data)
     {
         if (!empty($data['amount'])) {
-            $wallet = $this->walletService->findOrCreateWallet($data['id'], WalletType::COIN);
+            $wallet = FacadesWallet::coin()->findOrCreateWallet($data['id']);
             $params = json_decode($wallet['params']);
             $lastUpdateAmount = $params['last_donap_coin'] ?? 0;
             $updateAmount = intval($data['amount']) - intval($lastUpdateAmount);
@@ -207,7 +208,7 @@ class WooService
     public function deleteExpiredCarts()
     {
         $table = DB::wpdb()->prefix . 'dnp_user_carts';
-        DB::query("DELETE FROM $table  WHERE expired_at < now()");
+        DB::query("DELETE FROM '$table'  WHERE expired_at < now()");
     }
 
     public function createOrUpdateProduct($data)

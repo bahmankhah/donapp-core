@@ -16,33 +16,33 @@ abstract class Wallet extends Adapter {
     }
 
     public function getBalance($identifier){
-        $wallet = $this->findWallet($identifier, $this->config['type']);
+        $wallet = $this->findWallet($identifier);
         if(!$wallet){
             return 0;
         }
         return $wallet['balance'];
     }
-    public function createWalllet($identifier, $walletType){
+    public function createWalllet($identifier){
         (new ModelsWallet())->create([
-            'identifiter' => $identifier,
-            'type' => $walletType,
+            'identifier' => $identifier,
+            'type' => $this->config['type'],
             'balance' => 0,
         ]);
-        $wallet = $this->findWallet($identifier, $walletType);
+        $wallet = $this->findWallet($identifier);
         if(!$wallet){
             throw new Exception('Could not create Wallet at this moment', 406);
         }
         return $wallet;
     }
-    public function findWallet($identifier, $walletType){
-        $wallet = (new ModelsWallet())->where('identifiter', '=', $identifier)
-        ->where('type', '=', $walletType)->first();
+    public function findWallet($identifier){
+        $wallet = (new ModelsWallet())->where('identifier', '=', $identifier)
+        ->where('type', '=', $this->config['type'])->first();
         return $wallet;
     }
     public function findOrCreateWallet($identifier){
-        $wallet = $this->findWallet($identifier, $this->config['type']);
+        $wallet = $this->findWallet($identifier);
         if(!$wallet){
-            $wallet = $this->createWalllet($identifier, $this->config['type']);
+            $wallet = $this->createWalllet($identifier);
         }
         return $wallet;
     }

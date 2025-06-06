@@ -12,7 +12,7 @@ class WalletService{
 
     public function findUserWallets($identifier)
     {
-        $wallets = (new Wallet())->where('identifiter', '=', $identifier)->get();
+        $wallets = (new Wallet())->where('identifier', '=', $identifier)->get();
         return $wallets;
     }
 
