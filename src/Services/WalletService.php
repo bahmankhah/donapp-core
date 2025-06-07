@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Facades\Wallet as FacadesWallet;
-use App\Helpers\TransactionType;
+use App\Core\TransactionType;
 use App\Models\Wallet;
 use Exception;
 use Kernel\Container;

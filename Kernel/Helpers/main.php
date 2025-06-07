@@ -100,7 +100,7 @@ if(!function_exists(('reverse'))){
         if(!$routeDef){
             throw new \Exception("Route with name {$routeName} not found");
         }
-        $prefix = appConfig('api.namespace', 'dnp/v1');
+        $prefix = appConfig('app.api.namespace', 'dnp/v1');
         $url = trim($routeDef->buildRoute($params), '/');
         if($prefix === null){
             return rest_url(trim($prefix . '/' . $url, '/'));

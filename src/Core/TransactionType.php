@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Helpers;
+namespace App\Core;
 
 class TransactionType{
     public const DONAP_COIN = 'donap_coin';

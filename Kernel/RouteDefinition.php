@@ -51,7 +51,7 @@ class RouteDefinition
     {
         $route = $this->generateDynamicRoute($this->route);
         add_action('rest_api_init', function () use ($route) {
-            $namespace = appConfig('api.namespace', 'dnp/v1');
+            $namespace = appConfig('app.api.namespace', 'dnp/v1');
             register_rest_route($namespace, "/{$route}", [
                 'methods' => $this->method,
                 'callback' => function ($request) {
