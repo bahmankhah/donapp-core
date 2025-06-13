@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Core\WCDonapGateway;
 use Kernel\Container;
 use Kernel\Facades\Auth;
+use Kernel\Facades\Wordpress;
 
 class HookFilterServiceProvider
 {
@@ -29,13 +30,13 @@ class HookFilterServiceProvider
                 $balance = Container::resolve('WalletService')->getAvailableCredit($user_id);
                 $wallet_display = view('components/wallet-navbar', ['balance' => $balance]);
                 $items .= $wallet_display;
-            }else {
-            // Add Login button if the user is not logged in
-            $login_url = Auth::sso()->getLoginUrl();
-            $items .= view('components/login-button', ['url' => $login_url]);;
-        }
+            }
             return $items;
         }, 10, 2);
+
+        Wordpress::filter('login_url', function(){
+            return Auth::sso()->getLoginUrl();
+        });
 
         add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
             if (!empty($cart_item['wallet_topup'])) {
