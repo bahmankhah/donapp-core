@@ -9,7 +9,9 @@ class SSOGuard extends Adapter implements Guard
 {
 
     public function getLoginUrl(){
-        return $this->config['login_url'];
+        return 
+        
+        replacePlaceholders($this->config['login_url'], ['clientId'=>$this->config['client_id'],'redirectUri'=>appConfig('app.url')]);
     }
     public function check(): bool
     {

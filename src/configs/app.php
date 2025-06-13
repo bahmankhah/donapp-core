@@ -12,6 +12,7 @@ return [
     ],
     'version'=>'v1',
     'name'=>'donapp-core',
+    'url'=>getenv('APP_URL'),
     'api'=> [
         'namespace'=>'dnp/v1',
     ],
