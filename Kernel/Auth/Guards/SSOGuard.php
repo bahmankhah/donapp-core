@@ -8,6 +8,9 @@ use Kernel\Contracts\Auth\Guard;
 class SSOGuard extends Adapter implements Guard
 {
 
+    public function getLoginUrl(){
+        return $this->config['login_url'];
+    }
     public function check(): bool
     {
         $user = wp_get_current_user();
