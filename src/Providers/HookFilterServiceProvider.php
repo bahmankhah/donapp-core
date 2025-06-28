@@ -35,6 +35,7 @@ class HookFilterServiceProvider
         }, 10, 2);
 
         Wordpress::filter('login_url', function(){
+            appLogger('setting login url');
             return Auth::sso()->getLoginUrl();
         });
 
