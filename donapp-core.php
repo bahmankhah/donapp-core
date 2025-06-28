@@ -49,6 +49,10 @@ register_activation_hook(__FILE__, function () {
 });
 add_action('plugins_loaded', function () {});
 add_action('init', function () {
+    if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && !is_user_logged_in()) {
+        wp_redirect(Auth::sso()->getLoginUrl()); 
+        exit;
+    }
     (new RouteServiceProvider())->boot();
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
@@ -56,10 +60,7 @@ add_action('init', function () {
     (new ShortcodeServiceProvider())->boot();
 });
 
-if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && !is_user_logged_in()) {
-    wp_redirect(Auth::sso()->getLoginUrl()); 
-    exit;
-}
+
 
 // function custom_footer_script()
 // {
