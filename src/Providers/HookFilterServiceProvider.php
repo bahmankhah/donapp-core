@@ -14,6 +14,13 @@ class HookFilterServiceProvider
     public function boot()
     {
 
+        if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false) {
+            if (!is_user_logged_in()) {
+                wp_redirect(Auth::sso()->getLoginUrl()); 
+                exit;
+            }
+        }
+        
         Wordpress::filter('login_url', function ($login_url, $redirect, $force_reauth) {
             appLogger('setting login url');
             return Auth::sso()->getLoginUrl();
@@ -39,7 +46,7 @@ class HookFilterServiceProvider
             return $items;
         }, 10, 2);
 
-        
+
         add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
             if (!empty($cart_item['wallet_topup'])) {
                 $item_data[] = [
@@ -56,7 +63,7 @@ class HookFilterServiceProvider
                 $is_wallet_topup = $item->get_meta('wallet_topup', true);
                 if ($is_wallet_topup) {
                     $user_id = get_donap_user_id($order->get_user_id());
-                    $amount = $item->get_total() ; // assuming wallet in rials
+                    $amount = $item->get_total(); // assuming wallet in rials
                     Container::resolve('WalletService')->increaseCredit($user_id, $amount);
                     $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
                 }
