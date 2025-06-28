@@ -17,6 +17,8 @@ use App\Providers\HookFilterServiceProvider;
 use App\Providers\ShortcodeServiceProvider;
 use App\Providers\WooServiceProvider;
 use App\Routes\RouteServiceProvider;
+use Kernel\Facades\Auth;
+use Kernel\Facades\Wordpress;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -52,6 +54,10 @@ add_action('init', function () {
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
+});
+Wordpress::filter('login_url', function(){
+    appLogger('setting login url');
+    return Auth::sso()->getLoginUrl();
 });
 // function custom_footer_script()
 // {
