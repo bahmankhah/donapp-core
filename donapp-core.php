@@ -48,11 +48,13 @@ register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
 add_action('plugins_loaded', function () {});
-add_action('init', function () {
+add_action('template_redirect',function(){
     if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && !is_user_logged_in()) {
         wp_redirect(Auth::sso()->getLoginUrl()); 
         exit;
     }
+});
+add_action('init', function () {
     (new RouteServiceProvider())->boot();
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
