@@ -39,7 +39,7 @@ class HookFilterServiceProvider
             return Auth::sso()->getLoginUrl();
         });
 
-        add_filter('login_url', function ($item_data, $cart_item) {
+        add_filter('login_url', function () {
             appLogger('setting login url');
             return Auth::sso()->getLoginUrl();
         }, 10, 1);
