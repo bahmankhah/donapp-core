@@ -56,7 +56,7 @@ add_action('init', function () {
 Wordpress::filter('login_url', function ($login_url, $redirect, $force_reauth) {
     appLogger('setting login url');
     return Auth::sso()->getLoginUrl();
-}, 10, 3);
+}, 5, 3);
 // function custom_footer_script()
 // {
 //     // Register the script
