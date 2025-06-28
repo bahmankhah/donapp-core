@@ -43,10 +43,7 @@ spl_autoload_register(function ($class) {
     }
 });
 
-if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && !is_user_logged_in()) {
-    wp_redirect(Auth::sso()->getLoginUrl()); 
-    exit;
-}
+
 register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
@@ -58,6 +55,11 @@ add_action('init', function () {
     (new HookFilterServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
 });
+
+if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && !is_user_logged_in()) {
+    wp_redirect(Auth::sso()->getLoginUrl()); 
+    exit;
+}
 
 // function custom_footer_script()
 // {
