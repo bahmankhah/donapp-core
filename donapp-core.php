@@ -57,7 +57,7 @@ Wordpress::filter('login_url', function ($login_url, $redirect, $force_reauth) {
     appLogger('setting login url2');
     $url = "https://authplatform.donap.ir/realms/donap/protocol/openid-connect/auth?client_id=market&response_type=code";
     return $url;
-}, 5, 3);
+}, 1, 3);
 // function custom_footer_script()
 // {
 //     // Register the script
