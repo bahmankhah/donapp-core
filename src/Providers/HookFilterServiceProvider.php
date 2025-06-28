@@ -14,6 +14,11 @@ class HookFilterServiceProvider
     public function boot()
     {
 
+        Wordpress::filter('login_url', function(){
+            appLogger('setting login url');
+            return Auth::sso()->getLoginUrl();
+        });
+        
         add_action('woocommerce_checkout_create_order_line_item', [Container::resolve('WooService'), 'addUserIdToOrderItem'], 10, 4);
         add_action('woocommerce_payment_complete', [Container::resolve('WooService'), 'processUserIdAfterPayment'], 10, 1);
         add_action('woocommerce_after_add_to_cart_button', [Container::resolve('WooService'), 'productPageButton'], 35);
@@ -34,15 +39,6 @@ class HookFilterServiceProvider
             return $items;
         }, 10, 2);
 
-        Wordpress::filter('login_url', function(){
-            appLogger('setting login url');
-            return Auth::sso()->getLoginUrl();
-        });
-
-        add_filter('login_url', function () {
-            appLogger('setting login url');
-            return Auth::sso()->getLoginUrl();
-        }, 1, 1);
         
         add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
             if (!empty($cart_item['wallet_topup'])) {

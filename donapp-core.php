@@ -46,6 +46,7 @@ register_activation_hook(__FILE__, function () {
 });
 add_action('plugins_loaded', function () {});
 add_action('init', function () {
+    appLogger('init plugin');
     (new RouteServiceProvider())->boot();
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
