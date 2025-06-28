@@ -14,13 +14,6 @@ class HookFilterServiceProvider
     public function boot()
     {
 
-        if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false) {
-            if (!is_user_logged_in()) {
-                wp_redirect(Auth::sso()->getLoginUrl()); 
-                exit;
-            }
-        }
-        
         Wordpress::filter('login_url', function ($login_url, $redirect, $force_reauth) {
             appLogger('setting login url');
             return Auth::sso()->getLoginUrl();

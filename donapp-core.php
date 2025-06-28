@@ -19,6 +19,7 @@ use App\Routes\RouteServiceProvider;
 use Kernel\Facades\Auth;
 use Kernel\Facades\Wordpress;
 
+
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
 require_once(__DIR__ . '/Kernel/autoload.php');
@@ -41,7 +42,10 @@ spl_autoload_register(function ($class) {
         require $file;
     }
 });
-
+if (!is_user_logged_in()) {
+    wp_redirect(Auth::sso()->getLoginUrl()); 
+    exit;
+}
 register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
