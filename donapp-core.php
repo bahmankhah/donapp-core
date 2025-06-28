@@ -42,7 +42,8 @@ spl_autoload_register(function ($class) {
         require $file;
     }
 });
-if (!is_user_logged_in()) {
+
+if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && !is_user_logged_in()) {
     wp_redirect(Auth::sso()->getLoginUrl()); 
     exit;
 }

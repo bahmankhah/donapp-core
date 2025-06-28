@@ -14,6 +14,8 @@ class HookFilterServiceProvider
     public function boot()
     {
 
+
+
         Wordpress::filter('login_url', function ($login_url, $redirect, $force_reauth) {
             appLogger('setting login url');
             return Auth::sso()->getLoginUrl();
