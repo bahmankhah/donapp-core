@@ -12,13 +12,10 @@ if (!defined('ABSPATH')) {
 }
 
 use App\Providers\AppServiceProvider;
-use App\Providers\AudioPlayerServiceProvider;
 use App\Providers\HookFilterServiceProvider;
 use App\Providers\ShortcodeServiceProvider;
 use App\Providers\WooServiceProvider;
 use App\Routes\RouteServiceProvider;
-use Kernel\Facades\Auth;
-use Kernel\Facades\Wordpress;
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -48,16 +45,11 @@ register_activation_hook(__FILE__, function () {
 });
 add_action('plugins_loaded', function () {});
 add_action('init', function () {
-    appLogger('init plugin');
     (new RouteServiceProvider())->boot();
     (new AppServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
-});
-Wordpress::filter('login_url', function(){
-    appLogger('setting login url');
-    return Auth::sso()->getLoginUrl();
 });
 // function custom_footer_script()
 // {

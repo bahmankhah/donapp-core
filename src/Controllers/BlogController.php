@@ -16,7 +16,6 @@ class BlogController
     public function index($request)
     {
         try{
-            die('ddd');
             return $this->blogService->list($request->get_query_params());
         }catch(Exception $e){
             echo $e->getMessage();
