@@ -49,7 +49,7 @@ register_activation_hook(__FILE__, function () {
 });
 add_action('plugins_loaded', function () {});
 add_action('template_redirect',function(){
-    if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && !is_user_logged_in()) {
+    if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false && !is_user_logged_in()) {
         wp_redirect(Auth::sso()->getLoginUrl()); 
         exit;
     }
