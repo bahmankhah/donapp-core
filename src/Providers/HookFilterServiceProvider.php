@@ -14,7 +14,10 @@ class HookFilterServiceProvider
     public function boot()
     {
 
-
+        Wordpress::filter('login_url', function ($login_url, $redirect, $force_reauth) {
+            appLogger('setting login url');
+            return Auth::sso()->getLoginUrl();
+        }, 1, 3);
 
         add_action('woocommerce_checkout_create_order_line_item', [Container::resolve('WooService'), 'addUserIdToOrderItem'], 10, 4);
         add_action('woocommerce_payment_complete', [Container::resolve('WooService'), 'processUserIdAfterPayment'], 10, 1);
