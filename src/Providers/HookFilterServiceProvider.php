@@ -42,7 +42,7 @@ class HookFilterServiceProvider
         add_filter('login_url', function () {
             appLogger('setting login url');
             return Auth::sso()->getLoginUrl();
-        }, 10, 2);
+        }, 5, 1);
         
         add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
             if (!empty($cart_item['wallet_topup'])) {
