@@ -20,9 +20,9 @@ return [
         'contexts' => [
             'sso' => [
                 'context' => Kernel\Auth\Guards\SSOGuard::class,
-                'login_url' => 'https://authplatform.donap.ir/realms/donap/protocol/openid-connect/auth?client_id={clientId}&response_type=code',
+                'login_url' => 'https://tauth.platform.donap.ir/realms/donap/protocol/openid-connect/auth?client_id={clientId}&response_type=code',
                 'client_id' => 'market',
-                'validate_url'=>'https://authplatform.donap.ir/realms/donap/protocol/openid-connect/token'
+                'validate_url'=>'https://tauth.platform.donap.ir/realms/donap/protocol/openid-connect/token'
             ]
         ]
     ],
