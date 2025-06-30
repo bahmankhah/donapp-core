@@ -56,6 +56,7 @@ class SSOGuard extends Adapter implements Guard
         $api_url = $this->config['validate_url'];
         $clientId = $this->config['client_id'];
 
+        appLogger(json_encode($credential));
         // Exchange code for token
         $response = wp_remote_post($api_url, [
             'body' => [
@@ -65,6 +66,8 @@ class SSOGuard extends Adapter implements Guard
                 'code' => $credential['code'],
             ],
         ]);
+
+        appLogger($response);
 
         if (is_wp_error($response)) {
             return false;
