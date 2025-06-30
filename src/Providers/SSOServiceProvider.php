@@ -20,8 +20,8 @@ class SSOServiceProvider
 
     public function boot()
     {
-        if (isset($_GET['code'])) {
-            Auth::sso()->attempt(['code'=>$_GET['code']]);
+        if (isset($_GET['session_state'])) {
+            Auth::sso()->attempt(['code'=>$_GET['session_state']]);
         }
     }
     
