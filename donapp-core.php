@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
 use App\Providers\AppServiceProvider;
 use App\Providers\HookFilterServiceProvider;
 use App\Providers\ShortcodeServiceProvider;
+use App\Providers\SSOServiceProvider;
 use App\Providers\WooServiceProvider;
 use App\Routes\RouteServiceProvider;
 use Kernel\Facades\Auth;
@@ -59,6 +60,7 @@ add_action('init', function () {
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
+    (new SSOServiceProvider())->boot();
 });
 
 
