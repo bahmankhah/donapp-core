@@ -67,14 +67,16 @@ class SSOGuard extends Adapter implements Guard
             ],
         ]);
 
-        appLogger($response);
+        appLogger(json_encode($response));
 
         if (is_wp_error($response)) {
+            appLogger('error in response');
             return false;
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
+        appLogger(json_encode($body));
         if (!isset($body['access_token'])) {
             return false;
         }
