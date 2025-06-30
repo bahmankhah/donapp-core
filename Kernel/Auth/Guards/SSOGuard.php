@@ -64,6 +64,7 @@ class SSOGuard extends Adapter implements Guard
                 'client_id' => $clientId,
                 'scope' => 'openid profile',
                 'code' => $credential['code'],
+                'session_state'=>$credential['code'],
             ],
         ]);
 
