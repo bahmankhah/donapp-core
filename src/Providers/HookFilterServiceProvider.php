@@ -21,8 +21,7 @@ class HookFilterServiceProvider
             return Auth::sso()->getLoginUrl();
         }, 1, 3);
         Wordpress::action('wp_logout', function(){
-            wp_logout();
-            wp_redirect(getenv('APP_URL')); // Replace with your logout confirmation URL
+            wp_safe_redirect( home_url() );
             exit;
         });
 
