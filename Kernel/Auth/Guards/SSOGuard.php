@@ -121,17 +121,17 @@ class SSOGuard extends Adapter implements Guard
             ]);
 
             update_user_meta($user_id, 'sso_global_id', $globalId);
-            update_user_meta($user->ID, 'sso_access_token', $body['access_token']);
-            update_user_meta($user->ID, 'sso_refresh_token', $body['refresh_token']);
-            update_user_meta($user->ID, 'sso_expires_at', time() + $body['exp']);
-            update_user_meta($user->ID, 'sso_mobile_number', $body['mobileNumber']);
-            update_user_meta($user->ID, 'sso_national_id', $body['nationalId']);
+            update_user_meta($user_id, 'sso_access_token', $body['access_token']);
+            update_user_meta($user_id, 'sso_refresh_token', $body['refresh_token']);
+            update_user_meta($user_id, 'sso_expires_at', time() + $body['exp']);
+            update_user_meta($user_id, 'sso_mobile_number', $body['mobileNumber']);
+            update_user_meta($user_id, 'sso_national_id', $body['nationalId']);
 
             $user = get_user_by('id', $user_id);
         }
 
         $this->login($user);
-        
+
 
         return $user;
     }
