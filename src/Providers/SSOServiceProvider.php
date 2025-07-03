@@ -20,10 +20,10 @@ class SSOServiceProvider
 
     public function boot()
     {
-        appLogger($_GET['session_state'] ?? 'no state');
-        if (isset($_GET['session_state'])) {
+        appLogger($_GET['code'] ?? 'no state');
+        if (isset($_GET['code'])) {
 
-            Auth::sso()->attempt(['code'=>$_GET['session_state']]);
+            Auth::sso()->attempt(['code'=>$_GET['code']]);
         }
     }
     
