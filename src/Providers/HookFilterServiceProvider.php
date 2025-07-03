@@ -22,7 +22,7 @@ class HookFilterServiceProvider
         }, 1, 3);
         Wordpress::action('wp_logout', function(){
             wp_logout();
-            wp_redirect(WP_SITEURL); // Replace with your logout confirmation URL
+            wp_redirect(getenv('APP_URL')); // Replace with your logout confirmation URL
             exit;
         });
 
