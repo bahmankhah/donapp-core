@@ -131,7 +131,7 @@ class SSOGuard extends Adapter implements Guard
         }
 
         $this->login($user);
-
+        
 
         return $user;
     }
