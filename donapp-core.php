@@ -12,13 +12,13 @@ if (!defined('ABSPATH')) {
 }
 
 use App\Providers\AppServiceProvider;
+use App\Providers\ElementorServiceProvider;
 use App\Providers\HookFilterServiceProvider;
 use App\Providers\ShortcodeServiceProvider;
 use App\Providers\SSOServiceProvider;
 use App\Providers\WooServiceProvider;
 use App\Routes\RouteServiceProvider;
 use Kernel\Facades\Auth;
-use Kernel\Facades\Wordpress;
 
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -61,6 +61,7 @@ add_action('init', function () {
     (new HookFilterServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
     (new SSOServiceProvider())->boot();
+    (new ElementorServiceProvider())->boot();
 });
 
 
