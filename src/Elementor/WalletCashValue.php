@@ -5,7 +5,7 @@ use Elementor\Core\DynamicTags\Tag;
 use Elementor\Controls_Manager;
 use Kernel\Container;
 
-class WalletCreditValue extends Tag
+class WalletCashValue extends Tag
 {
 
     public function get_name()
