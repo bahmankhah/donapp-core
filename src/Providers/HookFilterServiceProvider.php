@@ -62,8 +62,9 @@ class HookFilterServiceProvider
                 $is_wallet_topup = $item->get_meta('wallet_topup', true);
                 if ($is_wallet_topup) {
                     $user_id = get_donap_user_id($order->get_user_id());
-                    $amount = $item->get_total(); // assuming wallet in rials
+                    $amount = $item->get_total();
                     Container::resolve('WalletService')->increaseCredit($user_id, $amount);
+                    Container::resolve('WalletService')->addGift($user_id, $amount);
                     $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
                 }
             }

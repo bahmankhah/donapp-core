@@ -41,6 +41,10 @@ return [
                 'context'=>App\Adapters\Wallet\Contexts\Cash::class,
                 'type'=>App\Core\WalletType::CASH,
             ],
+            'suspended'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Suspended::class,
+                'type'=>App\Core\WalletType::SUSPENDED,
+            ],
             'virtualCreditCash'=>[
                 'context'=>App\Adapters\Wallet\Contexts\VirtualCreditCash::class,
                 'type'=> null, // virtual
