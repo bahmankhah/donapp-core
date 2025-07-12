@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use WalletCashValue;
-use WalletCreditValue;
+use App\Elementor\WalletCashValue;
+use App\Elementor\WalletCreditValue;
 
 class ElementorServiceProvider
 {

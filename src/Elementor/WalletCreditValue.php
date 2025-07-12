@@ -1,5 +1,6 @@
 <?php
 
+namespace App\Elementor;
 use Elementor\Core\DynamicTags\Tag;
 use Elementor\Controls_Manager;
 use Kernel\Container;

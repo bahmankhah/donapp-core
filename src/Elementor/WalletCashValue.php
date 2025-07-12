@@ -1,4 +1,5 @@
 <?php
+namespace App\Elementor;
 
 use App\Facades\Wallet;
 use Elementor\Core\DynamicTags\Tag;
