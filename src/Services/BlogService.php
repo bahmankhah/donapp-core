@@ -20,7 +20,7 @@ class BlogService{
         $limit = $data['limit'] ?? 10;
         
         $categotyId = (new DB())->getCategoryId('dnp-text');
-        if(!$categotyId) return [];
+        // if(!$categotyId) return [];
 
         return (new Post())
         ->setTableAlias('p')
@@ -39,8 +39,8 @@ class BlogService{
         ->where('p.post_status','=','publish')
         // ->where('tt.term_id', '=', $categotyId, '%d')
         ->join(DB::wpdb()->prefix.'postmeta as pm', 'p.ID', '=', 'pm.post_id')
-        ->join(DB::wpdb()->term_relationships.' as tr', 'p.ID', '=', 'tr.object_id')
-        ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
+        // ->join(DB::wpdb()->term_relationships.' as tr', 'p.ID', '=', 'tr.object_id')
+        // ->join(DB::wpdb()->term_taxonomy.' as tt', 'tr.term_taxonomy_id', '=', 'tt.term_taxonomy_id')
         ->orderBy($orderBy, $orderDirection)
         ->groupBy(['p.ID'])->get();
         
