@@ -35,15 +35,15 @@ class HookFilterServiceProvider
             return $gateways;
         });
 
-        add_filter('wp_nav_menu_items', function ($items, $args) {
-            if (is_user_logged_in() && $args->theme_location === 'primary') {
-                $user_id = get_donap_user_id();
-                $balance = Container::resolve('WalletService')->getAvailableCredit($user_id);
-                $wallet_display = view('components/wallet-navbar', ['balance' => $balance]);
-                $items .= $wallet_display;
-            }
-            return $items;
-        }, 10, 2);
+        // add_filter('wp_nav_menu_items', function ($items, $args) {
+        //     if (is_user_logged_in() && $args->theme_location === 'primary') {
+        //         $user_id = get_donap_user_id();
+        //         $balance = Container::resolve('WalletService')->getAvailableCredit($user_id);
+        //         $wallet_display = view('components/wallet-navbar', ['balance' => $balance]);
+        //         $items .= $wallet_display;
+        //     }
+        //     return $items;
+        // }, 10, 2);
 
 
         add_filter('woocommerce_get_item_data', function ($item_data, $cart_item) {
