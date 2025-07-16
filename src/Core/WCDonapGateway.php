@@ -66,49 +66,71 @@ class WCDonapGateway extends \WC_Payment_Gateway {
      */
     public function is_available() {
         if (!is_user_logged_in()) {
-            error_log('WCDonapGateway: User not logged in');
             return false;
         }
 
         $user_id = get_donap_user_id();
         if (!$user_id) {
-            error_log('WCDonapGateway: No Donap user ID');
             return false;
         }
 
-        $balance = $this->walletService->getAvailableCredit($user_id);
-        error_log('WCDonapGateway: User balance: ' . $balance);
-        return $balance > 0;
+        // Add timeout protection
+        set_time_limit(5); // 5 seconds max
+        
+        try {
+            $balance = $this->walletService->getAvailableCredit($user_id);
+            return $balance > 0;
+        } catch (Exception $e) {
+            error_log('WCDonapGateway: getAvailableCredit failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
      * Process the payment and return the result.
      */
     public function process_payment($order_id) {
+        error_log('WCDonapGateway::process_payment() - START for order: ' . $order_id);
+        
         $order = wc_get_order($order_id);
-        $amount = $order->get_total() * 100; // Assuming wallet is in smallest currency unit
+        $amount = $order->get_total() * 100;
 
         $identifier = get_donap_user_id();
-        $balance = $this->walletService->getAvailableCredit($identifier);
+        
+        error_log('WCDonapGateway: About to check balance for payment');
+        
+        try {
+            $balance = $this->walletService->getAvailableCredit($identifier);
+            error_log('WCDonapGateway: Balance for payment: ' . $balance);
+            
+            if ($balance < $amount) {
+                error_log('WCDonapGateway: Insufficient balance');
+                wc_add_notice('موجودی کافی نیست.', 'error');
+                return ['result' => 'failure'];
+            }
 
-        if ($balance < $amount) {
-            wc_add_notice('موجودی کافی نیست.', 'error');
+            error_log('WCDonapGateway: About to decrease credit');
+            $success = $this->walletService->decreaseCredit($identifier, $amount);
+            
+            if (!$success) {
+                error_log('WCDonapGateway: Failed to decrease credit');
+                wc_add_notice('خطا در کسر موجودی کیف پول.', 'error');
+                return ['result' => 'failure'];
+            }
+
+            error_log('WCDonapGateway: Payment completed successfully');
+            $order->payment_complete();
+            $order->add_order_note('پرداخت با کیف پول انجام شد.');
+
+            return [
+                'result'   => 'success',
+                'redirect' => $this->get_return_url($order),
+            ];
+        } catch (Exception $e) {
+            error_log('WCDonapGateway: Exception in process_payment: ' . $e->getMessage());
+            wc_add_notice('خطا در پردازش پرداخت.', 'error');
             return ['result' => 'failure'];
         }
-
-        $success = $this->walletService->decreaseCredit($identifier, $amount);
-        if (!$success) {
-            wc_add_notice('خطا در کسر موجودی کیف پول.', 'error');
-            return ['result' => 'failure'];
-        }
-
-        $order->payment_complete();
-        $order->add_order_note('پرداخت با کیف پول انجام شد.');
-
-        return [
-            'result'   => 'success',
-            'redirect' => $this->get_return_url($order),
-        ];
     }
 
     /**
