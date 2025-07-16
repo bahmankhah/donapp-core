@@ -30,10 +30,10 @@ class HookFilterServiceProvider
         add_action('woocommerce_after_add_to_cart_button', [Container::resolve('WooService'), 'productPageButton'], 35);
         add_action('woocommerce_check_cart_items', [Container::resolve('WooService'), 'beforeCheckout']);
 
-        // add_filter('woocommerce_payment_gateways', function ($gateways) {
-        //     $gateways[] = \App\Core\WCDonapGateway::class;
-        //     return $gateways;
-        // });
+        add_filter('woocommerce_payment_gateways', function ($gateways) {
+            $gateways[] = \App\Core\WCDonapGateway::class;
+            return $gateways;
+        });
 
         add_filter('wp_nav_menu_items', function ($items, $args) {
             if (is_user_logged_in() && $args->theme_location === 'primary') {
