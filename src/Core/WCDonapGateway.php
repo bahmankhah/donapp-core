@@ -81,7 +81,7 @@ class WCDonapGateway extends \WC_Payment_Gateway {
             $balance = $this->walletService->getAvailableCredit($user_id);
             return $balance > 0;
         } catch (Exception $e) {
-            error_log('WCDonapGateway: getAvailableCredit failed: ' . $e->getMessage());
+            appLogger('WCDonapGateway: getAvailableCredit failed: ' . $e->getMessage());
             return false;
         }
     }
@@ -90,35 +90,35 @@ class WCDonapGateway extends \WC_Payment_Gateway {
      * Process the payment and return the result.
      */
     public function process_payment($order_id) {
-        error_log('WCDonapGateway::process_payment() - START for order: ' . $order_id);
+        appLogger('WCDonapGateway::process_payment() - START for order: ' . $order_id);
         
         $order = wc_get_order($order_id);
         $amount = $order->get_total() * 100;
 
         $identifier = get_donap_user_id();
         
-        error_log('WCDonapGateway: About to check balance for payment');
+        appLogger('WCDonapGateway: About to check balance for payment');
         
         try {
             $balance = $this->walletService->getAvailableCredit($identifier);
-            error_log('WCDonapGateway: Balance for payment: ' . $balance);
+            appLogger('WCDonapGateway: Balance for payment: ' . $balance);
             
             if ($balance < $amount) {
-                error_log('WCDonapGateway: Insufficient balance');
+                appLogger('WCDonapGateway: Insufficient balance');
                 wc_add_notice('موجودی کافی نیست.', 'error');
                 return ['result' => 'failure'];
             }
 
-            error_log('WCDonapGateway: About to decrease credit');
+            appLogger('WCDonapGateway: About to decrease credit');
             $success = $this->walletService->decreaseCredit($identifier, $amount);
             
             if (!$success) {
-                error_log('WCDonapGateway: Failed to decrease credit');
+                appLogger('WCDonapGateway: Failed to decrease credit');
                 wc_add_notice('خطا در کسر موجودی کیف پول.', 'error');
                 return ['result' => 'failure'];
             }
 
-            error_log('WCDonapGateway: Payment completed successfully');
+            appLogger('WCDonapGateway: Payment completed successfully');
             $order->payment_complete();
             $order->add_order_note('پرداخت با کیف پول انجام شد.');
 
@@ -127,7 +127,7 @@ class WCDonapGateway extends \WC_Payment_Gateway {
                 'redirect' => $this->get_return_url($order),
             ];
         } catch (Exception $e) {
-            error_log('WCDonapGateway: Exception in process_payment: ' . $e->getMessage());
+            appLogger('WCDonapGateway: Exception in process_payment: ' . $e->getMessage());
             wc_add_notice('خطا در پردازش پرداخت.', 'error');
             return ['result' => 'failure'];
         }
