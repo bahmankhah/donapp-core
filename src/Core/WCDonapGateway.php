@@ -66,15 +66,18 @@ class WCDonapGateway extends \WC_Payment_Gateway {
      */
     public function is_available() {
         if (!is_user_logged_in()) {
+            error_log('WCDonapGateway: User not logged in');
             return false;
         }
 
         $user_id = get_donap_user_id();
         if (!$user_id) {
+            error_log('WCDonapGateway: No Donap user ID');
             return false;
         }
 
         $balance = $this->walletService->getAvailableCredit($user_id);
+        error_log('WCDonapGateway: User balance: ' . $balance);
         return $balance > 0;
     }
 
