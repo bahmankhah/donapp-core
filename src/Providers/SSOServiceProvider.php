@@ -20,7 +20,7 @@ class SSOServiceProvider
 
     public function boot()
     {
-        appLogger($_GET['code'] ?? 'no state');
+        // appLogger($_GET['code'] ?? 'no state');
         if (isset($_GET['code'])) {
             Auth::sso()->attempt(['code'=>$_GET['code']]);
             $this->remove_code_param_redirect();
