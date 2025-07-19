@@ -31,14 +31,18 @@ class WCDonapGateway extends \WC_Payment_Gateway {
         $this->init_settings();
 
         // Load settings
-        $user_id = get_donap_user_id();
         $this->title   = $this->get_option('title', 'پرداخت با کیف پول');
         $this->enabled = $this->get_option('enabled', 'yes');
-        $this->description = $this->get_option('description', 'پرداخت سریع با موجودی کیف پول شما' . ' - ' . $this->walletService->getAvailableCredit($user_id));
+        $this->description = $this->get_option('description', 'پرداخت سریع با موجودی کیف پول شما' . ' - ' . $this->getBalance());
 
         // Handle saving admin settings
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         
+    }
+
+    private function getBalance(){
+        $user_id = get_donap_user_id();
+        return $this->walletService->getAvailableCredit($user_id);
     }
 
     /**
@@ -64,7 +68,7 @@ class WCDonapGateway extends \WC_Payment_Gateway {
                 'title'       => 'توضیحات',
                 'type'        => 'textarea',
                 'description' => 'توضیحاتی برای مشتریان که در هنگام انتخاب درگاه کیف پول نمایش داده می‌شود.',
-                'default'     => 'پرداخت سریع با موجودی کیف پول شما',
+                'default'     => $this->description,
             ],
         ];
     }
