@@ -34,8 +34,7 @@ class WCDonapGateway extends \WC_Payment_Gateway {
         $this->title   = $this->get_option('title', 'پرداخت با کیف پول');
         $this->enabled = $this->get_option('enabled', 'yes');
         $balance = $this->getBalance();
-        $formatter = new \NumberFormatter('fa_IR', \NumberFormatter::DECIMAL);
-        $formattedBalance = $formatter->format($balance);
+        $formattedBalance = number_format($balance);
         $this->description = $this->get_option(
             'description',
             'پرداخت سریع با موجودی کیف پول شما - ' . $formattedBalance . ' تومان'
