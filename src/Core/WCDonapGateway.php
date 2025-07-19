@@ -120,10 +120,11 @@ class WCDonapGateway extends \WC_Payment_Gateway {
      * Process the payment and return the result.
      */
     public function process_payment($order_id) {
-        appLogger('WCDonapGateway::process_payment() - START for order: ' . $order_id);
-        
         $order = wc_get_order($order_id);
         $amount = $order->get_total() * 100;
+
+        appLogger('WCDonapGateway: Processing payment for order ' . $order_id . ' with amount: ' . $amount);
+
 
         $identifier = get_donap_user_id();
         
