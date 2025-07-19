@@ -10,6 +10,7 @@ use Exception;
 use Kernel\Container;
 
 class WalletService{
+    
     public function settlementRequest($identifier){
         $balance = FacadesWallet::cash()->getBalance($identifier);
         if($balance <= 0){
@@ -56,6 +57,122 @@ class WalletService{
         }
         $updated = FacadesWallet::$walletType()->updateBalance($identifier, $amount, $transactionType);
         return $updated;
+    }
+    
+    /**
+     * Get all wallets for admin view
+     */
+    public function getAllWallets($limit = 50)
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return [];
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallets';
+        $results = $wpdb->get_results($wpdb->prepare("
+            SELECT * FROM $table 
+            ORDER BY created_at DESC 
+            LIMIT %d
+        ", $limit));
+
+        return $results ?: [];
+    }
+    
+    /**
+     * Get wallet statistics for admin dashboard
+     */
+    public function getWalletStats()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return [
+                'total_wallets' => 0,
+                'active_wallets' => 0,
+                'total_balance' => 0,
+                'avg_balance' => 0
+            ];
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallets';
+        
+        return [
+            'total_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table") ?: 0,
+            'active_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE balance > 0") ?: 0,
+            'total_balance' => $wpdb->get_var("SELECT SUM(balance) FROM $table WHERE type = 'credit'") ?: 0,
+            'avg_balance' => $wpdb->get_var("SELECT AVG(balance) FROM $table WHERE type = 'credit' AND balance > 0") ?: 0
+        ];
+    }
+    
+    /**
+     * Get total users with wallets
+     */
+    public function getTotalUsersWithWallets()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return 0;
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallets';
+        $count = $wpdb->get_var("SELECT COUNT(DISTINCT identifier) FROM $table");
+        return $count ?: 0;
+    }
+    
+    /**
+     * Get total wallet balance across all users
+     */
+    public function getTotalWalletBalance()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return 0;
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallets';
+        $total = $wpdb->get_var("SELECT SUM(balance) FROM $table WHERE type = 'credit'");
+        return $total ?: 0;
+    }
+    
+    /**
+     * Get active wallets count
+     */
+    public function getActiveWalletsCount()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return 0;
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallets';
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE balance > 0");
+        return $count ?: 0;
+    }
+    
+    /**
+     * Modify wallet balance (for admin use)
+     */
+    public function modifyWalletBalance($identifier, $amount, $action_type, $description = null)
+    {
+        $transactionType = null;
+        
+        switch ($action_type) {
+            case 'add':
+                $transactionType = TransactionType::ADMIN;
+                return $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), $transactionType);
+                
+            case 'subtract':
+                $transactionType = TransactionType::ADMIN;
+                return $this->updateBalance($identifier, WalletType::CREDIT, -abs($amount), $transactionType);
+                
+            default:
+                throw new Exception('Invalid action type', 400);
+        }
     }
 
 }

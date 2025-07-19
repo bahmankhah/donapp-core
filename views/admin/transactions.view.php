@@ -79,9 +79,10 @@
                         <th>شناسه کاربر</th>
                         <th>نوع کیف پول</th>
                         <th>نوع تراکنش</th>
+                        <th>بستانکار</th>
+                        <th>بدهکار</th>
                         <th>مقدار</th>
-                        <th>موجودی قبل</th>
-                        <th>موجودی بعد</th>
+                        <th>موجودی باقیمانده</th>
                         <th>توضیحات</th>
                         <th>تاریخ</th>
                     </tr>
@@ -119,15 +120,30 @@
                                 </span>
                             </td>
                             <td class="amount-cell">
+                                <?php if ($transaction->credit): ?>
+                                    <span class="amount-positive">
+                                        +<?php echo number_format($transaction->credit); ?> تومان
+                                    </span>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td class="amount-cell">
+                                <?php if ($transaction->debit): ?>
+                                    <span class="amount-negative">
+                                        -<?php echo number_format($transaction->debit); ?> تومان
+                                    </span>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td class="amount-cell">
                                 <span class="amount-<?php echo $transaction->amount >= 0 ? 'positive' : 'negative'; ?>">
                                     <?php echo ($transaction->amount >= 0 ? '+' : '') . number_format($transaction->amount); ?> تومان
                                 </span>
                             </td>
                             <td class="amount-cell">
-                                <?php echo number_format($transaction->balance_before ?? 0); ?> تومان
-                            </td>
-                            <td class="amount-cell">
-                                <?php echo number_format($transaction->balance_after ?? 0); ?> تومان
+                                <?php echo number_format($transaction->remain ?? 0); ?> تومان
                             </td>
                             <td>
                                 <?php echo esc_html($transaction->description ?? '-'); ?>
@@ -228,6 +244,11 @@ function exportTransactions(format) {
 .amount-negative {
     color: #dc3545;
     font-weight: bold;
+}
+
+.amount-cell {
+    text-align: center;
+    min-width: 100px;
 }
 
 .transaction-date {

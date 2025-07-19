@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Helpers\GiftConfigHelper;
 use Kernel\Container;
+use Exception;
 
 class AdminServiceProvider
 {
@@ -169,11 +170,14 @@ class AdminServiceProvider
      */
     public function dashboard_page()
     {
+        $walletService = Container::resolve('WalletService');
+        $transactionService = Container::resolve('TransactionService');
+        
         $data = [
-            'total_users' => $this->get_total_users(),
-            'total_balance' => $this->get_total_wallet_balance(),
-            'total_transactions' => $this->get_total_transactions(),
-            'recent_activity' => $this->get_recent_activity_data()
+            'total_users' => $walletService->getTotalUsersWithWallets(),
+            'total_balance' => $walletService->getTotalWalletBalance(),
+            'total_transactions' => $transactionService->getTotalTransactionsCount(),
+            'recent_activity' => $transactionService->getRecentActivity()
         ];
         
         echo view('admin/dashboard', $data);
@@ -192,31 +196,36 @@ class AdminServiceProvider
      */
     public function wallets_page()
     {
+        $walletService = Container::resolve('WalletService');
+        
         // Handle wallet balance modifications
         if (isset($_POST['modify_wallet']) && wp_verify_nonce($_POST['wallet_nonce'], 'modify_wallet_action')) {
             $user_id = sanitize_text_field($_POST['user_id']);
             $amount = intval($_POST['amount']);
             $action_type = sanitize_text_field($_POST['action_type']);
+            $description = sanitize_text_field($_POST['description'] ?? '');
             
             if ($user_id && $amount > 0) {
-                $wallet_service = Container::resolve('WalletService');
-                
-                if ($action_type === 'increase') {
-                    $wallet_service->updateBalance($user_id, 'credit', $amount, \App\Core\TransactionType::ADMIN);
-                    $message = "موجودی کیف پول کاربر {$user_id} به مقدار {$amount} تومان افزایش یافت.";
-                } else {
-                    $wallet_service->updateBalance($user_id, 'credit', -$amount, \App\Core\TransactionType::ADMIN);
-                    $message = "موجودی کیف پول کاربر {$user_id} به مقدار {$amount} تومان کاهش یافت.";
+                try {
+                    $walletService->modifyWalletBalance($user_id, $amount, $action_type, $description);
+                    $message = 'تراکنش با موفقیت انجام شد.';
+                } catch (Exception $e) {
+                    $error = 'خطا در انجام تراکنش: ' . $e->getMessage();
                 }
-                
-                echo '<div class="notice notice-success"><p>' . $message . '</p></div>';
             }
         }
         
         $data = [
-            'wallets' => $this->get_all_wallets(),
-            'wallet_stats' => $this->get_wallet_stats()
+            'wallets' => $walletService->getAllWallets(),
+            'wallet_stats' => $walletService->getWalletStats()
         ];
+        
+        if (isset($message)) {
+            $data['message'] = $message;
+        }
+        if (isset($error)) {
+            $data['error'] = $error;
+        }
         
         echo view('admin/wallets', $data);
     }
@@ -226,9 +235,19 @@ class AdminServiceProvider
      */
     public function transactions_page()
     {
+        $transactionService = Container::resolve('TransactionService');
+        
+        // Get filters from request
+        $filters = [
+            'user_filter' => $_GET['user_filter'] ?? '',
+            'type_filter' => $_GET['type_filter'] ?? '',
+            'start_date' => $_GET['start_date'] ?? '',
+            'end_date' => $_GET['end_date'] ?? ''
+        ];
+        
         $data = [
-            'transactions' => $this->get_all_transactions(),
-            'transaction_stats' => $this->get_transaction_stats()
+            'transactions' => $transactionService->getAllTransactions($filters),
+            'transaction_stats' => $transactionService->getTransactionStats()
         ];
         
         echo view('admin/transactions', $data);
@@ -304,163 +323,12 @@ class AdminServiceProvider
     }
 
     /**
-     * Get total users with wallets
-     */
-    private function get_total_users()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return 0;
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        $count = $wpdb->get_var("SELECT COUNT(DISTINCT identifier) FROM $table");
-        return $count ?: 0;
-    }
-
-    /**
-     * Get total wallet balance across all users
-     */
-    private function get_total_wallet_balance()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return 0;
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        $total = $wpdb->get_var("SELECT SUM(balance) FROM $table WHERE type = 'credit'");
-        return $total ?: 0;
-    }
-
-    /**
-     * Get total transactions count
-     */
-    private function get_total_transactions()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return 0;
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table");
-        return $count ?: 0;
-    }
-
-    /**
-     * Get recent activity data
-     */
-    private function get_recent_activity_data()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [];
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        
-        $results = $wpdb->get_results("
-            SELECT * FROM $table 
-            ORDER BY created_at DESC 
-            LIMIT 10
-        ");
-
-        return $results ?: [];
-    }
-
-    /**
-     * Get active wallets count
-     */
-    private function get_active_wallets_count()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return 0;
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE balance > 0");
-        return $count ?: 0;
-    }
-
-    /**
-     * Get pending transactions count
-     */
-    private function get_pending_transactions_count()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return 0;
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE status = 'pending'");
-        return $count ?: 0;
-    }
-
-    /**
-     * Get daily volume
-     */
-    private function get_daily_volume()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return 0;
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $today = date('Y-m-d');
-        $volume = $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(amount) FROM $table WHERE DATE(created_at) = %s AND type IN ('credit_charge', 'charge_gift')",
-            $today
-        ));
-        return $volume ?: 0;
-    }
-
-    /**
-     * Get wallet activities
-     */
-    private function get_wallet_activities()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [];
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        
-        $results = $wpdb->get_results("
-            SELECT * FROM $table 
-            ORDER BY created_at DESC 
-            LIMIT 20
-        ");
-
-        return $results ?: [];
-    }
-
-    /**
      * Generate report data
      */
     private function generate_report_data($report_type, $start_date, $end_date)
     {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [
-                'report_data' => [],
-                'total_amount' => 0,
-                'table_headers' => []
-            ];
-        }
+        $transactionService = Container::resolve('TransactionService');
+        $walletService = Container::resolve('WalletService');
         
         $data = [
             'report_data' => [],
@@ -471,12 +339,12 @@ class AdminServiceProvider
         switch ($report_type) {
             case 'transactions':
                 $data['table_headers'] = ['ID', 'User ID', 'Type', 'Amount', 'Date'];
-                $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-                $where = '';
+                $filters = [];
                 if ($start_date && $end_date) {
-                    $where = $wpdb->prepare(" WHERE DATE(created_at) BETWEEN %s AND %s", $start_date, $end_date);
+                    $filters['start_date'] = $start_date;
+                    $filters['end_date'] = $end_date;
                 }
-                $results = $wpdb->get_results("SELECT * FROM $table $where ORDER BY created_at DESC");
+                $results = $transactionService->getAllTransactions($filters, 1000); // Get more for reports
                 foreach ($results as $row) {
                     $data['report_data'][] = [
                         $row->id,
@@ -491,8 +359,7 @@ class AdminServiceProvider
                 
             case 'wallets':
                 $data['table_headers'] = ['User ID', 'Type', 'Balance', 'Created'];
-                $table = $wpdb->prefix . 'dnp_user_wallets';
-                $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
+                $results = $walletService->getAllWallets(1000); // Get more for reports
                 foreach ($results as $row) {
                     $data['report_data'][] = [
                         $row->identifier,
@@ -511,101 +378,6 @@ class AdminServiceProvider
         }
         
         return $data;
-    }
-
-    /**
-     * Get all wallets
-     */
-    private function get_all_wallets()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [];
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        $results = $wpdb->get_results("
-            SELECT * FROM $table 
-            ORDER BY created_at DESC 
-            LIMIT 50
-        ");
-
-        return $results ?: [];
-    }
-
-    /**
-     * Get wallet statistics
-     */
-    private function get_wallet_stats()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [
-                'total_wallets' => 0,
-                'active_wallets' => 0,
-                'total_balance' => 0,
-                'avg_balance' => 0
-            ];
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        
-        return [
-            'total_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table") ?: 0,
-            'active_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE balance > 0") ?: 0,
-            'total_balance' => $wpdb->get_var("SELECT SUM(balance) FROM $table WHERE type = 'credit'") ?: 0,
-            'avg_balance' => $wpdb->get_var("SELECT AVG(balance) FROM $table WHERE type = 'credit' AND balance > 0") ?: 0
-        ];
-    }
-
-    /**
-     * Get all transactions
-     */
-    private function get_all_transactions()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [];
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $results = $wpdb->get_results("
-            SELECT * FROM $table 
-            ORDER BY created_at DESC 
-            LIMIT 50
-        ");
-
-        return $results ?: [];
-    }
-
-    /**
-     * Get transaction statistics
-     */
-    private function get_transaction_stats()
-    {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [
-                'total_transactions' => 0,
-                'today_transactions' => 0,
-                'total_volume' => 0,
-                'today_volume' => 0
-            ];
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $today = date('Y-m-d');
-        
-        return [
-            'total_transactions' => $wpdb->get_var("SELECT COUNT(*) FROM $table") ?: 0,
-            'today_transactions' => $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE DATE(created_at) = %s", $today)) ?: 0,
-            'total_volume' => $wpdb->get_var("SELECT SUM(ABS(amount)) FROM $table") ?: 0,
-            'today_volume' => $wpdb->get_var($wpdb->prepare("SELECT SUM(ABS(amount)) FROM $table WHERE DATE(created_at) = %s", $today)) ?: 0
-        ];
     }
 
     /**
