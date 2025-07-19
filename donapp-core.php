@@ -54,9 +54,9 @@ add_action('plugins_loaded', function () {
     // Make sure WooCommerce is active before registering the gateway
     if (class_exists('WooCommerce') && class_exists('WC_Payment_Gateway')) {
         add_filter('woocommerce_payment_gateways', function ($gateways) {
-            error_log('Donap Core: Registering Donap Wallet Gateway - gateways count before: ' . count($gateways));
+            appLogger('Donap Core: Registering Donap Wallet Gateway - gateways count before: ' . count($gateways));
             $gateways[] = \App\Core\WCDonapGateway::class;
-            error_log('Donap Core: Registering Donap Wallet Gateway - gateways count after: ' . count($gateways));
+            appLogger('Donap Core: Registering Donap Wallet Gateway - gateways count after: ' . count($gateways));
             return $gateways;
         });
         
@@ -68,7 +68,7 @@ add_action('plugins_loaded', function () {
         });
         
     } else {
-        error_log('Donap Core: WooCommerce not found - cannot register Donap Wallet Gateway');
+        appLogger('Donap Core: WooCommerce not found - cannot register Donap Wallet Gateway');
         
         // Add admin notice about missing WooCommerce
         add_action('admin_notices', function() {

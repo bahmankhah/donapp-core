@@ -12,13 +12,13 @@ class WCDonapGateway extends \WC_Payment_Gateway {
     private WalletService $walletService;
 
     public function __construct() {
-        error_log('WCDonapGateway: Constructor called');
+        appLogger('WCDonapGateway: Constructor called');
         
         try {
             $this->walletService = Container::resolve('WalletService');
-            error_log('WCDonapGateway: WalletService resolved successfully');
+            appLogger('WCDonapGateway: WalletService resolved successfully');
         } catch (Exception $e) {
-            error_log('WCDonapGateway: Failed to resolve WalletService: ' . $e->getMessage());
+            appLogger('WCDonapGateway: Failed to resolve WalletService: ' . $e->getMessage());
             // Don't return here, continue with basic setup
         }
 
@@ -41,7 +41,7 @@ class WCDonapGateway extends \WC_Payment_Gateway {
         // Handle saving admin settings
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         
-        error_log('WCDonapGateway: Constructor completed successfully');
+        appLogger('WCDonapGateway: Constructor completed successfully');
     }
 
     /**
@@ -76,27 +76,27 @@ class WCDonapGateway extends \WC_Payment_Gateway {
      * Determine if the gateway is available.
      */
     public function is_available() {
-        error_log('WCDonapGateway::is_available() called');
+        appLogger('WCDonapGateway::is_available() called');
         
         // For testing - make gateway always available when enabled
         if ($this->enabled === 'yes') {
-            error_log('WCDonapGateway: Gateway is enabled, checking conditions...');
+            appLogger('WCDonapGateway: Gateway is enabled, checking conditions...');
             
             if (!is_user_logged_in()) {
-                error_log('WCDonapGateway: User not logged in');
+                appLogger('WCDonapGateway: User not logged in');
                 return true; // For testing, allow even when not logged in
             }
 
             $user_id = get_donap_user_id();
             if (!$user_id) {
-                error_log('WCDonapGateway: No donap user ID found');
+                appLogger('WCDonapGateway: No donap user ID found');
                 return true; // For testing, allow even without donap ID
             }
 
-            error_log('WCDonapGateway: User ID found: ' . $user_id);
+            appLogger('WCDonapGateway: User ID found: ' . $user_id);
 
             if (!isset($this->walletService)) {
-                error_log('WCDonapGateway: WalletService not available');
+                appLogger('WCDonapGateway: WalletService not available');
                 return true; // For testing, allow even without wallet service
             }
 
@@ -105,17 +105,17 @@ class WCDonapGateway extends \WC_Payment_Gateway {
             
             try {
                 $balance = $this->walletService->getAvailableCredit($user_id);
-                error_log('WCDonapGateway: Available balance: ' . $balance);
+                appLogger('WCDonapGateway: Available balance: ' . $balance);
                 $isAvailable = $balance > 0;
-                error_log('WCDonapGateway: Gateway available: ' . ($isAvailable ? 'yes' : 'no'));
+                appLogger('WCDonapGateway: Gateway available: ' . ($isAvailable ? 'yes' : 'no'));
                 return $isAvailable;
             } catch (Exception $e) {
-                error_log('WCDonapGateway: getAvailableCredit failed: ' . $e->getMessage());
+                appLogger('WCDonapGateway: getAvailableCredit failed: ' . $e->getMessage());
                 return true; // For testing, allow even on error
             }
         }
         
-        error_log('WCDonapGateway: Gateway not enabled');
+        appLogger('WCDonapGateway: Gateway not enabled');
         return false;
     }
 
