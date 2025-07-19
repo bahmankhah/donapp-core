@@ -33,7 +33,13 @@ class WCDonapGateway extends \WC_Payment_Gateway {
         // Load settings
         $this->title   = $this->get_option('title', 'پرداخت با کیف پول');
         $this->enabled = $this->get_option('enabled', 'yes');
-        $this->description = $this->get_option('description', 'پرداخت سریع با موجودی کیف پول شما' . ' - ' . $this->getBalance());
+        $balance = $this->getBalance();
+        $formatter = new \NumberFormatter('fa_IR', \NumberFormatter::DECIMAL);
+        $formattedBalance = $formatter->format($balance);
+        $this->description = $this->get_option(
+            'description',
+            'پرداخت سریع با موجودی کیف پول شما - ' . $formattedBalance . ' تومان'
+        );
 
         // Handle saving admin settings
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
