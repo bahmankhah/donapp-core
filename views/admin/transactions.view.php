@@ -38,7 +38,7 @@
                 <tr>
                     <th scope="row">شناسه کاربر</th>
                     <td>
-                        <input type="text" name="user_filter" value="<?php echo esc_attr($_GET['user_filter'] ?? ''); ?>" 
+                        <input type="text" name="user_filter" value="<?php echo esc_attr($current_filters['user_filter'] ?? ''); ?>" 
                                class="regular-text" placeholder="شناسه کاربر" />
                     </td>
                 </tr>
@@ -47,19 +47,19 @@
                     <td>
                         <select name="type_filter">
                             <option value="">همه</option>
-                            <option value="credit_charge" <?php selected($_GET['type_filter'] ?? '', 'credit_charge'); ?>>شارژ اعتبار</option>
-                            <option value="charge_gift" <?php selected($_GET['type_filter'] ?? '', 'charge_gift'); ?>>هدیه شارژ</option>
-                            <option value="admin" <?php selected($_GET['type_filter'] ?? '', 'admin'); ?>>مدیریتی</option>
-                            <option value="settlement_request" <?php selected($_GET['type_filter'] ?? '', 'settlement_request'); ?>>درخواست تسویه</option>
+                            <option value="credit_charge" <?php selected($current_filters['type_filter'] ?? '', 'credit_charge'); ?>>شارژ اعتبار</option>
+                            <option value="charge_gift" <?php selected($current_filters['type_filter'] ?? '', 'charge_gift'); ?>>هدیه شارژ</option>
+                            <option value="admin" <?php selected($current_filters['type_filter'] ?? '', 'admin'); ?>>مدیریتی</option>
+                            <option value="settlement_request" <?php selected($current_filters['type_filter'] ?? '', 'settlement_request'); ?>>درخواست تسویه</option>
                         </select>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">بازه تاریخ</th>
                     <td>
-                        <input type="date" name="start_date" value="<?php echo esc_attr($_GET['start_date'] ?? ''); ?>" />
+                        <input type="date" name="start_date" value="<?php echo esc_attr($current_filters['start_date'] ?? ''); ?>" />
                         تا
-                        <input type="date" name="end_date" value="<?php echo esc_attr($_GET['end_date'] ?? ''); ?>" />
+                        <input type="date" name="end_date" value="<?php echo esc_attr($current_filters['end_date'] ?? ''); ?>" />
                     </td>
                 </tr>
             </table>
@@ -161,6 +161,13 @@
         <?php else: ?>
             <p>هیچ تراکنشی یافت نشد.</p>
         <?php endif; ?>
+        
+        <!-- Pagination -->
+        <?php 
+        if (isset($pagination)) {
+            echo view('admin/components/pagination', ['pagination' => $pagination]); 
+        }
+        ?>
     </div>
 
     <!-- Export Options -->

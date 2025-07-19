@@ -39,12 +39,20 @@ class TransactionService{
     /**
      * Get all transactions with filtering and pagination
      */
-    public function getAllTransactions($filters = [], $limit = 50)
+    public function getAllTransactions($filters = [], $page = 1, $per_page = 20)
     {
         global $wpdb;
         
         if (!$wpdb) {
-            return [];
+            return [
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'per_page' => $per_page,
+                    'total_items' => 0,
+                    'total_pages' => 0
+                ]
+            ];
         }
         
         $user_filter = $filters['user_filter'] ?? '';
@@ -80,6 +88,25 @@ class TransactionService{
         
         $where_clause = implode(' AND ', $where_conditions);
         
+        // Get total count for pagination
+        $count_query = "
+            SELECT COUNT(*)
+            FROM $tx_table t
+            LEFT JOIN $wallet_table w ON t.wallet_id = w.id
+            WHERE $where_clause
+        ";
+        
+        if (!empty($where_values)) {
+            $total_items = $wpdb->get_var($wpdb->prepare($count_query, $where_values));
+        } else {
+            $total_items = $wpdb->get_var($count_query);
+        }
+        
+        $total_pages = ceil($total_items / $per_page);
+        $page = max(1, min($page, $total_pages));
+        $offset = ($page - 1) * $per_page;
+        
+        // Get paginated results
         $query = "
             SELECT 
                 t.id,
@@ -102,18 +129,26 @@ class TransactionService{
             LEFT JOIN $wallet_table w ON t.wallet_id = w.id
             WHERE $where_clause
             ORDER BY t.created_at DESC 
-            LIMIT %d
+            LIMIT %d OFFSET %d
         ";
         
-        $where_values[] = $limit;
+        $query_values = array_merge($where_values, [$per_page, $offset]);
         
         if (!empty($where_values)) {
-            $results = $wpdb->get_results($wpdb->prepare($query, $where_values));
+            $results = $wpdb->get_results($wpdb->prepare($query, $query_values));
         } else {
-            $results = $wpdb->get_results($query);
+            $results = $wpdb->get_results($wpdb->prepare($query, [$per_page, $offset]));
         }
 
-        return $results ?: [];
+        return [
+            'data' => $results ?: [],
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $per_page,
+                'total_items' => (int)$total_items,
+                'total_pages' => $total_pages
+            ]
+        ];
     }
     
     /**

@@ -60,24 +60,85 @@ class WalletService{
     }
     
     /**
-     * Get all wallets for admin view
+     * Get all wallets for admin view with pagination
      */
-    public function getAllWallets($limit = 50)
+    public function getAllWallets($page = 1, $per_page = 20, $filters = [])
     {
         global $wpdb;
         
         if (!$wpdb) {
-            return [];
+            return [
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'per_page' => $per_page,
+                    'total_items' => 0,
+                    'total_pages' => 0
+                ]
+            ];
         }
         
         $table = $wpdb->prefix . 'dnp_user_wallets';
-        $results = $wpdb->get_results($wpdb->prepare("
+        
+        $where_conditions = ['1=1'];
+        $where_values = [];
+        
+        // Apply filters if provided
+        if (!empty($filters['identifier'])) {
+            $where_conditions[] = 'identifier LIKE %s';
+            $where_values[] = '%' . $filters['identifier'] . '%';
+        }
+        
+        if (!empty($filters['type'])) {
+            $where_conditions[] = 'type = %s';
+            $where_values[] = $filters['type'];
+        }
+        
+        if (isset($filters['min_balance']) && is_numeric($filters['min_balance'])) {
+            $where_conditions[] = 'balance >= %d';
+            $where_values[] = intval($filters['min_balance']);
+        }
+        
+        $where_clause = implode(' AND ', $where_conditions);
+        
+        // Get total count for pagination
+        $count_query = "SELECT COUNT(*) FROM $table WHERE $where_clause";
+        
+        if (!empty($where_values)) {
+            $total_items = $wpdb->get_var($wpdb->prepare($count_query, $where_values));
+        } else {
+            $total_items = $wpdb->get_var($count_query);
+        }
+        
+        $total_pages = ceil($total_items / $per_page);
+        $page = max(1, min($page, $total_pages));
+        $offset = ($page - 1) * $per_page;
+        
+        // Get paginated results
+        $query = "
             SELECT * FROM $table 
+            WHERE $where_clause
             ORDER BY created_at DESC 
-            LIMIT %d
-        ", $limit));
+            LIMIT %d OFFSET %d
+        ";
+        
+        $query_values = array_merge($where_values, [$per_page, $offset]);
+        
+        if (!empty($where_values)) {
+            $results = $wpdb->get_results($wpdb->prepare($query, $query_values));
+        } else {
+            $results = $wpdb->get_results($wpdb->prepare($query, [$per_page, $offset]));
+        }
 
-        return $results ?: [];
+        return [
+            'data' => $results ?: [],
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $per_page,
+                'total_items' => (int)$total_items,
+                'total_pages' => $total_pages
+            ]
+        ];
     }
     
     /**

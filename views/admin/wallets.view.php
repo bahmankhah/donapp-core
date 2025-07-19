@@ -66,6 +66,44 @@
         </form>
     </div>
 
+    <!-- Filter Form for Wallets -->
+    <div class="donap-wallet-filters">
+        <h2>فیلتر کیف پول‌ها</h2>
+        <form method="get" action="">
+            <input type="hidden" name="page" value="donap-wallets">
+            
+            <table class="form-table">
+                <tr>
+                    <th scope="row">شناسه کاربر</th>
+                    <td>
+                        <input type="text" name="identifier_filter" value="<?php echo esc_attr($current_filters['identifier'] ?? ''); ?>" 
+                               class="regular-text" placeholder="شناسه کاربر" />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">نوع کیف پول</th>
+                    <td>
+                        <select name="type_filter">
+                            <option value="">همه</option>
+                            <option value="credit" <?php selected($current_filters['type'] ?? '', 'credit'); ?>>اعتبار</option>
+                            <option value="cash" <?php selected($current_filters['type'] ?? '', 'cash'); ?>>نقد</option>
+                            <option value="suspended" <?php selected($current_filters['type'] ?? '', 'suspended'); ?>>معلق</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">حداقل موجودی</th>
+                    <td>
+                        <input type="number" name="min_balance" value="<?php echo esc_attr($current_filters['min_balance'] ?? ''); ?>" 
+                               class="regular-text" placeholder="حداقل موجودی به تومان" min="0" />
+                    </td>
+                </tr>
+            </table>
+            
+            <?php submit_button('اعمال فیلتر', 'secondary', 'filter_wallets'); ?>
+        </form>
+    </div>
+
     <!-- Wallets List -->
     <div class="donap-wallets-list">
         <h2>لیست کیف پول‌ها</h2>
@@ -125,6 +163,13 @@
         <?php else: ?>
             <p>هیچ کیف پولی یافت نشد.</p>
         <?php endif; ?>
+        
+        <!-- Pagination -->
+        <?php 
+        if (isset($pagination)) {
+            echo view('admin/components/pagination', ['pagination' => $pagination]); 
+        }
+        ?>
     </div>
 </div>
 
@@ -152,6 +197,14 @@ function modifyWalletQuick(userId, walletType) {
 
 <style>
 .donap-wallet-modification {
+    background: #fff;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #ccd0d4;
+    border-radius: 8px;
+}
+
+.donap-wallet-filters {
     background: #fff;
     padding: 20px;
     margin: 20px 0;

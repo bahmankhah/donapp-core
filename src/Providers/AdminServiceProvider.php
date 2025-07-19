@@ -215,9 +215,24 @@ class AdminServiceProvider
             }
         }
         
+        // Get pagination parameters
+        $page = max(1, intval($_GET['paged'] ?? 1));
+        $per_page = 20;
+        
+        // Get filters
+        $filters = [
+            'identifier' => $_GET['identifier_filter'] ?? '',
+            'type' => $_GET['type_filter'] ?? '',
+            'min_balance' => $_GET['min_balance'] ?? ''
+        ];
+        
+        $wallets_result = $walletService->getAllWallets($page, $per_page, $filters);
+        
         $data = [
-            'wallets' => $walletService->getAllWallets(),
-            'wallet_stats' => $walletService->getWalletStats()
+            'wallets' => $wallets_result['data'],
+            'pagination' => $wallets_result['pagination'],
+            'wallet_stats' => $walletService->getWalletStats(),
+            'current_filters' => $filters
         ];
         
         if (isset($message)) {
@@ -237,6 +252,10 @@ class AdminServiceProvider
     {
         $transactionService = Container::resolve('TransactionService');
         
+        // Get pagination parameters
+        $page = max(1, intval($_GET['paged'] ?? 1));
+        $per_page = 20;
+        
         // Get filters from request
         $filters = [
             'user_filter' => $_GET['user_filter'] ?? '',
@@ -245,9 +264,13 @@ class AdminServiceProvider
             'end_date' => $_GET['end_date'] ?? ''
         ];
         
+        $transactions_result = $transactionService->getAllTransactions($filters, $page, $per_page);
+        
         $data = [
-            'transactions' => $transactionService->getAllTransactions($filters),
-            'transaction_stats' => $transactionService->getTransactionStats()
+            'transactions' => $transactions_result['data'],
+            'pagination' => $transactions_result['pagination'],
+            'transaction_stats' => $transactionService->getTransactionStats(),
+            'current_filters' => $filters
         ];
         
         echo view('admin/transactions', $data);
@@ -344,8 +367,8 @@ class AdminServiceProvider
                     $filters['start_date'] = $start_date;
                     $filters['end_date'] = $end_date;
                 }
-                $results = $transactionService->getAllTransactions($filters, 1000); // Get more for reports
-                foreach ($results as $row) {
+                $results = $transactionService->getAllTransactions($filters, 1, 1000); // Get more for reports
+                foreach ($results['data'] as $row) {
                     $data['report_data'][] = [
                         $row->id,
                         $row->identifier,
@@ -359,8 +382,8 @@ class AdminServiceProvider
                 
             case 'wallets':
                 $data['table_headers'] = ['User ID', 'Type', 'Balance', 'Created'];
-                $results = $walletService->getAllWallets(1000); // Get more for reports
-                foreach ($results as $row) {
+                $results = $walletService->getAllWallets(1, 1000); // Get more for reports
+                foreach ($results['data'] as $row) {
                     $data['report_data'][] = [
                         $row->identifier,
                         $row->type,
