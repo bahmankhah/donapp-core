@@ -53,6 +53,13 @@ add_action('plugins_loaded', function () {
         wp_redirect(Auth::sso()->getLoginUrl()); 
         exit;
     }
+    add_filter('woocommerce_payment_gateways', function ($gateways) {
+        $gateways[] = \App\Core\WCDonapGateway::class;
+        return $gateways;
+    });
+});
+
+add_action('init', function () {
     (new AppServiceProvider())->boot();
     (new RouteServiceProvider())->boot();
     (new WooServiceProvider())->boot();
@@ -60,9 +67,6 @@ add_action('plugins_loaded', function () {
     (new ShortcodeServiceProvider())->boot();
     (new SSOServiceProvider())->boot();
     (new ElementorServiceProvider())->boot();
-});
-
-add_action('init', function () {
 });
 
 
