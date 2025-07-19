@@ -26,20 +26,20 @@ class AdminServiceProvider
     {
         // Main Donap menu
         add_menu_page(
-            'Donap Dashboard',           // Page title
-            'Donap',                    // Menu title
-            $this->capability,          // Capability
-            $this->main_menu_slug,      // Menu slug
-            [$this, 'dashboard_page'],  // Function
-            $this->get_menu_icon(),     // Icon
-            30                          // Position
+            'داشبورد دناپ',                 // Page title
+            'دناپ',                        // Menu title
+            $this->capability,             // Capability
+            $this->main_menu_slug,         // Menu slug
+            [$this, 'dashboard_page'],     // Function
+            $this->get_menu_icon(),        // Icon
+            30                             // Position
         );
 
         // Dashboard submenu (rename the main item)
         add_submenu_page(
             $this->main_menu_slug,
-            'Dashboard',
-            'Dashboard',
+            'داشبورد',
+            'داشبورد',
             $this->capability,
             $this->main_menu_slug,
             [$this, 'dashboard_page']
@@ -48,28 +48,38 @@ class AdminServiceProvider
         // Settings submenu
         add_submenu_page(
             $this->main_menu_slug,
-            'Donap Settings',
-            'Settings',
+            'تنظیمات دناپ',
+            'تنظیمات',
             $this->capability,
             'donap-settings',
             [$this, 'settings_page']
         );
 
-        // Wallet Management submenu
+        // Wallets submenu
         add_submenu_page(
             $this->main_menu_slug,
-            'Wallet Management',
-            'Wallet Management',
+            'مدیریت کیف پول‌ها',
+            'کیف پول‌ها',
             $this->capability,
-            'donap-wallet-management',
-            [$this, 'wallet_management_page']
+            'donap-wallets',
+            [$this, 'wallets_page']
+        );
+
+        // Transactions submenu
+        add_submenu_page(
+            $this->main_menu_slug,
+            'تراکنش‌ها',
+            'تراکنش‌ها',
+            $this->capability,
+            'donap-transactions',
+            [$this, 'transactions_page']
         );
 
         // Reports submenu
         add_submenu_page(
             $this->main_menu_slug,
-            'Reports',
-            'Reports',
+            'گزارشات',
+            'گزارشات',
             $this->capability,
             'donap-reports',
             [$this, 'reports_page']
@@ -103,45 +113,45 @@ class AdminServiceProvider
 
         add_settings_section(
             'donap_gift_section',
-            'Gift Values Configuration',
+            'تنظیمات مقادیر هدیه',
             [$this, 'gift_section_callback'],
             'donap-gift-settings'
         );
 
         add_settings_field(
             'gift_till_50k',
-            'Till 50,000 Charge',
+            'تا ۵۰ هزار تومان شارژ',
             [$this, 'gift_field_callback'],
             'donap-gift-settings',
             'donap_gift_section',
-            ['field' => 'till_50k', 'label' => 'Gift percentage for charges up to 50,000']
+            ['field' => 'till_50k', 'label' => 'مقدار هدیه برای شارژ تا ۵۰ هزار تومان']
         );
 
         add_settings_field(
             'gift_50k_to_100k',
-            'From 50,000 Till 100,000 Charge',
+            'از ۵۰ هزار تا ۱۰۰ هزار تومان شارژ',
             [$this, 'gift_field_callback'],
             'donap-gift-settings',
             'donap_gift_section',
-            ['field' => '50k_to_100k', 'label' => 'Gift percentage for charges from 50,000 to 100,000']
+            ['field' => '50k_to_100k', 'label' => 'مقدار هدیه برای شارژ از ۵۰ هزار تا ۱۰۰ هزار تومان']
         );
 
         add_settings_field(
             'gift_100k_to_200k',
-            'From 100,000 Till 200,000 Charge',
+            'از ۱۰۰ هزار تا ۲۰۰ هزار تومان شارژ',
             [$this, 'gift_field_callback'],
             'donap-gift-settings',
             'donap_gift_section',
-            ['field' => '100k_to_200k', 'label' => 'Gift percentage for charges from 100,000 to 200,000']
+            ['field' => '100k_to_200k', 'label' => 'مقدار هدیه برای شارژ از ۱۰۰ هزار تا ۲۰۰ هزار تومان']
         );
 
         add_settings_field(
             'gift_above_200k',
-            'Above 200,000 Charge',
+            'بالای ۲۰۰ هزار تومان شارژ',
             [$this, 'gift_field_callback'],
             'donap-gift-settings',
             'donap_gift_section',
-            ['field' => 'above_200k', 'label' => 'Gift percentage for charges above 200,000']
+            ['field' => 'above_200k', 'label' => 'مقدار هدیه برای شارژ بالای ۲۰۰ هزار تومان']
         );
     }
 
@@ -180,16 +190,48 @@ class AdminServiceProvider
     /**
      * Wallet Management page content
      */
-    public function wallet_management_page()
+    public function wallets_page()
     {
+        // Handle wallet balance modifications
+        if (isset($_POST['modify_wallet']) && wp_verify_nonce($_POST['wallet_nonce'], 'modify_wallet_action')) {
+            $user_id = sanitize_text_field($_POST['user_id']);
+            $amount = intval($_POST['amount']);
+            $action_type = sanitize_text_field($_POST['action_type']);
+            
+            if ($user_id && $amount > 0) {
+                $wallet_service = Container::resolve('WalletService');
+                
+                if ($action_type === 'increase') {
+                    $wallet_service->updateBalance($user_id, 'credit', $amount, \App\Core\TransactionType::ADMIN);
+                    $message = "موجودی کیف پول کاربر {$user_id} به مقدار {$amount} تومان افزایش یافت.";
+                } else {
+                    $wallet_service->updateBalance($user_id, 'credit', -$amount, \App\Core\TransactionType::ADMIN);
+                    $message = "موجودی کیف پول کاربر {$user_id} به مقدار {$amount} تومان کاهش یافت.";
+                }
+                
+                echo '<div class="notice notice-success"><p>' . $message . '</p></div>';
+            }
+        }
+        
         $data = [
-            'active_wallets' => $this->get_active_wallets_count(),
-            'pending_transactions' => $this->get_pending_transactions_count(),
-            'daily_volume' => $this->get_daily_volume(),
-            'wallet_activities' => $this->get_wallet_activities()
+            'wallets' => $this->get_all_wallets(),
+            'wallet_stats' => $this->get_wallet_stats()
         ];
         
-        echo view('admin/wallet-management', $data);
+        echo view('admin/wallets', $data);
+    }
+
+    /**
+     * Transactions page content
+     */
+    public function transactions_page()
+    {
+        $data = [
+            'transactions' => $this->get_all_transactions(),
+            'transaction_stats' => $this->get_transaction_stats()
+        ];
+        
+        echo view('admin/transactions', $data);
     }
 
     /**
@@ -224,7 +266,7 @@ class AdminServiceProvider
      */
     public function gift_section_callback()
     {
-        echo '<p>Configure gift percentages for different charge ranges. These values will be used to calculate bonus credits when users top up their wallets.</p>';
+        echo '<p>تنظیم مقادیر ثابت هدیه برای بازه‌های مختلف شارژ. این مقادیر برای محاسبه اعتبار هدیه هنگام شارژ کیف پول کاربران استفاده می‌شود.</p>';
     }
 
     /**
@@ -469,6 +511,101 @@ class AdminServiceProvider
         }
         
         return $data;
+    }
+
+    /**
+     * Get all wallets
+     */
+    private function get_all_wallets()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return [];
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallets';
+        $results = $wpdb->get_results("
+            SELECT * FROM $table 
+            ORDER BY created_at DESC 
+            LIMIT 50
+        ");
+
+        return $results ?: [];
+    }
+
+    /**
+     * Get wallet statistics
+     */
+    private function get_wallet_stats()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return [
+                'total_wallets' => 0,
+                'active_wallets' => 0,
+                'total_balance' => 0,
+                'avg_balance' => 0
+            ];
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallets';
+        
+        return [
+            'total_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table") ?: 0,
+            'active_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE balance > 0") ?: 0,
+            'total_balance' => $wpdb->get_var("SELECT SUM(balance) FROM $table WHERE type = 'credit'") ?: 0,
+            'avg_balance' => $wpdb->get_var("SELECT AVG(balance) FROM $table WHERE type = 'credit' AND balance > 0") ?: 0
+        ];
+    }
+
+    /**
+     * Get all transactions
+     */
+    private function get_all_transactions()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return [];
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
+        $results = $wpdb->get_results("
+            SELECT * FROM $table 
+            ORDER BY created_at DESC 
+            LIMIT 50
+        ");
+
+        return $results ?: [];
+    }
+
+    /**
+     * Get transaction statistics
+     */
+    private function get_transaction_stats()
+    {
+        global $wpdb;
+        
+        if (!$wpdb) {
+            return [
+                'total_transactions' => 0,
+                'today_transactions' => 0,
+                'total_volume' => 0,
+                'today_volume' => 0
+            ];
+        }
+        
+        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
+        $today = date('Y-m-d');
+        
+        return [
+            'total_transactions' => $wpdb->get_var("SELECT COUNT(*) FROM $table") ?: 0,
+            'today_transactions' => $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE DATE(created_at) = %s", $today)) ?: 0,
+            'total_volume' => $wpdb->get_var("SELECT SUM(ABS(amount)) FROM $table") ?: 0,
+            'today_volume' => $wpdb->get_var($wpdb->prepare("SELECT SUM(ABS(amount)) FROM $table WHERE DATE(created_at) = %s", $today)) ?: 0
+        ];
     }
 
     /**

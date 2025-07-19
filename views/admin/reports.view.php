@@ -1,71 +1,71 @@
 <div class="wrap donap-admin-page">
-    <h1>Reports</h1>
+    <h1>گزارشات</h1>
     
     <div class="donap-reports-filters">
-        <h2>Generate Reports</h2>
+        <h2>تولید گزارش</h2>
         <form method="get" action="">
             <input type="hidden" name="page" value="donap-reports">
             
             <table class="form-table">
                 <tr>
-                    <th scope="row">Report Type</th>
+                    <th scope="row">نوع گزارش</th>
                     <td>
                         <select name="report_type" id="report_type">
-                            <option value="transactions" <?php selected($report_type ?? '', 'transactions'); ?>>Transaction Report</option>
-                            <option value="wallets" <?php selected($report_type ?? '', 'wallets'); ?>>Wallet Report</option>
-                            <option value="gifts" <?php selected($report_type ?? '', 'gifts'); ?>>Gift Report</option>
-                            <option value="users" <?php selected($report_type ?? '', 'users'); ?>>User Report</option>
+                            <option value="transactions" <?php selected($report_type ?? '', 'transactions'); ?>>گزارش تراکنش‌ها</option>
+                            <option value="wallets" <?php selected($report_type ?? '', 'wallets'); ?>>گزارش کیف پول‌ها</option>
+                            <option value="gifts" <?php selected($report_type ?? '', 'gifts'); ?>>گزارش هدایا</option>
+                            <option value="users" <?php selected($report_type ?? '', 'users'); ?>>گزارش کاربران</option>
                         </select>
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row">Date Range</th>
+                    <th scope="row">بازه تاریخ</th>
                     <td>
                         <input type="date" name="start_date" value="<?php echo esc_attr($start_date ?? ''); ?>" />
-                        to
+                        تا
                         <input type="date" name="end_date" value="<?php echo esc_attr($end_date ?? ''); ?>" />
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row">Format</th>
+                    <th scope="row">فرمت</th>
                     <td>
                         <label>
                             <input type="radio" name="format" value="html" <?php checked($format ?? 'html', 'html'); ?> />
-                            HTML View
+                            نمایش HTML
                         </label>
                         <label>
                             <input type="radio" name="format" value="csv" <?php checked($format ?? '', 'csv'); ?> />
-                            CSV Export
+                            خروجی CSV
                         </label>
                         <label>
                             <input type="radio" name="format" value="pdf" <?php checked($format ?? '', 'pdf'); ?> />
-                            PDF Export
+                            خروجی PDF
                         </label>
                     </td>
                 </tr>
             </table>
             
-            <?php submit_button('Generate Report', 'primary', 'generate_report'); ?>
+            <?php submit_button('تولید گزارش', 'primary', 'generate_report'); ?>
         </form>
     </div>
 
     <?php if (!empty($report_data)): ?>
         <div class="donap-report-results">
-            <h2>Report Results</h2>
+            <h2>نتایج گزارش</h2>
             
             <div class="donap-report-summary">
                 <div class="donap-dashboard-grid">
                     <div class="donap-card">
-                        <h3>Total Records</h3>
+                        <h3>تعداد کل رکوردها</h3>
                         <p class="donap-stat"><?php echo count($report_data); ?></p>
                     </div>
                     <div class="donap-card">
-                        <h3>Total Amount</h3>
-                        <p class="donap-stat"><?php echo number_format($total_amount ?? 0); ?> Toman</p>
+                        <h3>مجموع مقدار</h3>
+                        <p class="donap-stat"><?php echo number_format($total_amount ?? 0); ?> تومان</p>
                     </div>
                     <div class="donap-card">
-                        <h3>Date Range</h3>
-                        <p class="donap-stat"><?php echo ($start_date ?? 'N/A') . ' to ' . ($end_date ?? 'N/A'); ?></p>
+                        <h3>بازه تاریخ</h3>
+                        <p class="donap-stat"><?php echo ($start_date ?? 'نامشخص') . ' تا ' . ($end_date ?? 'نامشخص'); ?></p>
                     </div>
                 </div>
             </div>

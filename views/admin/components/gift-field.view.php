@@ -7,11 +7,10 @@
                id="donap_gift_<?php echo $field; ?>" 
                name="donap_gift_values[<?php echo $field; ?>]" 
                value="<?php echo esc_attr($value); ?>" 
-               step="0.01" 
+               step="1" 
                min="0" 
-               max="100" 
-               class="regular-text donap-percentage-input" />
-        <span class="donap-field-suffix">%</span>
+               class="regular-text donap-amount-input" />
+        <span class="donap-field-suffix">تومان</span>
     </div>
     <p class="description donap-field-description">
         <?php echo $description; ?>
