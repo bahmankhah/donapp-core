@@ -12,13 +12,10 @@ class WCDonapGateway extends \WC_Payment_Gateway {
     private WalletService $walletService;
 
     public function __construct() {
-        appLogger('WCDonapGateway: Constructor called');
         
         try {
             $this->walletService = Container::resolve('WalletService');
-            appLogger('WCDonapGateway: WalletService resolved successfully');
         } catch (Exception $e) {
-            appLogger('WCDonapGateway: Failed to resolve WalletService: ' . $e->getMessage());
             // Don't return here, continue with basic setup
         }
 
@@ -34,14 +31,14 @@ class WCDonapGateway extends \WC_Payment_Gateway {
         $this->init_settings();
 
         // Load settings
+        $user_id = get_donap_user_id();
         $this->title   = $this->get_option('title', 'پرداخت با کیف پول');
         $this->enabled = $this->get_option('enabled', 'yes');
-        $this->description = $this->get_option('description', 'پرداخت سریع با موجودی کیف پول شما');
+        $this->description = $this->get_option('description', 'پرداخت سریع با موجودی کیف پول شما' . ' - ' . $this->walletService->getAvailableCredit($user_id));
 
         // Handle saving admin settings
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
         
-        appLogger('WCDonapGateway: Constructor completed successfully');
     }
 
     /**
