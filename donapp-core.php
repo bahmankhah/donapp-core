@@ -49,6 +49,7 @@ register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
 add_action('plugins_loaded', function () {
+    (new AppServiceProvider())->boot();
     add_filter('woocommerce_payment_gateways', function ($gateways) {
         $gateways[] = \App\Core\WCDonapGateway::class;
         return $gateways;
@@ -60,7 +61,6 @@ add_action('init', function () {
         wp_redirect(Auth::sso()->getLoginUrl()); 
         exit;
     }
-    (new AppServiceProvider())->boot();
     (new RouteServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
