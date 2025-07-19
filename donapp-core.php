@@ -50,10 +50,33 @@ register_activation_hook(__FILE__, function () {
 });
 add_action('plugins_loaded', function () {
     (new AppServiceProvider())->boot();
-    add_filter('woocommerce_payment_gateways', function ($gateways) {
-        $gateways[] = \App\Core\WCDonapGateway::class;
-        return $gateways;
-    });
+    
+    // Make sure WooCommerce is active before registering the gateway
+    if (class_exists('WooCommerce') && class_exists('WC_Payment_Gateway')) {
+        add_filter('woocommerce_payment_gateways', function ($gateways) {
+            error_log('Donap Core: Registering Donap Wallet Gateway - gateways count before: ' . count($gateways));
+            $gateways[] = \App\Core\WCDonapGateway::class;
+            error_log('Donap Core: Registering Donap Wallet Gateway - gateways count after: ' . count($gateways));
+            return $gateways;
+        });
+        
+        // Add admin notice to confirm registration
+        add_action('admin_notices', function() {
+            if (current_user_can('manage_options')) {
+                echo '<div class="notice notice-info"><p>Donap Wallet Gateway has been registered with WooCommerce.</p></div>';
+            }
+        });
+        
+    } else {
+        error_log('Donap Core: WooCommerce not found - cannot register Donap Wallet Gateway');
+        
+        // Add admin notice about missing WooCommerce
+        add_action('admin_notices', function() {
+            if (current_user_can('manage_options')) {
+                echo '<div class="notice notice-error"><p>WooCommerce is required for Donap Wallet Gateway to work.</p></div>';
+            }
+        });
+    }
 });
 
 add_action('init', function () {
