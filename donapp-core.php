@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use App\Providers\AdminServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\ElementorServiceProvider;
 use App\Providers\HookFilterServiceProvider;
@@ -72,6 +73,7 @@ add_action('init', function () {
     (new ShortcodeServiceProvider())->boot();
     (new SSOServiceProvider())->boot();
     (new ElementorServiceProvider())->boot();
+    (new AdminServiceProvider())->boot();
 });
 
 

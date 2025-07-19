@@ -69,8 +69,16 @@ class HookFilterServiceProvider
                     // Get the line total using array access method
                     $amount = $item['line_total'];
                     Container::resolve('WalletService')->increaseCredit($user_id, $amount);
-                    Container::resolve('WalletService')->addGift($user_id, $amount);
-                    $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
+                    
+                    // Calculate gift amount using GiftService
+                    $gift_amount = Container::resolve('GiftService')->calculateGift($amount);
+                    if ($gift_amount > 0) {
+                        Container::resolve('WalletService')->addGift($user_id, $gift_amount);
+                        $gift_percentage = Container::resolve('GiftService')->getGiftPercentage($amount);
+                        $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد. هدیه {$gift_percentage}% ({$gift_amount} ریال) اعطا شد.");
+                    } else {
+                        $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
+                    }
                 }
             }
         });
