@@ -47,7 +47,15 @@ class WCDonapGateway extends \WC_Payment_Gateway {
 
     private function getBalance(){
         $user_id = get_donap_user_id();
-        return $this->walletService->getAvailableCredit($user_id);
+        if (!$user_id || !isset($this->walletService)) {
+            return 0;
+        }
+        try {
+            return $this->walletService->getAvailableCredit($user_id);
+        } catch (Exception $e) {
+            appLogger('WCDonapGateway::getBalance() failed: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -82,47 +90,55 @@ class WCDonapGateway extends \WC_Payment_Gateway {
      * Determine if the gateway is available.
      */
     public function is_available() {
-        appLogger('WCDonapGateway::is_available() called');
         
-        // For testing - make gateway always available when enabled
-        if ($this->enabled === 'yes') {
-            appLogger('WCDonapGateway: Gateway is enabled, checking conditions...');
-            
-            if (!is_user_logged_in()) {
-                appLogger('WCDonapGateway: User not logged in');
-                return true; // For testing, allow even when not logged in
-            }
+        if ($this->enabled !== 'yes') {
+            appLogger('WCDonapGateway: Gateway not enabled');
+            return false;
+        }
 
-            $user_id = get_donap_user_id();
-            if (!$user_id) {
-                appLogger('WCDonapGateway: No donap user ID found');
-                return true; // For testing, allow even without donap ID
-            }
-
-            appLogger('WCDonapGateway: User ID found: ' . $user_id);
-
-            if (!isset($this->walletService)) {
-                appLogger('WCDonapGateway: WalletService not available');
-                return true; // For testing, allow even without wallet service
-            }
-
-            // Add timeout protection
-            set_time_limit(5); // 5 seconds max
-            
-            try {
-                $balance = $this->walletService->getAvailableCredit($user_id);
-                appLogger('WCDonapGateway: Available balance: ' . $balance);
-                $isAvailable = $balance > 0;
-                appLogger('WCDonapGateway: Gateway available: ' . ($isAvailable ? 'yes' : 'no'));
-                return $isAvailable;
-            } catch (Exception $e) {
-                appLogger('WCDonapGateway: getAvailableCredit failed: ' . $e->getMessage());
-                return true; // For testing, allow even on error
+        appLogger('WCDonapGateway: Gateway is enabled, checking conditions...');
+        
+        // Check if cart contains wallet top-up items - if so, hide this gateway
+        if (WC()->cart && !WC()->cart->is_empty()) {
+            foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+                if (!empty($cart_item['wallet_topup'])) {
+                    appLogger('WCDonapGateway: Cart contains wallet top-up item, hiding gateway');
+                    return false;
+                }
             }
         }
         
-        appLogger('WCDonapGateway: Gateway not enabled');
-        return false;
+        if (!is_user_logged_in()) {
+            appLogger('WCDonapGateway: User not logged in');
+            return false;
+        }
+
+        $user_id = get_donap_user_id();
+        if (!$user_id) {
+            appLogger('WCDonapGateway: No donap user ID found');
+            return false;
+        }
+
+        appLogger('WCDonapGateway: User ID found: ' . $user_id);
+
+        if (!isset($this->walletService)) {
+            appLogger('WCDonapGateway: WalletService not available');
+            return false;
+        }
+
+        // Add timeout protection
+        set_time_limit(5); // 5 seconds max
+        
+        try {
+            $balance = $this->walletService->getAvailableCredit($user_id);
+            appLogger('WCDonapGateway: Available balance: ' . $balance);
+            $isAvailable = $balance > 0;
+            appLogger('WCDonapGateway: Gateway available: ' . ($isAvailable ? 'yes' : 'no'));
+            return $isAvailable;
+        } catch (Exception $e) {
+            appLogger('WCDonapGateway: getAvailableCredit failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

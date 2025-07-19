@@ -30,6 +30,13 @@ class HookFilterServiceProvider
         add_action('woocommerce_after_add_to_cart_button', [Container::resolve('WooService'), 'productPageButton'], 35);
         add_action('woocommerce_check_cart_items', [Container::resolve('WooService'), 'beforeCheckout']);
 
+        // Transfer wallet_topup meta from cart item to order item
+        add_action('woocommerce_checkout_create_order_line_item', function($item, $cart_item_key, $values, $order) {
+            if (!empty($values['wallet_topup'])) {
+                $item->add_meta_data('wallet_topup', true);
+            }
+        }, 10, 4);
+
 
 
         // add_filter('wp_nav_menu_items', function ($items, $args) {
@@ -59,7 +66,8 @@ class HookFilterServiceProvider
                 $is_wallet_topup = $item->get_meta('wallet_topup', true);
                 if ($is_wallet_topup) {
                     $user_id = get_donap_user_id($order->get_user_id());
-                    $amount = $item->get_total();
+                    // Get the line total using array access method
+                    $amount = $item['line_total'];
                     Container::resolve('WalletService')->increaseCredit($user_id, $amount);
                     Container::resolve('WalletService')->addGift($user_id, $amount);
                     $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");

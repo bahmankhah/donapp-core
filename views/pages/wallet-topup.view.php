@@ -8,16 +8,19 @@
             WC()->session->set('wallet_topup_amount', $amount);
             WC()->cart->empty_cart();
 
-            // You can create a simple "wallet top-up" product in admin and use its ID instead
-            $product = new WC_Product();
+            // Create a virtual wallet top-up product
+            $product = new WC_Product_Simple();
             $product->set_name('افزایش موجودی کیف پول');
             $product->set_price($amount);
             $product->set_regular_price($amount);
             $product->set_virtual(true);
             $product->set_downloadable(false);
+            $product->set_catalog_visibility('hidden');
+            $product->set_status('publish');
+            $product_id = $product->save();
 
-            // Add item to cart
-            WC()->cart->add_to_cart($product->get_id(), 1, 0, [], ['wallet_topup' => true]);
+            // Add item to cart with wallet_topup meta
+            WC()->cart->add_to_cart($product_id, 1, 0, [], ['wallet_topup' => true]);
 
             wp_redirect(wc_get_checkout_url());
             exit;

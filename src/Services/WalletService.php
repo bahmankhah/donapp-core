@@ -40,7 +40,7 @@ class WalletService{
     }
 
     public function addGift($identifier, $amount){
-        return $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), TransactionType::CREDIT_CHARGE);
+        return $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), TransactionType::CHARGE_GIFT);
     }
 
     public function decreaseCredit($identifier, $amount, $useCash = true){
