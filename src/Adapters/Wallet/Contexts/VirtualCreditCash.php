@@ -15,7 +15,7 @@ class VirtualCreditCash extends Wallet{
     {
         $creditAmount = FacadesWallet::credit()->getBalance($identifier);
         $cashAmount = FacadesWallet::cash()->getBalance($identifier);
-        return $creditAmount + $cashAmount;
+        return intval($creditAmount + $cashAmount);
     }
     public function decreaseBalance($identifier, $amount, $transactionType = null)
     {
@@ -36,7 +36,7 @@ class VirtualCreditCash extends Wallet{
             // Deduct the rest from cash
             $updatedBalance = FacadesWallet::cash()->updateBalance($identifier, -$remainingAmount, $transactionType);
         }
-        return $updatedBalance;
+        return intval($updatedBalance);
 
     }
 }

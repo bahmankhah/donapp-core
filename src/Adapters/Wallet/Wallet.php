@@ -20,7 +20,7 @@ abstract class Wallet extends Adapter {
         if(!$wallet){
             return 0;
         }
-        return $wallet['balance'];
+        return intval($wallet['balance']);
     }
     public function createWalllet($identifier){
         (new ModelsWallet())->create([
@@ -66,7 +66,7 @@ abstract class Wallet extends Adapter {
             ]
         );
         $this->trasnactionService->create($wallet, $amount, $updatedBalance, $transactionType);
-        return $updatedBalance;
+        return intval($updatedBalance);
     }
 
 }
