@@ -214,10 +214,11 @@ class AdminServiceProvider
         if (isset($_POST['create_wallet']) && wp_verify_nonce($_POST['wallet_create_nonce'], 'create_wallet_action')) {
             $user_id = sanitize_text_field($_POST['selected_user_id']);
             $initial_amount = intval($_POST['initial_amount']) ?: 0;
+            $wallet_type = sanitize_text_field($_POST['wallet_type']);
             
-            if ($user_id) {
+            if ($user_id && $wallet_type) {
                 try {
-                    $walletService->createWalletForUser($user_id, $initial_amount);
+                    $walletService->createWalletForUser($user_id, $initial_amount, $wallet_type);
                     $message = 'کیف پول با موفقیت ایجاد شد.';
                 } catch (Exception $e) {
                     $error = 'خطا در ایجاد کیف پول: ' . $e->getMessage();
@@ -227,15 +228,21 @@ class AdminServiceProvider
         
         // Handle wallet balance modifications
         if (isset($_POST['modify_wallet']) && wp_verify_nonce($_POST['wallet_nonce'], 'modify_wallet_action')) {
-            $user_id = sanitize_text_field($_POST['user_id']);
+            $user_id = sanitize_text_field($_POST['selected_user_id_modify']);
             $amount = intval($_POST['amount']);
             $action_type = sanitize_text_field($_POST['action_type']);
             $description = sanitize_text_field($_POST['description'] ?? '');
             
             if ($user_id && $amount > 0) {
                 try {
-                    $walletService->modifyWalletBalance($user_id, $amount, $action_type, $description);
-                    $message = 'تراکنش با موفقیت انجام شد.';
+                    // Get user's SSO ID for wallet operations using the user ID
+                    $user = $userService->getUserForWalletCreation($user_id);
+                    if ($user && $user->sso_global_id) {
+                        $walletService->modifyWalletBalance($user->sso_global_id, $amount, $action_type, $description);
+                        $message = 'تراکنش با موفقیت انجام شد.';
+                    } else {
+                        $error = 'کاربر SSO یافت نشد.';
+                    }
                 } catch (Exception $e) {
                     $error = 'خطا در انجام تراکنش: ' . $e->getMessage();
                 }

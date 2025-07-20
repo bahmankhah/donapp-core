@@ -136,22 +136,19 @@ class WalletService{
         if (!$wpdb) {
             return [
                 'total_wallets' => 0,
-                'active_wallets' => 0,
                 'total_balance' => 0,
                 'avg_balance' => 0
             ];
         }
         
         $total_wallets_query = $this->walletModel->newQuery()->select('COUNT(*)');
-        $active_wallets_query = $this->walletModel->newQuery()->select('COUNT(*)')->where('balance', '>', 0, '%d');
         $total_balance_query = $this->walletModel->newQuery()->select('SUM(balance)')->where('type', '=', 'credit');
         $avg_balance_query = $this->walletModel->newQuery()->select('AVG(balance)')->where('type', '=', 'credit')->where('balance', '>', 0, '%d');
         
         return [
-            'total_wallets' => $wpdb->get_var($total_wallets_query->sql()) ?: 0,
-            'active_wallets' => $wpdb->get_var($active_wallets_query->sql()) ?: 0,
-            'total_balance' => $wpdb->get_var($total_balance_query->sql()) ?: 0,
-            'avg_balance' => $wpdb->get_var($avg_balance_query->sql()) ?: 0
+            'total_wallets' => intval($wpdb->get_var($total_wallets_query->sql()) ?: 0),
+            'total_balance' => floatval($wpdb->get_var($total_balance_query->sql()) ?: 0),
+            'avg_balance' => floatval($wpdb->get_var($avg_balance_query->sql()) ?: 0)
         ];
     }
     
@@ -227,10 +224,16 @@ class WalletService{
     /**
      * Create wallet for user with initial balance
      */
-    public function createWalletForUser($user_id, $initial_amount = 0)
+    public function createWalletForUser($user_id, $initial_amount = 0, $wallet_type = WalletType::CREDIT)
     {
         if (!$user_id) {
             throw new Exception('User ID is required', 400);
+        }
+        
+        // Validate wallet type
+        $valid_types = [WalletType::CREDIT, WalletType::CASH, WalletType::SUSPENDED, WalletType::COIN];
+        if (!in_array($wallet_type, $valid_types)) {
+            throw new Exception('Invalid wallet type', 400);
         }
         
         // Use UserService to get user details
@@ -249,10 +252,10 @@ class WalletService{
         
         // Create wallet with initial balance
         if ($initial_amount > 0) {
-            return $this->updateBalance($identifier, WalletType::CREDIT, abs($initial_amount), TransactionType::ADMIN);
+            return $this->updateBalance($identifier, $wallet_type, abs($initial_amount), TransactionType::ADMIN);
         } else {
             // Create empty wallet by adding and removing 0
-            $this->updateBalance($identifier, WalletType::CREDIT, 0, TransactionType::ADMIN);
+            $this->updateBalance($identifier, $wallet_type, 0, TransactionType::ADMIN);
             return true;
         }
     }

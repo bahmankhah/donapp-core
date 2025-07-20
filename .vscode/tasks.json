@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Test PHP Syntax",
+			"type": "shell",
+			"command": "cd /var/www/php/donapp-core && php -l src/Services/WalletService.php && php -l src/Providers/AdminServiceProvider.php",
+			"group": "test",
+			"isBackground": false
+		}
+	]
+}
