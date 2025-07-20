@@ -61,8 +61,9 @@ class HookFilterServiceProvider
             return $item_data;
         }, 10, 2);
 
-        add_action('woocommerce_order_status_completed', function ($order_id) {
-            appLogger("woocommerce_order_status_completed hook triggered for order ID: {$order_id}");
+        // Function to process wallet topup
+        $processWalletTopup = function ($order_id, $hook_name = '') {
+            appLogger("{$hook_name} hook triggered for order ID: {$order_id}");
             
             $order = wc_get_order($order_id);
             if (!$order) {
@@ -70,7 +71,14 @@ class HookFilterServiceProvider
                 return;
             }
             
-            appLogger("Order found, processing items. Order user ID: " . $order->get_user_id());
+            // Check if wallet topup was already processed to avoid duplicates
+            $already_processed = $order->get_meta('_wallet_topup_processed');
+            if ($already_processed) {
+                appLogger("Wallet topup already processed for order {$order_id}, skipping");
+                return;
+            }
+            
+            appLogger("Order found, processing items. Order user ID: " . $order->get_user_id() . ", Order Status: " . $order->get_status());
             
             foreach ($order->get_items() as $item_id => $item) {
                 appLogger("Processing item ID: {$item_id}, Item name: " . $item->get_name());
@@ -102,6 +110,12 @@ class HookFilterServiceProvider
                             $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
                             appLogger("No gift amount, only main credit added");
                         }
+                        
+                        // Mark as processed to avoid duplicates
+                        $order->update_meta_data('_wallet_topup_processed', true);
+                        $order->save();
+                        appLogger("Marked order {$order_id} as wallet topup processed");
+                        
                     } catch (Exception $e) {
                         appLogger("Error processing wallet topup: " . $e->getMessage());
                         $order->add_order_note("خطا در افزایش موجودی کیف پول: " . $e->getMessage());
@@ -110,6 +124,27 @@ class HookFilterServiceProvider
                     appLogger("Item is not a wallet topup, skipping");
                 }
             }
+        };
+
+        // Hook into multiple payment completion events
+        add_action('woocommerce_payment_complete', function($order_id) use ($processWalletTopup) {
+            $processWalletTopup($order_id, 'woocommerce_payment_complete');
         });
+        
+        add_action('woocommerce_order_status_completed', function($order_id) use ($processWalletTopup) {
+            $processWalletTopup($order_id, 'woocommerce_order_status_completed');
+        });
+        
+        add_action('woocommerce_order_status_processing', function($order_id) use ($processWalletTopup) {
+            $processWalletTopup($order_id, 'woocommerce_order_status_processing');
+        });
+        
+        // Also hook into when order status changes to paid statuses
+        add_action('woocommerce_order_status_changed', function($order_id, $old_status, $new_status) use ($processWalletTopup) {
+            appLogger("Order {$order_id} status changed from {$old_status} to {$new_status}");
+            if (in_array($new_status, ['completed', 'processing'])) {
+                $processWalletTopup($order_id, 'woocommerce_order_status_changed');
+            }
+        }, 10, 3);
     }
 }
