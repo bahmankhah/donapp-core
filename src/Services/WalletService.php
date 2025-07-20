@@ -102,10 +102,34 @@ class WalletService{
             $query->where('balance', '>=', intval($filters['min_balance']), '%d');
         }
 
-        // Get total count for pagination
-        $count_query = clone $query;
-        $count_query->select('COUNT(*)');
-        $total_items = $wpdb->get_var($count_query->sql()) ?: 0;
+        // Get total count for pagination (using direct SQL to avoid query builder issues)
+        $table_name = $wpdb->prefix . 'dnp_user_wallets';
+        $where_conditions = [];
+        $where_values = [];
+
+        if (!empty($filters['identifier'])) {
+            $where_conditions[] = "identifier LIKE %s";
+            $where_values[] = '%' . $filters['identifier'] . '%';
+        }
+        
+        if (!empty($filters['type'])) {
+            $where_conditions[] = "type = %s";
+            $where_values[] = $filters['type'];
+        }
+        
+        if (isset($filters['min_balance']) && is_numeric($filters['min_balance'])) {
+            $where_conditions[] = "balance >= %d";
+            $where_values[] = intval($filters['min_balance']);
+        }
+
+        $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+        $count_sql = "SELECT COUNT(*) FROM {$table_name} {$where_clause}";
+        
+        if (!empty($where_values)) {
+            $total_items = intval($wpdb->get_var($wpdb->prepare($count_sql, $where_values)));
+        } else {
+            $total_items = intval($wpdb->get_var($count_sql));
+        }
 
         $total_pages = ceil($total_items / $per_page);
         $page = max(1, min($page, $total_pages));
@@ -141,14 +165,28 @@ class WalletService{
             ];
         }
         
-        $total_wallets_query = $this->walletModel->newQuery()->select('COUNT(*)');
-        $total_balance_query = $this->walletModel->newQuery()->select('SUM(balance)')->where('type', '=', 'credit');
-        $avg_balance_query = $this->walletModel->newQuery()->select('AVG(balance)')->where('type', '=', 'credit')->where('balance', '>', 0, '%d');
+        // Use direct SQL queries instead of model query builder to avoid issues
+        $table_name = $wpdb->prefix . 'dnp_user_wallets';
+        
+        // Count total wallets
+        $total_wallets = intval($wpdb->get_var("SELECT COUNT(*) FROM {$table_name}"));
+        
+        // Sum of credit wallet balances
+        $total_balance = floatval($wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(balance), 0) FROM {$table_name} WHERE type = %s",
+            'credit'
+        )));
+        
+        // Average balance for credit wallets with balance > 0
+        $avg_balance = floatval($wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(AVG(balance), 0) FROM {$table_name} WHERE type = %s AND balance > 0",
+            'credit'
+        )));
         
         return [
-            'total_wallets' => intval($wpdb->get_var($total_wallets_query->sql()) ?: 0),
-            'total_balance' => floatval($wpdb->get_var($total_balance_query->sql()) ?: 0),
-            'avg_balance' => floatval($wpdb->get_var($avg_balance_query->sql()) ?: 0)
+            'total_wallets' => $total_wallets,
+            'total_balance' => $total_balance,
+            'avg_balance' => $avg_balance
         ];
     }
     
@@ -163,8 +201,8 @@ class WalletService{
             return 0;
         }
         
-        $query = $this->walletModel->newQuery()->select('COUNT(DISTINCT identifier)');
-        $count = $wpdb->get_var($query->sql());
+        $table_name = $wpdb->prefix . 'dnp_user_wallets';
+        $count = intval($wpdb->get_var("SELECT COUNT(DISTINCT identifier) FROM {$table_name}"));
         return $count ?: 0;
     }
     
@@ -179,8 +217,11 @@ class WalletService{
             return 0;
         }
         
-        $query = $this->walletModel->newQuery()->select('SUM(balance)')->where('type', '=', 'credit');
-        $total = $wpdb->get_var($query->sql());
+        $table_name = $wpdb->prefix . 'dnp_user_wallets';
+        $total = floatval($wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(balance), 0) FROM {$table_name} WHERE type = %s",
+            'credit'
+        )));
         return $total ?: 0;
     }
     
@@ -195,8 +236,8 @@ class WalletService{
             return 0;
         }
         
-        $query = $this->walletModel->newQuery()->select('COUNT(*)')->where('balance', '>', 0, '%d');
-        $count = $wpdb->get_var($query->sql());
+        $table_name = $wpdb->prefix . 'dnp_user_wallets';
+        $count = intval($wpdb->get_var("SELECT COUNT(*) FROM {$table_name} WHERE balance > 0"));
         return $count ?: 0;
     }
     
