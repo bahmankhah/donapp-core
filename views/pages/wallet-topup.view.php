@@ -1,4 +1,7 @@
     <?php
+    // Get default amount from query parameter if exists
+    $default_amount = isset($_GET['amount']) ? absint($_GET['amount']) : '';
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wallet_topup_submit'], $_POST['wallet_amount'])) {
         $amount = absint($_POST['wallet_amount']);
 
@@ -30,6 +33,6 @@
 
     <form method="post">
         <label for="wallet_amount">مبلغ افزایش موجودی (تومان):</label>
-        <input type="number" name="wallet_amount" required min="1000" step="1000">
+        <input type="number" name="wallet_amount" required min="1000" step="1000" value="<?php echo esc_attr($default_amount); ?>">
         <button type="submit" name="wallet_topup_submit">افزایش موجودی</button>
     </form>

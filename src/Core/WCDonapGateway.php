@@ -196,5 +196,26 @@ class WCDonapGateway extends \WC_Payment_Gateway {
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         }
+        
+        // Check if user has insufficient balance and show charge button
+        $user_id = get_donap_user_id();
+        if ($user_id && isset($this->walletService) && WC()->cart) {
+            try {
+                $balance = $this->walletService->getAvailableCredit($user_id);
+                $cart_total = WC()->cart->get_total('edit');
+                
+                if ($balance < $cart_total) {
+                    $needed_amount = $cart_total - $balance;
+                    $charge_url = home_url('/charge-wallet?amount=' . ceil($needed_amount));
+                    
+                    echo '<div style="margin-top: 10px; padding: 10px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">';
+                    echo '<p style="margin: 0 0 10px 0; color: #856404;">موجودی کیف پول شما کافی نیست. مبلغ مورد نیاز: ' . number_format($needed_amount) . ' تومان</p>';
+                    echo '<a href="' . esc_url($charge_url) . '" class="button" style="background-color: #0073aa; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px;">شارژ کیف پول</a>';
+                    echo '</div>';
+                }
+            } catch (Exception $e) {
+                appLogger('WCDonapGateway: payment_fields balance check failed: ' . $e->getMessage());
+            }
+        }
     }
 }
