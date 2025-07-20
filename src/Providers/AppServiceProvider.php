@@ -8,6 +8,7 @@ use App\Services\GiftService;
 use App\Services\Modules\Proxy\ProxyService;
 use App\Services\ProductService;
 use App\Services\TransactionService;
+use App\Services\UserService;
 use App\Services\VideoService;
 use App\Services\WalletService;
 use App\Services\WooService;
@@ -108,6 +109,10 @@ class AppServiceProvider
         
         Container::bind('GiftService', function () {
             return new GiftService();
+        });
+        
+        Container::bind('UserService', function () {
+            return new UserService();
         });
     }
 }

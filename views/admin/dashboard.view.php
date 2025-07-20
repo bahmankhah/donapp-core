@@ -3,7 +3,7 @@
     <div class="donap-dashboard-grid">
         <?php 
         echo view('admin/components/stat-card', [
-            'title' => 'تعداد کل کاربران',
+            'title' => 'تعداد کل کاربران SSO',
             'value' => $total_users
         ]);
         

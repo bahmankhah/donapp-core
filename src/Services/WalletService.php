@@ -11,6 +11,13 @@ use Kernel\Container;
 
 class WalletService{
     
+    protected $walletModel;
+
+    public function __construct()
+    {
+        $this->walletModel = new Wallet();
+    }
+    
     public function settlementRequest($identifier){
         $balance = FacadesWallet::cash()->getBalance($identifier);
         if($balance <= 0){
@@ -23,8 +30,7 @@ class WalletService{
 
     public function findUserWallets($identifier)
     {
-        $wallets = (new Wallet())->where('identifier', '=', $identifier)->get();
-        return $wallets;
+        return $this->walletModel->where('identifier', '=', $identifier)->get();
     }
 
     public function getAvailableCredit($identifier, $useCash = true)
@@ -78,57 +84,36 @@ class WalletService{
             ];
         }
         
-        $table = $wpdb->prefix . 'dnp_user_wallets';
+        $offset = ($page - 1) * $per_page;
         
-        $where_conditions = ['1=1'];
-        $where_values = [];
-        
+        $query = $this->walletModel->newQuery()
+            ->orderBy('created_at', 'DESC');
+
         // Apply filters if provided
         if (!empty($filters['identifier'])) {
-            $where_conditions[] = 'identifier LIKE %s';
-            $where_values[] = '%' . $filters['identifier'] . '%';
+            $query->where('identifier', 'LIKE', '%' . $filters['identifier'] . '%');
         }
         
         if (!empty($filters['type'])) {
-            $where_conditions[] = 'type = %s';
-            $where_values[] = $filters['type'];
+            $query->where('type', '=', $filters['type']);
         }
         
         if (isset($filters['min_balance']) && is_numeric($filters['min_balance'])) {
-            $where_conditions[] = 'balance >= %d';
-            $where_values[] = intval($filters['min_balance']);
+            $query->where('balance', '>=', intval($filters['min_balance']), '%d');
         }
-        
-        $where_clause = implode(' AND ', $where_conditions);
-        
+
         // Get total count for pagination
-        $count_query = "SELECT COUNT(*) FROM $table WHERE $where_clause";
-        
-        if (!empty($where_values)) {
-            $total_items = $wpdb->get_var($wpdb->prepare($count_query, $where_values));
-        } else {
-            $total_items = $wpdb->get_var($count_query);
-        }
-        
+        $count_query = clone $query;
+        $count_query->select('COUNT(*)');
+        $total_items = $wpdb->get_var($count_query->sql()) ?: 0;
+
         $total_pages = ceil($total_items / $per_page);
         $page = max(1, min($page, $total_pages));
-        $offset = ($page - 1) * $per_page;
-        
+
         // Get paginated results
-        $query = "
-            SELECT * FROM $table 
-            WHERE $where_clause
-            ORDER BY created_at DESC 
-            LIMIT %d OFFSET %d
-        ";
-        
-        $query_values = array_merge($where_values, [$per_page, $offset]);
-        
-        if (!empty($where_values)) {
-            $results = $wpdb->get_results($wpdb->prepare($query, $query_values));
-        } else {
-            $results = $wpdb->get_results($wpdb->prepare($query, [$per_page, $offset]));
-        }
+        $query->limit($per_page);
+        $sql = $query->sql() . " OFFSET $offset";
+        $results = $wpdb->get_results($sql);
 
         return [
             'data' => $results ?: [],
@@ -157,13 +142,16 @@ class WalletService{
             ];
         }
         
-        $table = $wpdb->prefix . 'dnp_user_wallets';
+        $total_wallets_query = $this->walletModel->newQuery()->select('COUNT(*)');
+        $active_wallets_query = $this->walletModel->newQuery()->select('COUNT(*)')->where('balance', '>', 0, '%d');
+        $total_balance_query = $this->walletModel->newQuery()->select('SUM(balance)')->where('type', '=', 'credit');
+        $avg_balance_query = $this->walletModel->newQuery()->select('AVG(balance)')->where('type', '=', 'credit')->where('balance', '>', 0, '%d');
         
         return [
-            'total_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table") ?: 0,
-            'active_wallets' => $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE balance > 0") ?: 0,
-            'total_balance' => $wpdb->get_var("SELECT SUM(balance) FROM $table WHERE type = 'credit'") ?: 0,
-            'avg_balance' => $wpdb->get_var("SELECT AVG(balance) FROM $table WHERE type = 'credit' AND balance > 0") ?: 0
+            'total_wallets' => $wpdb->get_var($total_wallets_query->sql()) ?: 0,
+            'active_wallets' => $wpdb->get_var($active_wallets_query->sql()) ?: 0,
+            'total_balance' => $wpdb->get_var($total_balance_query->sql()) ?: 0,
+            'avg_balance' => $wpdb->get_var($avg_balance_query->sql()) ?: 0
         ];
     }
     
@@ -178,8 +166,8 @@ class WalletService{
             return 0;
         }
         
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        $count = $wpdb->get_var("SELECT COUNT(DISTINCT identifier) FROM $table");
+        $query = $this->walletModel->newQuery()->select('COUNT(DISTINCT identifier)');
+        $count = $wpdb->get_var($query->sql());
         return $count ?: 0;
     }
     
@@ -194,8 +182,8 @@ class WalletService{
             return 0;
         }
         
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        $total = $wpdb->get_var("SELECT SUM(balance) FROM $table WHERE type = 'credit'");
+        $query = $this->walletModel->newQuery()->select('SUM(balance)')->where('type', '=', 'credit');
+        $total = $wpdb->get_var($query->sql());
         return $total ?: 0;
     }
     
@@ -210,8 +198,8 @@ class WalletService{
             return 0;
         }
         
-        $table = $wpdb->prefix . 'dnp_user_wallets';
-        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE balance > 0");
+        $query = $this->walletModel->newQuery()->select('COUNT(*)')->where('balance', '>', 0, '%d');
+        $count = $wpdb->get_var($query->sql());
         return $count ?: 0;
     }
     
@@ -233,6 +221,39 @@ class WalletService{
                 
             default:
                 throw new Exception('Invalid action type', 400);
+        }
+    }
+    
+    /**
+     * Create wallet for user with initial balance
+     */
+    public function createWalletForUser($user_id, $initial_amount = 0)
+    {
+        if (!$user_id) {
+            throw new Exception('User ID is required', 400);
+        }
+        
+        // Use UserService to get user details
+        $userService = Container::resolve('UserService');
+        $user = $userService->getUserForWalletCreation($user_id);
+        
+        if (!$user) {
+            throw new Exception('SSO user not found', 404);
+        }
+        
+        if ($user->has_wallet) {
+            throw new Exception('User already has a wallet', 400);
+        }
+        
+        $identifier = $user->sso_global_id;
+        
+        // Create wallet with initial balance
+        if ($initial_amount > 0) {
+            return $this->updateBalance($identifier, WalletType::CREDIT, abs($initial_amount), TransactionType::ADMIN);
+        } else {
+            // Create empty wallet by adding and removing 0
+            $this->updateBalance($identifier, WalletType::CREDIT, 0, TransactionType::ADMIN);
+            return true;
         }
     }
 

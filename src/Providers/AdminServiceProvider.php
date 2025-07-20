@@ -85,6 +85,16 @@ class AdminServiceProvider
             'donap-reports',
             [$this, 'reports_page']
         );
+
+        // SSO Users submenu
+        add_submenu_page(
+            $this->main_menu_slug,
+            'کاربران SSO',
+            'کاربران SSO',
+            $this->capability,
+            'donap-sso-users',
+            [$this, 'sso_users_page']
+        );
     }
 
     /**
@@ -170,11 +180,12 @@ class AdminServiceProvider
      */
     public function dashboard_page()
     {
+        $userService = Container::resolve('UserService');
         $walletService = Container::resolve('WalletService');
         $transactionService = Container::resolve('TransactionService');
         
         $data = [
-            'total_users' => $walletService->getTotalUsersWithWallets(),
+            'total_users' => $userService->getTotalSSOUsersCount(),
             'total_balance' => $walletService->getTotalWalletBalance(),
             'total_transactions' => $transactionService->getTotalTransactionsCount(),
             'recent_activity' => $transactionService->getRecentActivity()
@@ -197,6 +208,22 @@ class AdminServiceProvider
     public function wallets_page()
     {
         $walletService = Container::resolve('WalletService');
+        $userService = Container::resolve('UserService');
+        
+        // Handle wallet creation
+        if (isset($_POST['create_wallet']) && wp_verify_nonce($_POST['wallet_create_nonce'], 'create_wallet_action')) {
+            $user_id = sanitize_text_field($_POST['selected_user_id']);
+            $initial_amount = intval($_POST['initial_amount']) ?: 0;
+            
+            if ($user_id) {
+                try {
+                    $walletService->createWalletForUser($user_id, $initial_amount);
+                    $message = 'کیف پول با موفقیت ایجاد شد.';
+                } catch (Exception $e) {
+                    $error = 'خطا در ایجاد کیف پول: ' . $e->getMessage();
+                }
+            }
+        }
         
         // Handle wallet balance modifications
         if (isset($_POST['modify_wallet']) && wp_verify_nonce($_POST['wallet_nonce'], 'modify_wallet_action')) {
@@ -228,11 +255,15 @@ class AdminServiceProvider
         
         $wallets_result = $walletService->getAllWallets($page, $per_page, $filters);
         
+        // Get SSO users for wallet creation dropdown
+        $sso_users_result = $userService->getSSOUsersForDropdown(1, 100);
+        
         $data = [
             'wallets' => $wallets_result['data'],
             'pagination' => $wallets_result['pagination'],
             'wallet_stats' => $walletService->getWalletStats(),
-            'current_filters' => $filters
+            'current_filters' => $filters,
+            'sso_users' => $sso_users_result
         ];
         
         if (isset($message)) {
@@ -301,6 +332,30 @@ class AdminServiceProvider
         }
         
         echo view('admin/reports', $data);
+    }
+
+    /**
+     * SSO Users page content
+     */
+    public function sso_users_page()
+    {
+        $userService = Container::resolve('UserService');
+        
+        // Get pagination parameters
+        $page = max(1, intval($_GET['paged'] ?? 1));
+        $per_page = 20;
+        $search = $_GET['search'] ?? '';
+        
+        $sso_users_result = $userService->getAllSSOUsers($page, $per_page, $search);
+        
+        $data = [
+            'sso_users' => $sso_users_result['data'],
+            'pagination' => $sso_users_result['pagination'],
+            'current_search' => $search,
+            'total_sso_users' => $userService->getTotalSSOUsersCount()
+        ];
+        
+        echo view('admin/sso-users', $data);
     }
 
     /**

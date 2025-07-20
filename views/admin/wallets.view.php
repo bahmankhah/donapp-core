@@ -50,12 +50,12 @@
                     <th scope="row">نوع عملیات</th>
                     <td>
                         <label>
-                            <input type="radio" name="action_type" value="increase" checked />
+                            <input type="radio" name="action_type" value="add" checked />
                             افزایش موجودی
                         </label>
                         <br>
                         <label>
-                            <input type="radio" name="action_type" value="decrease" />
+                            <input type="radio" name="action_type" value="subtract" />
                             کاهش موجودی
                         </label>
                     </td>
@@ -63,6 +63,54 @@
             </table>
             
             <?php submit_button('اعمال تغییرات', 'primary', 'modify_wallet'); ?>
+        </form>
+    </div>
+
+    <!-- Create Wallet Form -->
+    <div class="donap-wallet-create">
+        <h2>ایجاد کیف پول جدید</h2>
+        <?php if (isset($message)): ?>
+            <div class="notice notice-success"><p><?php echo esc_html($message); ?></p></div>
+        <?php endif; ?>
+        <?php if (isset($error)): ?>
+            <div class="notice notice-error"><p><?php echo esc_html($error); ?></p></div>
+        <?php endif; ?>
+        
+        <form method="post" action="">
+            <?php wp_nonce_field('create_wallet_action', 'wallet_create_nonce'); ?>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">انتخاب کاربر SSO</th>
+                    <td>
+                        <select name="selected_user_id" id="sso_user_select" class="regular-text" required>
+                            <option value="">کاربر مورد نظر را انتخاب کنید...</option>
+                            <?php if (!empty($sso_users)): ?>
+                                <?php foreach ($sso_users as $user): ?>
+                                    <option value="<?php echo esc_attr($user->ID); ?>" 
+                                            data-sso-id="<?php echo esc_attr($user->sso_global_id); ?>">
+                                        <?php echo esc_html($user->display_name ?: $user->user_login); ?> 
+                                        (<?php echo esc_html($user->user_email); ?>) 
+                                        - SSO: <?php echo esc_html($user->sso_global_id); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                        <p class="description">
+                            یا <a href="<?php echo admin_url('admin.php?page=donap-sso-users'); ?>">از لیست کاربران SSO جستجو کنید</a>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">موجودی اولیه (تومان)</th>
+                    <td>
+                        <input type="number" name="initial_amount" class="regular-text" min="0" value="0" 
+                               placeholder="موجودی اولیه (می‌تواند صفر باشد)" />
+                        <p class="description">مقدار اولیه‌ای که در کیف پول قرار می‌گیرد. می‌تواند صفر باشد.</p>
+                    </td>
+                </tr>
+            </table>
+            
+            <?php submit_button('ایجاد کیف پول', 'primary', 'create_wallet'); ?>
         </form>
     </div>
 
@@ -184,9 +232,9 @@ function modifyWalletQuick(userId, walletType) {
         document.querySelector('input[name="amount"]').value = amount;
         
         if (action) {
-            document.querySelector('input[name="action_type"][value="increase"]').checked = true;
+            document.querySelector('input[name="action_type"][value="add"]').checked = true;
         } else {
-            document.querySelector('input[name="action_type"][value="decrease"]').checked = true;
+            document.querySelector('input[name="action_type"][value="subtract"]').checked = true;
         }
         
         // Scroll to form
@@ -196,12 +244,20 @@ function modifyWalletQuick(userId, walletType) {
 </script>
 
 <style>
-.donap-wallet-modification {
+.donap-wallet-modification,
+.donap-wallet-create {
     background: #fff;
     padding: 20px;
     margin: 20px 0;
     border: 1px solid #ccd0d4;
     border-radius: 8px;
+}
+
+.donap-wallet-create h2 {
+    color: #0073aa;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
 }
 
 .donap-wallet-filters {
@@ -248,5 +304,27 @@ function modifyWalletQuick(userId, walletType) {
 
 .form-table th {
     width: 150px;
+}
+
+#sso_user_select {
+    min-width: 400px;
+}
+
+.notice {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.notice-success {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    color: #155724;
+}
+
+.notice-error {
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    color: #721c24;
 }
 </style>

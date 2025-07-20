@@ -7,6 +7,13 @@ use App\Models\Wallet;
 
 class TransactionService{
     
+    protected $transactionModel;
+
+    public function __construct()
+    {
+        $this->transactionModel = new Transaction();
+    }
+    
     /**
      * Create a new transaction
      */
@@ -41,114 +48,7 @@ class TransactionService{
      */
     public function getAllTransactions($filters = [], $page = 1, $per_page = 20)
     {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [
-                'data' => [],
-                'pagination' => [
-                    'current_page' => 1,
-                    'per_page' => $per_page,
-                    'total_items' => 0,
-                    'total_pages' => 0
-                ]
-            ];
-        }
-        
-        $user_filter = $filters['user_filter'] ?? '';
-        $type_filter = $filters['type_filter'] ?? '';
-        $start_date = $filters['start_date'] ?? '';
-        $end_date = $filters['end_date'] ?? '';
-        
-        $tx_table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $wallet_table = $wpdb->prefix . 'dnp_user_wallets';
-        
-        $where_conditions = ['1=1'];
-        $where_values = [];
-        
-        if (!empty($user_filter)) {
-            $where_conditions[] = 'w.identifier LIKE %s';
-            $where_values[] = '%' . $user_filter . '%';
-        }
-        
-        if (!empty($type_filter)) {
-            $where_conditions[] = 't.type = %s';
-            $where_values[] = $type_filter;
-        }
-        
-        if (!empty($start_date)) {
-            $where_conditions[] = 'DATE(t.created_at) >= %s';
-            $where_values[] = $start_date;
-        }
-        
-        if (!empty($end_date)) {
-            $where_conditions[] = 'DATE(t.created_at) <= %s';
-            $where_values[] = $end_date;
-        }
-        
-        $where_clause = implode(' AND ', $where_conditions);
-        
-        // Get total count for pagination
-        $count_query = "
-            SELECT COUNT(*)
-            FROM $tx_table t
-            LEFT JOIN $wallet_table w ON t.wallet_id = w.id
-            WHERE $where_clause
-        ";
-        
-        if (!empty($where_values)) {
-            $total_items = $wpdb->get_var($wpdb->prepare($count_query, $where_values));
-        } else {
-            $total_items = $wpdb->get_var($count_query);
-        }
-        
-        $total_pages = ceil($total_items / $per_page);
-        $page = max(1, min($page, $total_pages));
-        $offset = ($page - 1) * $per_page;
-        
-        // Get paginated results
-        $query = "
-            SELECT 
-                t.id,
-                t.wallet_id,
-                w.identifier,
-                w.type as wallet_type,
-                t.type,
-                t.description,
-                t.credit,
-                t.debit,
-                t.remain as balance_after,
-                t.params,
-                t.created_at,
-                CASE 
-                    WHEN t.credit IS NOT NULL THEN t.credit
-                    WHEN t.debit IS NOT NULL THEN -t.debit
-                    ELSE 0
-                END as amount
-            FROM $tx_table t
-            LEFT JOIN $wallet_table w ON t.wallet_id = w.id
-            WHERE $where_clause
-            ORDER BY t.created_at DESC 
-            LIMIT %d OFFSET %d
-        ";
-        
-        $query_values = array_merge($where_values, [$per_page, $offset]);
-        
-        if (!empty($where_values)) {
-            $results = $wpdb->get_results($wpdb->prepare($query, $query_values));
-        } else {
-            $results = $wpdb->get_results($wpdb->prepare($query, [$per_page, $offset]));
-        }
-
-        return [
-            'data' => $results ?: [],
-            'pagination' => [
-                'current_page' => $page,
-                'per_page' => $per_page,
-                'total_items' => (int)$total_items,
-                'total_pages' => $total_pages
-            ]
-        ];
+        return $this->transactionModel->getTransactionsWithFilters($filters, $page, $per_page);
     }
     
     /**
@@ -156,26 +56,7 @@ class TransactionService{
      */
     public function getTransactionStats()
     {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [
-                'total_transactions' => 0,
-                'today_transactions' => 0,
-                'total_volume' => 0,
-                'today_volume' => 0
-            ];
-        }
-        
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $today = date('Y-m-d');
-        
-        return [
-            'total_transactions' => $wpdb->get_var("SELECT COUNT(*) FROM $table") ?: 0,
-            'today_transactions' => $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE DATE(created_at) = %s", $today)) ?: 0,
-            'total_volume' => $wpdb->get_var("SELECT SUM(COALESCE(credit, 0) + COALESCE(debit, 0)) FROM $table") ?: 0,
-            'today_volume' => $wpdb->get_var($wpdb->prepare("SELECT SUM(COALESCE(credit, 0) + COALESCE(debit, 0)) FROM $table WHERE DATE(created_at) = %s", $today)) ?: 0
-        ];
+        return $this->transactionModel->getTransactionStats();
     }
     
     /**
@@ -183,33 +64,7 @@ class TransactionService{
      */
     public function getRecentActivity($limit = 10)
     {
-        global $wpdb;
-        
-        if (!$wpdb) {
-            return [];
-        }
-        
-        $tx_table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $wallet_table = $wpdb->prefix . 'dnp_user_wallets';
-        
-        $query = "
-            SELECT 
-                t.*,
-                w.identifier,
-                w.type as wallet_type,
-                CASE 
-                    WHEN t.credit IS NOT NULL THEN t.credit
-                    WHEN t.debit IS NOT NULL THEN -t.debit
-                    ELSE 0
-                END as amount
-            FROM $tx_table t
-            LEFT JOIN $wallet_table w ON t.wallet_id = w.id
-            ORDER BY t.created_at DESC 
-            LIMIT %d
-        ";
-        
-        $results = $wpdb->get_results($wpdb->prepare($query, $limit));
-        return $results ?: [];
+        return $this->transactionModel->getRecentTransactions($limit);
     }
     
     /**
@@ -223,8 +78,8 @@ class TransactionService{
             return 0;
         }
         
-        $table = $wpdb->prefix . 'dnp_user_wallet_transactions';
-        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+        $query = $this->transactionModel->newQuery()->select('COUNT(*)');
+        $count = $wpdb->get_var($query->sql());
         return $count ?: 0;
     }
     
