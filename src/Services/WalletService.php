@@ -43,11 +43,23 @@ class WalletService{
     }
 
     public function increaseCredit($identifier, $amount){
-        return $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), TransactionType::CREDIT_CHARGE);
+        appLogger("WalletService::increaseCredit called - Identifier: {$identifier}, Amount: {$amount}");
+        
+        $result = $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), TransactionType::CREDIT_CHARGE);
+        
+        appLogger("WalletService::increaseCredit result: " . ($result ? 'success' : 'failed'));
+        
+        return $result;
     }
 
     public function addGift($identifier, $amount){
-        return $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), TransactionType::CHARGE_GIFT);
+        appLogger("WalletService::addGift called - Identifier: {$identifier}, Amount: {$amount}");
+        
+        $result = $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), TransactionType::CHARGE_GIFT);
+        
+        appLogger("WalletService::addGift result: " . ($result ? 'success' : 'failed'));
+        
+        return $result;
     }
 
     public function decreaseCredit($identifier, $amount, $useCash = true){
@@ -58,11 +70,21 @@ class WalletService{
     }
 
     public function updateBalance($identifier, $walletType, $amount, $transactionType = null){
+        appLogger("WalletService::updateBalance called - Identifier: {$identifier}, WalletType: {$walletType}, Amount: {$amount}, TransactionType: {$transactionType}");
+        
         if(!in_array($walletType, ['coin', 'credit', 'cash', 'suspended'])){
+            appLogger("WalletService::updateBalance error - Invalid wallet type: {$walletType}");
             throw new \Exception('allowed wallets: coin, credit, cash', 400);
         }
-        $updated = FacadesWallet::$walletType()->updateBalance($identifier, $amount, $transactionType);
-        return $updated;
+        
+        try {
+            $updated = FacadesWallet::$walletType()->updateBalance($identifier, $amount, $transactionType);
+            appLogger("WalletService::updateBalance result: " . ($updated ? 'success' : 'failed') . " - Updated: " . json_encode($updated));
+            return $updated;
+        } catch (\Exception $e) {
+            appLogger("WalletService::updateBalance exception: " . $e->getMessage());
+            throw $e;
+        }
     }
     
     /**

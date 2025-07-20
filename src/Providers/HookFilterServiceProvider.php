@@ -6,6 +6,7 @@ use App\Core\WCDonapGateway;
 use Kernel\Container;
 use Kernel\Facades\Auth;
 use Kernel\Facades\Wordpress;
+use Exception;
 
 class HookFilterServiceProvider
 {
@@ -61,24 +62,52 @@ class HookFilterServiceProvider
         }, 10, 2);
 
         add_action('woocommerce_order_status_completed', function ($order_id) {
+            appLogger("woocommerce_order_status_completed hook triggered for order ID: {$order_id}");
+            
             $order = wc_get_order($order_id);
-            foreach ($order->get_items() as $item) {
+            if (!$order) {
+                appLogger("Order not found for ID: {$order_id}");
+                return;
+            }
+            
+            appLogger("Order found, processing items. Order user ID: " . $order->get_user_id());
+            
+            foreach ($order->get_items() as $item_id => $item) {
+                appLogger("Processing item ID: {$item_id}, Item name: " . $item->get_name());
+                
                 $is_wallet_topup = $item->get_meta('wallet_topup', true);
+                appLogger("Item wallet_topup meta: " . ($is_wallet_topup ? 'true' : 'false'));
+                
                 if ($is_wallet_topup) {
-                    $user_id = get_donap_user_id($order->get_user_id());
-                    // Get the line total using array access method
+                    $wordpress_user_id = $order->get_user_id();
+                    $user_id = get_donap_user_id($wordpress_user_id);
                     $amount = $item['line_total'];
-                    Container::resolve('WalletService')->increaseCredit($user_id, $amount);
                     
-                    // Calculate gift amount using GiftService
-                    $gift_amount = Container::resolve('GiftService')->calculateGift($amount);
-                    if ($gift_amount > 0) {
-                        Container::resolve('WalletService')->addGift($user_id, $gift_amount);
-                        $gift_percentage = Container::resolve('GiftService')->getGiftPercentage($amount);
-                        $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد. هدیه {$gift_percentage}% ({$gift_amount} ریال) اعطا شد.");
-                    } else {
-                        $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
+                    appLogger("Wallet topup detected! WordPress User ID: {$wordpress_user_id}, Donap User ID: {$user_id}, Amount: {$amount}");
+                    
+                    try {
+                        Container::resolve('WalletService')->increaseCredit($user_id, $amount);
+                        appLogger("Successfully called increaseCredit for user {$user_id} with amount {$amount}");
+                        
+                        // Calculate gift amount using GiftService
+                        $gift_amount = Container::resolve('GiftService')->calculateGift($amount);
+                        appLogger("Gift amount calculated: {$gift_amount}");
+                        
+                        if ($gift_amount > 0) {
+                            Container::resolve('WalletService')->addGift($user_id, $gift_amount);
+                            $gift_percentage = Container::resolve('GiftService')->getGiftPercentage($amount);
+                            $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد. هدیه {$gift_percentage}% ({$gift_amount} ریال) اعطا شد.");
+                            appLogger("Gift added successfully. Percentage: {$gift_percentage}%");
+                        } else {
+                            $order->add_order_note("مبلغ {$amount} ریال به کیف پول افزوده شد.");
+                            appLogger("No gift amount, only main credit added");
+                        }
+                    } catch (Exception $e) {
+                        appLogger("Error processing wallet topup: " . $e->getMessage());
+                        $order->add_order_note("خطا در افزایش موجودی کیف پول: " . $e->getMessage());
                     }
+                } else {
+                    appLogger("Item is not a wallet topup, skipping");
                 }
             }
         });
