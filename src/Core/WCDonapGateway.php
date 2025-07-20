@@ -193,12 +193,24 @@ class WCDonapGateway extends \WC_Payment_Gateway {
      * Show description on checkout page (optional override).
      */
     public function payment_fields() {
+        // Show current balance first
+        $user_id = get_donap_user_id();
+        if ($user_id && isset($this->walletService)) {
+            try {
+                $balance = $this->walletService->getAvailableCredit($user_id);
+                echo '<div style="margin-bottom: 10px; padding: 8px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px;">';
+                echo '<strong>موجودی فعلی کیف پول: ' . number_format($balance) . ' تومان</strong>';
+                echo '</div>';
+            } catch (Exception $e) {
+                appLogger('WCDonapGateway: payment_fields balance display failed: ' . $e->getMessage());
+            }
+        }
+        
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         }
         
         // Check if user has insufficient balance and show charge button
-        $user_id = get_donap_user_id();
         if ($user_id && isset($this->walletService) && WC()->cart) {
             try {
                 $balance = $this->walletService->getAvailableCredit($user_id);
