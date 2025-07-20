@@ -297,46 +297,4 @@
             event.target.style.color = '#2c3e50';
         }, 200);
     }
-    
-    // Format number input as user types (improved version)
-    document.getElementById('wallet_amount').addEventListener('input', function(e) {
-        let value = e.target.value.replace(/[^0-9]/g, ''); // Remove all non-numeric characters
-        
-        if (value && value.length > 0) {
-            // Only format if we have a valid number
-            let numericValue = parseInt(value);
-            if (!isNaN(numericValue) && numericValue > 0) {
-                // Store the cursor position
-                let cursorPosition = e.target.selectionStart;
-                let oldLength = e.target.value.length;
-                
-                // Format the number with commas
-                e.target.value = numericValue.toLocaleString('en-US');
-                
-                // Adjust cursor position based on length change
-                let newLength = e.target.value.length;
-                let lengthDiff = newLength - oldLength;
-                e.target.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
-            }
-        }
-    });
-    
-    // Handle paste events
-    document.getElementById('wallet_amount').addEventListener('paste', function(e) {
-        setTimeout(() => {
-            let value = e.target.value.replace(/[^0-9]/g, '');
-            if (value && value.length > 0) {
-                let numericValue = parseInt(value);
-                if (!isNaN(numericValue) && numericValue > 0) {
-                    e.target.value = numericValue.toLocaleString('en-US');
-                }
-            }
-        }, 10);
-    });
-    
-    // Remove formatting before form submission
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const input = document.getElementById('wallet_amount');
-        input.value = input.value.replace(/,/g, '');
-    });
 </script>
