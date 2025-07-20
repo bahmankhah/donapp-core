@@ -22,13 +22,27 @@ class UserService
      */
     public function getAllSSOUsers($page = 1, $per_page = 20, $search = '')
     {
+        $wpdb = $this->userModel->getWpdb();
+        
+        if (!$wpdb) {
+            return [
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'per_page' => $per_page,
+                    'total_items' => 0,
+                    'total_pages' => 0
+                ]
+            ];
+        }
+        
         $offset = ($page - 1) * $per_page;
         
         // Build the query using models
         $userQuery = $this->userModel->newQuery()
             ->select('DISTINCT u.ID, u.user_login, u.display_name, u.user_email, u.user_registered, um.meta_value as sso_global_id')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('um.meta_key', '=', 'sso_global_id')
             ->orderBy('u.user_registered', 'DESC')
             ->limit($per_page);
@@ -37,7 +51,7 @@ class UserService
         if (!empty($search)) {
             $search_term = '%' . $search . '%';
             // We need to build a custom WHERE clause for OR conditions
-            $where_sql = $this->userModel->wpdb->prepare(
+            $where_sql = $wpdb->prepare(
                 "(u.user_login LIKE %s OR u.display_name LIKE %s OR u.user_email LIKE %s OR um.meta_value LIKE %s)",
                 $search_term, $search_term, $search_term, $search_term
             );
@@ -50,12 +64,12 @@ class UserService
         $countQuery = $this->userModel->newQuery()
             ->select('COUNT(DISTINCT u.ID)')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('um.meta_key', '=', 'sso_global_id');
 
         if (!empty($search)) {
             $search_term = '%' . $search . '%';
-            $where_sql = $this->userModel->wpdb->prepare(
+            $where_sql = $wpdb->prepare(
                 "(u.user_login LIKE %s OR u.display_name LIKE %s OR u.user_email LIKE %s OR um.meta_value LIKE %s)",
                 $search_term, $search_term, $search_term, $search_term
             );
@@ -63,11 +77,11 @@ class UserService
             $countQuery->queryBuilder['where'][count($countQuery->queryBuilder['where']) - 1] = $where_sql;
         }
 
-        $total_items = $this->userModel->wpdb->get_var($countQuery->sql()) ?: 0;
+        $total_items = $wpdb->get_var($countQuery->sql()) ?: 0;
 
         // Add OFFSET to the main query
         $sql = $userQuery->sql() . " OFFSET $offset";
-        $results = $this->userModel->wpdb->get_results($sql);
+        $results = $wpdb->get_results($sql);
 
         $total_pages = ceil($total_items / $per_page);
         $page = max(1, min($page, $total_pages));
@@ -88,13 +102,19 @@ class UserService
      */
     public function getTotalSSOUsersCount()
     {
+        $wpdb = $this->userModel->getWpdb();
+        
+        if (!$wpdb) {
+            return 0;
+        }
+        
         $countQuery = $this->userModel->newQuery()
             ->select('COUNT(DISTINCT u.ID)')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('um.meta_key', '=', 'sso_global_id');
 
-        $count = $this->userModel->wpdb->get_var($countQuery->sql());
+        $count = $wpdb->get_var($countQuery->sql());
         return $count ?: 0;
     }
 
@@ -103,18 +123,20 @@ class UserService
      */
     public function getUserForWalletCreation($user_id)
     {
-        if (!$user_id) {
+        $wpdb = $this->userModel->getWpdb();
+        
+        if (!$user_id || !$wpdb) {
             return null;
         }
 
         $userQuery = $this->userModel->newQuery()
             ->select('u.ID, u.user_login, u.display_name, u.user_email, um.meta_value as sso_global_id')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('u.ID', '=', $user_id)
             ->where('um.meta_key', '=', 'sso_global_id');
 
-        $result = $this->userModel->wpdb->get_row($userQuery->sql());
+        $result = $wpdb->get_row($userQuery->sql());
 
         if ($result) {
             // Check if user already has wallets using WalletService
@@ -132,18 +154,20 @@ class UserService
      */
     public function getUserBySSOId($sso_global_id)
     {
-        if (!$sso_global_id) {
+        $wpdb = $this->userModel->getWpdb();
+        
+        if (!$sso_global_id || !$wpdb) {
             return null;
         }
 
         $userQuery = $this->userModel->newQuery()
             ->select('u.ID, u.user_login, u.display_name, u.user_email, um.meta_value as sso_global_id')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('um.meta_value', '=', $sso_global_id)
             ->where('um.meta_key', '=', 'sso_global_id');
 
-        return $this->userModel->wpdb->get_row($userQuery->sql());
+        return $wpdb->get_row($userQuery->sql());
     }
 
     /**
@@ -168,7 +192,9 @@ class UserService
      */
     public function searchSSOUsers($search_term, $limit = 50)
     {
-        if (empty($search_term)) {
+        $wpdb = $this->userModel->getWpdb();
+        
+        if (empty($search_term) || !$wpdb) {
             return [];
         }
 
@@ -177,20 +203,20 @@ class UserService
         $userQuery = $this->userModel->newQuery()
             ->select('DISTINCT u.ID, u.user_login, u.display_name, u.user_email, um.meta_value as sso_global_id')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('um.meta_key', '=', 'sso_global_id')
             ->orderBy('u.user_login', 'ASC')
             ->limit($limit);
 
         // Add search condition
-        $where_sql = $this->userModel->wpdb->prepare(
+        $where_sql = $wpdb->prepare(
             "(u.user_login LIKE %s OR u.display_name LIKE %s OR u.user_email LIKE %s OR um.meta_value LIKE %s)",
             $search_term, $search_term, $search_term, $search_term
         );
         $userQuery->where('1', '=', '1', 'none');
         $userQuery->queryBuilder['where'][count($userQuery->queryBuilder['where']) - 1] = $where_sql;
 
-        return $this->userModel->wpdb->get_results($userQuery->sql());
+        return $wpdb->get_results($userQuery->sql());
     }
 
     /**
@@ -198,18 +224,24 @@ class UserService
      */
     public function getSSOUsersForDropdown($page = 1, $per_page = 100)
     {
+        $wpdb = $this->userModel->getWpdb();
+        
+        if (!$wpdb) {
+            return [];
+        }
+        
         $offset = ($page - 1) * $per_page;
         
         $userQuery = $this->userModel->newQuery()
             ->select('DISTINCT u.ID, u.user_login, u.display_name, u.user_email, um.meta_value as sso_global_id')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('um.meta_key', '=', 'sso_global_id')
             ->orderBy('u.user_login', 'ASC')
             ->limit($per_page);
 
         $sql = $userQuery->sql() . " OFFSET $offset";
-        return $this->userModel->wpdb->get_results($sql);
+        return $wpdb->get_results($sql);
     }
 
     /**
@@ -217,10 +249,16 @@ class UserService
      */
     public function validateSSOUser($user_id)
     {
+        $wpdb = $this->userModel->getWpdb();
+        
+        if (!$wpdb) {
+            return false;
+        }
+        
         $user = $this->userModel->newQuery()
             ->select('u.ID')
             ->setTableAlias('u')
-            ->join($this->userMetaModel->wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
+            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
             ->where('u.ID', '=', $user_id)
             ->where('um.meta_key', '=', 'sso_global_id')
             ->first();
