@@ -31,68 +31,67 @@ class UserService
                     'current_page' => 1,
                     'per_page' => $per_page,
                     'total_items' => 0,
-                    'total_pages' => 0
+                    'total_pages' => 1
                 ]
             ];
         }
         
+        // Use the same approach as getSSOUsersForDropdown but with pagination
         $offset = ($page - 1) * $per_page;
         
-        // Build the query using models
-        $userQuery = $this->userModel->newQuery()
-            ->select('DISTINCT u.ID, u.user_login, u.display_name, u.user_email, u.user_registered, um.meta_value as sso_global_id')
-            ->setTableAlias('u')
-            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
-            ->where('um.meta_key', '=', 'sso_global_id')
-            ->orderBy('u.user_registered', 'DESC')
-            ->limit($per_page);
-
-        // Apply search filter if provided
+        // Build basic SQL without complex conditions first
+        $base_sql = "
+            SELECT DISTINCT u.ID, u.user_login, u.display_name, u.user_email, u.user_registered, um.meta_value as sso_global_id
+            FROM {$wpdb->prefix}users u 
+            INNER JOIN {$wpdb->prefix}usermeta um ON u.ID = um.user_id 
+            WHERE um.meta_key = 'sso_global_id'
+        ";
+        
+        $count_sql = "
+            SELECT COUNT(DISTINCT u.ID)
+            FROM {$wpdb->prefix}users u 
+            INNER JOIN {$wpdb->prefix}usermeta um ON u.ID = um.user_id 
+            WHERE um.meta_key = 'sso_global_id'
+        ";
+        
+        // Add search conditions if needed
         if (!empty($search)) {
-            $search_term = '%' . $search . '%';
-            // We need to build a custom WHERE clause for OR conditions
-            $where_sql = $wpdb->prepare(
-                "(u.user_login LIKE %s OR u.display_name LIKE %s OR u.user_email LIKE %s OR um.meta_value LIKE %s)",
-                $search_term, $search_term, $search_term, $search_term
-            );
-            $userQuery->where('1', '=', '1', 'none'); // Dummy condition
-            // Manually modify the last where condition to be an OR group
-            $userQuery->queryBuilder['where'][count($userQuery->queryBuilder['where']) - 1] = $where_sql;
+            $search_condition = " AND (u.user_login LIKE %s OR u.display_name LIKE %s OR u.user_email LIKE %s OR um.meta_value LIKE %s)";
+            $base_sql .= $search_condition;
+            $count_sql .= $search_condition;
+            $search_term = '%' . $wpdb->esc_like($search) . '%';
+            $search_params = [$search_term, $search_term, $search_term, $search_term];
+        } else {
+            $search_params = [];
         }
-
-        // Get total count for pagination
-        $countQuery = $this->userModel->newQuery()
-            ->select('COUNT(DISTINCT u.ID)')
-            ->setTableAlias('u')
-            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
-            ->where('um.meta_key', '=', 'sso_global_id');
-
-        if (!empty($search)) {
-            $search_term = '%' . $search . '%';
-            $where_sql = $wpdb->prepare(
-                "(u.user_login LIKE %s OR u.display_name LIKE %s OR u.user_email LIKE %s OR um.meta_value LIKE %s)",
-                $search_term, $search_term, $search_term, $search_term
-            );
-            $countQuery->where('1', '=', '1', 'none');
-            $countQuery->queryBuilder['where'][count($countQuery->queryBuilder['where']) - 1] = $where_sql;
+        
+        // Get total count
+        if (!empty($search_params)) {
+            $total_items = intval($wpdb->get_var($wpdb->prepare($count_sql, $search_params)));
+        } else {
+            $total_items = intval($wpdb->get_var($count_sql));
         }
-
-        $total_items = $wpdb->get_var($countQuery->sql()) ?: 0;
-
-        // Add OFFSET to the main query
-        $sql = $userQuery->sql() . " OFFSET $offset";
-        $results = $wpdb->get_results($sql);
-
-        $total_pages = ceil($total_items / $per_page);
-        $page = max(1, min($page, $total_pages));
+        
+        // Get results
+        $final_sql = $base_sql . " ORDER BY u.user_registered DESC LIMIT %d OFFSET %d";
+        $params = array_merge($search_params, [$per_page, $offset]);
+        
+        if (!empty($search_params)) {
+            $results = $wpdb->get_results($wpdb->prepare($final_sql, $params));
+        } else {
+            $results = $wpdb->get_results($wpdb->prepare($final_sql, [$per_page, $offset]));
+        }
+        
+        $total_pages = $total_items > 0 ? ceil($total_items / $per_page) : 1;
+        $page = max(1, $total_pages > 0 ? min($page, $total_pages) : 1);
 
         return [
             'data' => $results ?: [],
             'pagination' => [
                 'current_page' => $page,
                 'per_page' => $per_page,
-                'total_items' => (int)$total_items,
-                'total_pages' => $total_pages
+                'total_items' => $total_items,
+                'total_pages' => max(1, $total_pages)
             ]
         ];
     }
@@ -108,13 +107,14 @@ class UserService
             return 0;
         }
         
-        $countQuery = $this->userModel->newQuery()
-            ->select('COUNT(DISTINCT u.ID)')
-            ->setTableAlias('u')
-            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
-            ->where('um.meta_key', '=', 'sso_global_id');
-
-        $count = $wpdb->get_var($countQuery->sql());
+        $count_sql = "
+            SELECT COUNT(DISTINCT u.ID) 
+            FROM {$wpdb->prefix}users u 
+            INNER JOIN {$wpdb->prefix}usermeta um ON u.ID = um.user_id 
+            WHERE um.meta_key = 'sso_global_id'
+        ";
+        
+        $count = intval($wpdb->get_var($count_sql));
         return $count ?: 0;
     }
 
@@ -232,16 +232,16 @@ class UserService
         
         $offset = ($page - 1) * $per_page;
         
-        $userQuery = $this->userModel->newQuery()
-            ->select('DISTINCT u.ID, u.user_login, u.display_name, u.user_email, um.meta_value as sso_global_id')
-            ->setTableAlias('u')
-            ->join($wpdb->prefix . 'usermeta um', 'u.ID', '=', 'um.user_id')
-            ->where('um.meta_key', '=', 'sso_global_id')
-            ->orderBy('u.user_login', 'ASC')
-            ->limit($per_page);
-
-        $sql = $userQuery->sql() . " OFFSET $offset";
-        return $wpdb->get_results($sql);
+        $sql = "
+            SELECT DISTINCT u.ID, u.user_login, u.display_name, u.user_email, um.meta_value as sso_global_id
+            FROM {$wpdb->prefix}users u 
+            INNER JOIN {$wpdb->prefix}usermeta um ON u.ID = um.user_id 
+            WHERE um.meta_key = 'sso_global_id'
+            ORDER BY u.user_login ASC
+            LIMIT %d OFFSET %d
+        ";
+        
+        return $wpdb->get_results($wpdb->prepare($sql, [$per_page, $offset]));
     }
 
     /**

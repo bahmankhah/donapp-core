@@ -61,7 +61,12 @@ class Transaction extends Model {
 
         // Apply filters
         if (!empty($filters['user_filter'])) {
-            $query->where('w.identifier', 'LIKE', '%' . $filters['user_filter'] . '%');
+            // Use exact match for SSO IDs, fallback to LIKE for partial searches
+            if (strlen($filters['user_filter']) > 10) { // Assuming SSO IDs are longer than 10 chars
+                $query->where('w.identifier', '=', $filters['user_filter']);
+            } else {
+                $query->where('w.identifier', 'LIKE', '%' . $filters['user_filter'] . '%');
+            }
         }
 
         if (!empty($filters['type_filter'])) {

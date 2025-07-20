@@ -36,10 +36,24 @@
             
             <table class="form-table">
                 <tr>
-                    <th scope="row">شناسه کاربر</th>
+                    <th scope="row">انتخاب کاربر SSO</th>
                     <td>
-                        <input type="text" name="user_filter" value="<?php echo esc_attr($current_filters['user_filter'] ?? ''); ?>" 
-                               class="regular-text" placeholder="شناسه کاربر" />
+                        <select name="user_filter" id="sso_user_select_filter" class="regular-text">
+                            <option value="">همه کاربران...</option>
+                            <?php if (!empty($sso_users)): ?>
+                                <?php foreach ($sso_users as $user): ?>
+                                    <option value="<?php echo esc_attr($user->sso_global_id); ?>" 
+                                            <?php selected($current_filters['user_filter'] ?? '', $user->sso_global_id); ?>>
+                                        <?php echo esc_html($user->display_name ?: $user->user_login); ?> 
+                                        (<?php echo esc_html($user->user_email); ?>) 
+                                        - SSO: <?php echo esc_html($user->sso_global_id); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                        <p class="description">
+                            یا <a href="<?php echo admin_url('admin.php?page=donap-sso-users'); ?>">از لیست کاربران SSO جستجو کنید</a>
+                        </p>
                     </td>
                 </tr>
                 <tr>
@@ -100,6 +114,7 @@
                                     switch($transaction->wallet_type) {
                                         case 'credit': echo 'اعتبار'; break;
                                         case 'cash': echo 'نقد'; break;
+                                        case 'coin': echo 'سکه'; break;
                                         case 'suspended': echo 'معلق'; break;
                                         default: echo $transaction->wallet_type;
                                     }
@@ -216,6 +231,33 @@ function exportTransactions(format) {
     border-radius: 8px;
 }
 
+.wallet-type {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.wallet-type-credit {
+    background: #d4edda;
+    color: #155724;
+}
+
+.wallet-type-cash {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.wallet-type-coin {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.wallet-type-suspended {
+    background: #f8d7da;
+    color: #721c24;
+}
+
 .transaction-type {
     padding: 4px 8px;
     border-radius: 4px;
@@ -269,6 +311,10 @@ function exportTransactions(format) {
 
 .form-table th {
     width: 150px;
+}
+
+#sso_user_select_filter {
+    min-width: 400px;
 }
 
 .wp-list-table td {

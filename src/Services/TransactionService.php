@@ -78,8 +78,8 @@ class TransactionService{
             return 0;
         }
         
-        $query = $this->transactionModel->newQuery()->select('COUNT(*)');
-        $count = $wpdb->get_var($query->sql());
+        $table_name = $wpdb->prefix . 'dnp_user_wallet_transactions';
+        $count = intval($wpdb->get_var("SELECT COUNT(*) FROM {$table_name}"));
         return $count ?: 0;
     }
     

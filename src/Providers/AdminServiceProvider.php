@@ -289,6 +289,7 @@ class AdminServiceProvider
     public function transactions_page()
     {
         $transactionService = Container::resolve('TransactionService');
+        $userService = Container::resolve('UserService');
         
         // Get pagination parameters
         $page = max(1, intval($_GET['paged'] ?? 1));
@@ -304,11 +305,15 @@ class AdminServiceProvider
         
         $transactions_result = $transactionService->getAllTransactions($filters, $page, $per_page);
         
+        // Get SSO users for filter dropdown
+        $sso_users_result = $userService->getSSOUsersForDropdown(1, 100);
+        
         $data = [
             'transactions' => $transactions_result['data'],
             'pagination' => $transactions_result['pagination'],
             'transaction_stats' => $transactionService->getTransactionStats(),
-            'current_filters' => $filters
+            'current_filters' => $filters,
+            'sso_users' => $sso_users_result
         ];
         
         echo view('admin/transactions', $data);
