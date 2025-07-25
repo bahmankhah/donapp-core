@@ -31,17 +31,16 @@
     }
 ?>
 
-<style>
+<style type="text/css">
     .wallet-topup-container {
         max-width: 600px;
         margin: 40px auto;
         padding: 0 20px;
-        font-family: 'Vazir', 'Tahoma', sans-serif;
         direction: rtl;
     }
     
     .wallet-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #6485e8 0%, #4169e3 100%);
         border-radius: 20px;
         padding: 40px;
         box-shadow: 0 20px 40px rgba(0,0,0,0.1);
@@ -67,6 +66,7 @@
         font-size: 16px;
         opacity: 0.9;
         margin-bottom: 0;
+		text-align:center;
     }
     
     .topup-form {
@@ -135,7 +135,7 @@
         border: 2px solid #e1e8ed;
         background: white;
         border-radius: 8px;
-        cursor: pointer;    
+        cursor: pointer;
         transition: all 0.3s ease;
         font-size: 14px;
         font-weight: 500;
@@ -152,7 +152,7 @@
     .submit-btn {
         width: 100%;
         padding: 16px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: linear-gradient(135deg, #6485e8 0%, #4169e3 100%);
         color: white;
         border: none;
         border-radius: 12px;
