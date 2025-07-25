@@ -11,7 +11,7 @@ class ElementorServiceProvider
 
     public function boot()
     {
-        add_action('elementor/dynamic_tags/register_tags', function ($dynamic_tags_manager) {
+        add_action('elementor/dynamic_tags/register', function ($dynamic_tags_manager) {
             // Register the custom group
             $dynamic_tags_manager->register_group('donap', [
                 'title' => 'دناپ' // Persian title for your group
