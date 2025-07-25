@@ -60,6 +60,11 @@ add_action('plugins_loaded', function () {
         });
         
     }
+    (new RouteServiceProvider())->boot();
+    (new WooServiceProvider())->boot();
+    (new HookFilterServiceProvider())->boot();
+    (new ShortcodeServiceProvider())->boot();
+    (new SSOServiceProvider())->boot();
 });
 
 add_action('init', function () {
@@ -67,11 +72,6 @@ add_action('init', function () {
         wp_redirect(Auth::sso()->getLoginUrl()); 
         exit;
     }
-    (new RouteServiceProvider())->boot();
-    (new WooServiceProvider())->boot();
-    (new HookFilterServiceProvider())->boot();
-    (new ShortcodeServiceProvider())->boot();
-    (new SSOServiceProvider())->boot();
     (new ElementorServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
 });
