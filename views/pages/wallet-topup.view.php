@@ -135,7 +135,7 @@
         border: 2px solid #e1e8ed;
         background: white;
         border-radius: 8px;
-        cursor: pointer;
+        cursor: pointer;    
         transition: all 0.3s ease;
         font-size: 14px;
         font-weight: 500;
