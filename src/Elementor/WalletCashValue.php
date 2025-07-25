@@ -31,12 +31,16 @@ class WalletCashValue extends Tag
 
     public function render()
     {
-        if (is_user_logged_in()) {
-            $user_id = get_donap_user_id();
-            $balance = Wallet::cash()->getBalance($user_id);
-            echo number_format($balance ?? 0, 0, '.', ',') ;
-        } else {
-            echo 'وارد شوید';
+        try {
+            if (is_user_logged_in()) {
+                $user_id = get_donap_user_id();
+                $balance = Wallet::cash()->getBalance($user_id);
+                echo number_format($balance ?? 0, 0, '.', ',');
+            } else {
+                echo 'وارد شوید';
+            }
+        } catch (\Throwable $th) {
+            echo '0';
         }
     }
 }
