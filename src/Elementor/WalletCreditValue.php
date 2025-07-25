@@ -33,7 +33,7 @@ class WalletCreditValue extends Tag
         if (is_user_logged_in()) {
             $user_id = get_donap_user_id();
             $balance = Container::resolve('WalletService')->getAvailableCredit($user_id);
-            echo wc_price($balance);
+            echo number_format($balance, 0, '.', ',') . ' تومان';
         } else {
             echo 'وارد شوید';
         }
