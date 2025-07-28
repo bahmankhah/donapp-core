@@ -39,11 +39,11 @@ if (!function_exists('upload_image_from_url')) {
 
         // Set up the file array for WordPress
         $file = array(
-            'name'     => basename($image_url),
-            'type'     => mime_content_type($temp_file),
+            'name' => basename($image_url),
+            'type' => mime_content_type($temp_file),
             'tmp_name' => $temp_file,
-            'error'    => 0,
-            'size'     => filesize($temp_file),
+            'error' => 0,
+            'size' => filesize($temp_file),
         );
 
         // Upload the image to the WordPress media library
@@ -59,16 +59,17 @@ if (!function_exists('upload_image_from_url')) {
     }
 }
 
-if(!function_exists('get_donap_user_id')){
-    function get_donap_user_id($wp_user_id = null){
-        if($wp_user_id === null){
+if (!function_exists('get_donap_user_id')) {
+    function get_donap_user_id($wp_user_id = null)
+    {
+        if ($wp_user_id === null) {
             $user_id = get_current_user_id();
-        }else{
+        } else {
             $user_id = $wp_user_id;
         }
-        if($user_id){
-            $ssoId = get_user_meta( $user_id, 'sso_global_id', true );
-            if($ssoId){
+        if ($user_id) {
+            $ssoId = get_user_meta($user_id, 'sso_global_id', true);
+            if ($ssoId) {
                 return $ssoId;
             }
         }
@@ -76,3 +77,46 @@ if(!function_exists('get_donap_user_id')){
     }
 }
 
+
+if (!function_exists('formatMobile')) {
+    function formatMobile(string $mobile): string
+    {
+        $phoneSetting = [
+            "key" => "+98",
+            "code" => "98",
+            "regex" => "/^(9[0-9]{9})$/",
+            "is_default" => false,
+            "store_with" => "+98",
+            "country_flag" => "🇮🇷",
+            "country_name" => "Iran"
+        ];
+
+        $prefix = $phoneSetting['store_with'] ?? '+98';
+        $regex = $phoneSetting['regex'] ?? null;
+
+        // Trim spaces from the input number
+        $mobile = trim($mobile);
+
+        // Escape any special characters in the prefix (e.g., +, .)
+        $escapedPrefix = preg_quote($prefix, '/');
+
+        // Build the regex pattern for matching various prefixes
+        $prefixPattern = implode('|', [
+            $escapedPrefix,             // e.g., +98
+            '0098',                     // e.g., 0098
+            '98',                       // e.g., 98
+            '0'                         // e.g., local format like 09123456789
+        ]);
+
+        // Remove the prefix from the mobile number if it matches
+        $number = preg_replace("/^({$prefixPattern})/", '', $mobile);
+
+        // Validate the phone number format using regex
+        if (preg_match($regex, $number)) {
+            return $prefix . $number; // Return the formatted number with +98 prefix
+        }
+
+        // If no valid format matches, return the original input
+        return $mobile;
+    }
+}
