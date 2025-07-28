@@ -96,9 +96,9 @@ class SSOGuard extends Adapter implements Guard
         $mobileNumber = $body['mobileNumber'] ?? '';
         $formattedMobile = formatMobile($mobileNumber); // Ensure the mobile is formatted
 
-        // Check for existing user by phone_digits (formatted mobile)
+        // Check for existing user by digits_phone (formatted mobile)
         $users = get_users([
-            'meta_key' => 'phone_digits',
+            'meta_key' => 'digits_phone',
             'meta_value' => $formattedMobile,
             'number' => 1, // Limit to one user
             'count_total' => false,
