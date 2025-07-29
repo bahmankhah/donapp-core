@@ -8,8 +8,9 @@ use Kernel\Contracts\Auth\Guard;
 class SSOGuard extends Adapter implements Guard
 {
 
-    public function getLoginUrl(){
-        return replacePlaceholders($this->config['login_url'], ['clientId'=>$this->config['client_id']]);
+    public function getLoginUrl()
+    {
+        return replacePlaceholders($this->config['login_url'], ['clientId' => $this->config['client_id']]);
     }
     public function check(): bool
     {
@@ -28,7 +29,9 @@ class SSOGuard extends Adapter implements Guard
     }
 
 
-    public function user() {}
+    public function user()
+    {
+    }
 
     public function login($user)
     {
@@ -55,8 +58,8 @@ class SSOGuard extends Adapter implements Guard
     {
         $api_url = $this->config['validate_url'];
         $clientId = $this->config['client_id'];
-
         appLogger(json_encode($credential));
+
         // Exchange code for token
         $response = wp_remote_post($api_url, [
             'body' => [
@@ -64,20 +67,19 @@ class SSOGuard extends Adapter implements Guard
                 'client_id' => $clientId,
                 'scope' => 'openid profile',
                 'code' => $credential['code'],
-                'session_state'=>$credential['code'],
+                'session_state' => $credential['code'],
             ],
         ]);
 
         appLogger(json_encode($response));
-
         if (is_wp_error($response)) {
             appLogger('error in response');
             return false;
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
-
         appLogger(json_encode($body));
+
         if (!isset($body['access_token'])) {
             return false;
         }
@@ -90,22 +92,34 @@ class SSOGuard extends Adapter implements Guard
 
         $globalId = $payload['sub'];
 
-        // Check for existing user by meta
+        // Format the mobile number (use the `formatMobile` from your earlier function)
+        $mobileNumber = $body['mobileNumber'] ?? '';
+        $formattedMobile = formatMobile($mobileNumber); // Ensure the mobile is formatted
+
+        // Check for existing user by digits_phone (formatted mobile)
         $users = get_users([
-            'meta_key' => 'sso_global_id',
-            'meta_value' => $globalId,
-            'number' => 1,
+            'meta_key' => 'digits_phone',
+            'meta_value' => $formattedMobile,
+            'number' => 1, // Limit to one user
             'count_total' => false,
         ]);
 
         if (!empty($users)) {
+            // User exists, update them
             $user = $users[0];
+
+            // Update user metadata
+            update_user_meta($user->ID, 'sso_global_id', $globalId);
+            update_user_meta($user->ID, 'sso_access_token', $body['access_token']);
+            update_user_meta($user->ID, 'sso_refresh_token', $body['refresh_token']);
+            update_user_meta($user->ID, 'sso_expires_at', time() + $body['exp']);
+            update_user_meta($user->ID, 'sso_mobile_number', $mobileNumber);
+            update_user_meta($user->ID, 'sso_national_id', $body['nationalId']);
         } else {
-            // Create user
+            // Create new user
             $firstName = sanitize_text_field($payload['given_name'] ?? '');
             $lastName = sanitize_text_field($payload['family_name'] ?? '');
             $displayName = trim($firstName . ' ' . $lastName);
-
             $username = sanitize_user($payload['preferred_username'] ?? 'user_' . wp_generate_password(5, false));
             $email = sanitize_email($payload['email'] ?? $username . '@donap.ir');
 
@@ -113,6 +127,8 @@ class SSOGuard extends Adapter implements Guard
             if (is_wp_error($user_id)) {
                 return false;
             }
+
+            // Update the newly created user
             wp_update_user([
                 'ID' => $user_id,
                 'first_name' => $firstName,
@@ -120,19 +136,20 @@ class SSOGuard extends Adapter implements Guard
                 'display_name' => $displayName,
             ]);
 
+            // Set metadata
             update_user_meta($user_id, 'sso_global_id', $globalId);
             update_user_meta($user_id, 'sso_access_token', $body['access_token']);
             update_user_meta($user_id, 'sso_refresh_token', $body['refresh_token']);
             update_user_meta($user_id, 'sso_expires_at', time() + $body['exp']);
-            update_user_meta($user_id, 'sso_mobile_number', $body['mobileNumber']);
+            update_user_meta($user_id, 'sso_mobile_number', $mobileNumber);
+            update_user_meta($user_id, 'phone_digits', $formattedMobile); // Save the formatted mobile
             update_user_meta($user_id, 'sso_national_id', $body['nationalId']);
 
             $user = get_user_by('id', $user_id);
         }
 
+        // Log in the user
         $this->login($user);
-
-
         return $user;
     }
 
