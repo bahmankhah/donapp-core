@@ -95,7 +95,7 @@ class SSOGuard extends Adapter implements Guard
         // Format the mobile number (use the `formatMobile` from your earlier function)
         $mobileNumber = $body['phoneNumber'] ?? '';
         $formattedMobile = formatMobile($mobileNumber); // Ensure the mobile is formatted
-
+        appLogger('Formatted Mobile: ' . $formattedMobile);
         // Check for existing user by digits_phone (formatted mobile)
         $users = get_users([
             'meta_key' => 'digits_phone',
@@ -154,7 +154,7 @@ class SSOGuard extends Adapter implements Guard
             update_user_meta($user_id, 'sso_refresh_token', $body['refresh_token']);
             update_user_meta($user_id, 'sso_expires_at', time() + $body['exp']);
             update_user_meta($user_id, 'sso_mobile_number', $mobileNumber);
-            update_user_meta($user_id, 'phone_digits', $formattedMobile); // Save the formatted mobile
+            update_user_meta($user_id, 'digits_phone', $formattedMobile); // Save the formatted mobile
             update_user_meta($user_id, 'sso_national_id', $body['nationalId']);
 
             $user = get_user_by('id', $user_id);
