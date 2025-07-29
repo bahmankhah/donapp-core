@@ -93,7 +93,7 @@ class SSOGuard extends Adapter implements Guard
         $globalId = $payload['sub'];
 
         // Format the mobile number (use the `formatMobile` from your earlier function)
-        $mobileNumber = $body['mobileNumber'] ?? '';
+        $mobileNumber = $body['phoneNumber'] ?? '';
         $formattedMobile = formatMobile($mobileNumber); // Ensure the mobile is formatted
 
         // Check for existing user by digits_phone (formatted mobile)
@@ -107,6 +107,18 @@ class SSOGuard extends Adapter implements Guard
         if (!empty($users)) {
             // User exists, update them
             $user = $users[0];
+
+            // Update user profile information
+            $firstName = sanitize_text_field($payload['given_name'] ?? '');
+            $lastName = sanitize_text_field($payload['family_name'] ?? '');
+            $displayName = trim($firstName . ' ' . $lastName);
+
+            wp_update_user([
+                'ID' => $user->ID,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'display_name' => $displayName,
+            ]);
 
             // Update user metadata
             update_user_meta($user->ID, 'sso_global_id', $globalId);
