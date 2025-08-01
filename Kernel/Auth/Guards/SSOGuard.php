@@ -128,7 +128,7 @@ class SSOGuard extends Adapter implements Guard
         }
 
         // 3. If still no user, fall back to your phone number logic or create a new user
-        if (!$user) {
+        if (!$user && isset($payload['phoneNumber'])) {
             $mobileNumber = $payload['phoneNumber'] ?? '';
             appLogger($payload['phoneNumber']);
             $formattedMobile = formatMobile($mobileNumber); // Ensure the mobile is formatted
