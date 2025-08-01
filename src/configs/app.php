@@ -11,5 +11,9 @@ return [
         ResponseMiddleware::class
     ],
     'version'=>'v1',
-    'name'=>'donapp-core'
+    'name'=>'donapp-core',
+    'url'=>getenv('APP_URL'),
+    'api'=> [
+        'namespace'=>'dnp/v1',
+    ],
 ];

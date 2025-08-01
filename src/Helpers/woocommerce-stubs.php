@@ -100275,7 +100275,7 @@ namespace Automattic\WooCommerce\Database\Migrations\CustomOrderTable {
          *
          * @var \WC_Logger
          */
-        private $error_logger;
+        private $appLoggerger;
         /**
          * Array of objects used to perform the migration.
          *

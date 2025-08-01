@@ -17,7 +17,7 @@ class WalletController{
         if(!isset($data['amount']) || !isset($data['identifier'])){
             throw new \Exception('amount and id are required', 400);
         }
-        $updatedBalance = $this->walletService->updateBalance($data['identifier'], $data['amount'], $type);
+        $updatedBalance = $this->walletService->updateBalance($data['identifier'], $type, $data['amount']);
         return [
             'balance'=>$updatedBalance
         ];

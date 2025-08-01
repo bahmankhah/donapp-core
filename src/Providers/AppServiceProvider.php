@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Services\AuthService;
 use App\Services\BlogService;
+use App\Services\GiftService;
 use App\Services\Modules\Proxy\ProxyService;
 use App\Services\ProductService;
 use App\Services\TransactionService;
+use App\Services\UserService;
 use App\Services\VideoService;
 use App\Services\WalletService;
 use App\Services\WooService;
@@ -98,11 +100,19 @@ class AppServiceProvider
         Container::bind('ProxyService', function () {
             return new ProxyService();
         });
-        Container::bind('TrasnactionService', function () {
+        Container::bind('TransactionService', function () {
             return new TransactionService();
         });
         Container::bind('WalletService', function () {
             return new WalletService();
+        });
+        
+        Container::bind('GiftService', function () {
+            return new GiftService();
+        });
+        
+        Container::bind('UserService', function () {
+            return new UserService();
         });
     }
 }

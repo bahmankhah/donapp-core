@@ -11,11 +11,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use App\Providers\AdminServiceProvider;
 use App\Providers\AppServiceProvider;
-use App\Providers\AudioPlayerServiceProvider;
+use App\Providers\ElementorServiceProvider;
 use App\Providers\HookFilterServiceProvider;
+use App\Providers\ShortcodeServiceProvider;
+use App\Providers\SSOServiceProvider;
 use App\Providers\WooServiceProvider;
 use App\Routes\RouteServiceProvider;
+use Kernel\Facades\Auth;
+
 
 require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
@@ -40,16 +45,40 @@ spl_autoload_register(function ($class) {
     }
 });
 
+
 register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
-add_action('plugins_loaded', function () {});
-add_action('init', function () {
-    (new RouteServiceProvider())->boot();
+add_action('plugins_loaded', function () {
     (new AppServiceProvider())->boot();
+    
+    // Make sure WooCommerce is active before registering the gateway
+    if (class_exists('WooCommerce') && class_exists('WC_Payment_Gateway')) {
+        add_filter('woocommerce_payment_gateways', function ($gateways) {
+            $gateways[] = \App\Core\WCDonapGateway::class;
+            return $gateways;
+        });
+        
+    }
     (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
+    (new ElementorServiceProvider())->boot();
 });
+
+add_action('init', function () {
+    (new RouteServiceProvider())->boot();
+    (new ShortcodeServiceProvider())->boot();
+    (new SSOServiceProvider())->boot();
+    (new AdminServiceProvider())->boot();
+
+    if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false && !is_user_logged_in()) {
+        wp_redirect(Auth::sso()->getLoginUrl()); 
+        exit;
+    }
+});
+
+
+
 // function custom_footer_script()
 // {
 //     // Register the script
@@ -63,5 +92,3 @@ add_action('init', function () {
 //     wp_enqueue_script('custom-audioplayer');
 // }
 // add_action('wp_enqueue_scripts', 'custom_footer_script');
-
-

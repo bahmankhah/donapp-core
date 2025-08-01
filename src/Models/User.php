@@ -21,7 +21,7 @@ class User extends Model {
         $current_user_id = get_current_user_id();
         if ($current_user_id) {
             $user = new self();
-            return $user->find($current_user_id);
+            return $user->where('ID','=',$current_user_id)->first();
         }
         return null;
     }

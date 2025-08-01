@@ -20,31 +20,35 @@ return [
         'contexts' => [
             'sso' => [
                 'context' => Kernel\Auth\Guards\SSOGuard::class,
-                'login_url' => 'https://auth.platform.donap.ir/realms/donap/protocol/openid-connect/auth?client_id={clientId}&response_type=code&scope=openid profile&redirectUri={redirectUri}',
-                'client_id' => 'platform',
-                'validate_url'=>'https://auth.platform.donap.ir/realms/donap/protocol/openid-connect/token'
+                'login_url' => getenv('AUTH_SSO_LOGIN_URL'),
+                'client_id' => getenv('AUTH_SSO_CLIENT_ID'),
+                'validate_url'=> getenv('AUTH_SSO_VALIDATE_URL') ,
             ]
         ]
     ],
-    // 'wallet'=>[
-    //     'default'=>'credit',
-    //     'contexts'=>[
-    //         'credit'=>[
-    //             'context'=>App\Adapters\Wallet\Contexts\Credit::class,
-    //             'type'=>App\Helpers\WalletType::CREDIT,
-    //         ],
-    //         'coin'=>[
-    //             'context'=>App\Adapters\Wallet\Contexts\Coin::class,
-    //             'type'=>App\Helpers\WalletType::COIN,
-    //         ],
-    //         'cash'=>[
-    //             'context'=>App\Adapters\Wallet\Contexts\Cash::class,
-    //             'type'=>App\Helpers\WalletType::CASH,
-    //         ],
-    //         'virtualCreditCash'=>[
-    //             'context'=>App\Adapters\Wallet\Contexts\VirtualCreditCash::class,
-    //             'type'=> null, // virtual
-    //         ]
-    //     ]
-    // ]
+    'wallet'=>[
+        'default'=>'credit',
+        'contexts'=>[
+            'credit'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Credit::class,
+                'type'=>App\Core\WalletType::CREDIT,
+            ],
+            'coin'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Coin::class,
+                'type'=>App\Core\WalletType::COIN,
+            ],
+            'cash'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Cash::class,
+                'type'=>App\Core\WalletType::CASH,
+            ],
+            'suspended'=>[
+                'context'=>App\Adapters\Wallet\Contexts\Suspended::class,
+                'type'=>App\Core\WalletType::SUSPENDED,
+            ],
+            'virtualCreditCash'=>[
+                'context'=>App\Adapters\Wallet\Contexts\VirtualCreditCash::class,
+                'type'=> null, // virtual
+            ]
+        ]
+    ]
 ];

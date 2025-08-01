@@ -4,8 +4,9 @@ namespace App\Services;
 
 use DateTime;
 use App\Facades\Vendor;
-use App\Helpers\TransactionType;
-use App\Helpers\WalletType;
+use App\Facades\Wallet as FacadesWallet;
+use App\Core\TransactionType;
+use App\Core\WalletType;
 use App\Models\UserCart;
 use Exception;
 use Kernel\Container;
@@ -185,7 +186,7 @@ class WooService
     private function handleDonapCoin($data)
     {
         if (!empty($data['amount'])) {
-            $wallet = $this->walletService->findOrCreateWallet($data['id'], WalletType::COIN);
+            $wallet = FacadesWallet::coin()->findOrCreateWallet($data['id']);
             $params = json_decode($wallet['params']);
             $lastUpdateAmount = $params['last_donap_coin'] ?? 0;
             $updateAmount = intval($data['amount']) - intval($lastUpdateAmount);
@@ -207,7 +208,7 @@ class WooService
     public function deleteExpiredCarts()
     {
         $table = DB::wpdb()->prefix . 'dnp_user_carts';
-        DB::query("DELETE FROM '$table  WHERE expired_at < now()");
+        DB::query("DELETE FROM '$table'  WHERE expired_at < now()");
     }
 
     public function createOrUpdateProduct($data)
@@ -405,9 +406,9 @@ class WooService
     //     ]);
 
     //     if (is_wp_error($response)) {
-    //         error_log('API Error: ' . $response->get_error_message());
+    //         appLogger('API Error: ' . $response->get_error_message());
     //     } else {
-    //         error_log('Access granted successfully for User ID: ' . $dnpId);
+    //         appLogger('Access granted successfully for User ID: ' . $dnpId);
     //     }
     // }
 }

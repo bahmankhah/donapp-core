@@ -22,6 +22,11 @@ class Model
         $this->newQuery();
     }
 
+    public function getWpdb()
+    {
+        return $this->wpdb;
+    }
+
     public function create($data, $dataTypes = null){
         $inserted = $this->wpdb->insert(
             $this->table,
