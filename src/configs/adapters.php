@@ -20,9 +20,9 @@ return [
         'contexts' => [
             'sso' => [
                 'context' => Kernel\Auth\Guards\SSOGuard::class,
-                'login_url' => getenv('AUTH_SSO_LOGIN_URL'),
-                'client_id' => getenv('AUTH_SSO_CLIENT_ID'),
-                'validate_url'=> getenv('AUTH_SSO_VALIDATE_URL') ,
+                'login_url' => trim(getenv('AUTH_SSO_LOGIN_URL'), '"'),
+                'client_id' => trim(getenv('AUTH_SSO_CLIENT_ID'), '"'),
+                'validate_url'=> trim(getenv('AUTH_SSO_VALIDATE_URL'), '"'),
             ]
         ]
     ],
