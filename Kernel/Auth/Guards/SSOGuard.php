@@ -59,10 +59,11 @@ class SSOGuard extends Adapter implements Guard
         appLogger('SSOGuard::attempt called with credential: ' . json_encode($credential));
 
         $api_url = $this->config['validate_url'];
+        $api_url = trim($api_url, '"');
         $clientId = $this->config['client_id'];
 
         // Exchange code for token
-        appLogger('Sending token request to: ' . $api_url);
+        appLogger('Raw API URL: ' . var_export($api_url, true));
         $response = wp_remote_post($api_url, [
             'body' => [
                 'grant_type' => 'authorization_code',
