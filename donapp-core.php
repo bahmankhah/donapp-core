@@ -60,7 +60,6 @@ add_action('plugins_loaded', function () {
         });
         
     }
-    (new WooServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
     (new ElementorServiceProvider())->boot();
 });
@@ -69,12 +68,13 @@ add_action('init', function () {
     (new RouteServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
     (new SSOServiceProvider())->boot();
+    (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
-
     if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false && !is_user_logged_in()) {
         wp_redirect(Auth::sso()->getLoginUrl()); 
         exit;
     }
+
 });
 
 

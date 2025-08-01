@@ -30,21 +30,10 @@ class WooServiceProvider
             if ($cart) {
                 $cartDecoded = json_decode($cart['cart']); // Decode stored products
                 $dnpUser = sanitize_text_field($_GET['dnpuser']); 
-
+    
                 $productsAdded = false;
-
-                // Ensure WooCommerce and cart are properly initialized
-                if (!WC() || !WC()->cart) {
-                    // Initialize WooCommerce session and cart if not available
-                    if (function_exists('WC') && class_exists('WooCommerce')) {
-                        WC()->initialize_session();
-                        WC()->initialize_cart();
-                    } else {
-                        return; // WooCommerce not available
-                    }
-                }
-
-                // Now safely get the cart
+    
+                // Explicitly load the current WooCommerce cart session
                 WC()->cart->get_cart();
     
                 // Loop through the products and add them to the WooCommerce cart
