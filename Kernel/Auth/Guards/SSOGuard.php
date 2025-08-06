@@ -163,7 +163,7 @@ class SSOGuard extends Adapter implements Guard
 
                 // Set metadata for new user
                 update_user_meta($user_id, 'sso_global_id', $globalId);
-                update_user_meta($user_id, 'digits_phone', $formattedMobile);
+                // update_user_meta($user_id, 'sso_phone_number', $formattedMobile);
                 update_user_meta($user_id, 'sso_mobile_number', $mobileNumber);
                 update_user_meta($user_id, 'sso_national_id', $body['nationalId']);
                 appLogger('New user created and meta set: ' . $user_id);
