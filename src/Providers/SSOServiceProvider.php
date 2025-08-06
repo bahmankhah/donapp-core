@@ -26,9 +26,14 @@ class SSOServiceProvider
             $this->remove_code_param_redirect();
         }
 
-        // Add SSO Global ID field to user profile - use admin_init for wp-admin hooks
+        // Add SSO Global ID field to user profile - hook directly here for testing
         add_action('edit_user_profile', [$this, 'showSSOFields'], 10);
         add_action('show_user_profile', [$this, 'showSSOFields'], 10);
+        
+        // Debug: Add a simple test to see if hooks are working
+        add_action('edit_user_profile', function($user) {
+            echo '<h3>DEBUG: SSO Hook is working!</h3>';
+        }, 5);
     }
     
     public function remove_code_param_redirect() {
@@ -53,8 +58,12 @@ class SSOServiceProvider
      */
     public function showSSOFields($user)
     {
+        // Debug output
+        echo '<h3>DEBUG: showSSOFields called for user ID: ' . $user->ID . '</h3>';
+        
         // Only show to administrators in wp-admin
         if (!current_user_can('manage_options')) {
+            echo '<p>DEBUG: User does not have manage_options capability</p>';
             return;
         }
 
@@ -62,42 +71,35 @@ class SSOServiceProvider
         $sso_mobile_number = get_user_meta($user->ID, 'sso_mobile_number', true);
         $sso_national_id = get_user_meta($user->ID, 'sso_national_id', true);
         
-        // Only show the section if user has SSO data
-        if (empty($sso_global_id) && empty($sso_mobile_number) && empty($sso_national_id)) {
-            return;
-        }
+        echo '<p>DEBUG: SSO Global ID: ' . ($sso_global_id ?: 'empty') . '</p>';
+        echo '<p>DEBUG: SSO Mobile: ' . ($sso_mobile_number ?: 'empty') . '</p>';
+        echo '<p>DEBUG: SSO National ID: ' . ($sso_national_id ?: 'empty') . '</p>';
+        
+        // Show the section even if no SSO data for testing
         ?>
         <h3>اطلاعات SSO</h3>
         <table class="form-table" role="presentation">
-            <?php if (!empty($sso_global_id)): ?>
             <tr>
                 <th><label>شناسه جهانی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_global_id); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
+                    <input type="text" value="<?php echo esc_attr($sso_global_id ?: 'No data'); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
                     <p class="description">این شناسه منحصر به فرد از سرویس‌دهنده SSO دریافت شده و قابل تغییر نیست.</p>
                 </td>
             </tr>
-            <?php endif; ?>
-            
-            <?php if (!empty($sso_mobile_number)): ?>
             <tr>
                 <th><label>شماره موبایل SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_mobile_number); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
+                    <input type="text" value="<?php echo esc_attr($sso_mobile_number ?: 'No data'); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
                     <p class="description">شماره موبایل دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
-            <?php endif; ?>
-            
-            <?php if (!empty($sso_national_id)): ?>
             <tr>
                 <th><label>کد ملی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_national_id); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
+                    <input type="text" value="<?php echo esc_attr($sso_national_id ?: 'No data'); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
                     <p class="description">کد ملی دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
-            <?php endif; ?>
         </table>
         <?php
     }
