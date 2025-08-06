@@ -33,7 +33,17 @@ class SSOServiceProvider
         // Debug: Add a simple test to see if hooks are working
         add_action('edit_user_profile', function($user) {
             echo '<h3>DEBUG: SSO Hook is working!</h3>';
+            echo '<p>DEBUG: About to call showSSOFields method</p>';
         }, 5);
+        
+        // Debug: Test if method exists
+        add_action('edit_user_profile', function($user) {
+            if (method_exists($this, 'showSSOFields')) {
+                echo '<p>DEBUG: showSSOFields method exists</p>';
+            } else {
+                echo '<p>DEBUG: showSSOFields method does NOT exist</p>';
+            }
+        }, 6);
     }
     
     public function remove_code_param_redirect() {
@@ -66,6 +76,8 @@ class SSOServiceProvider
             echo '<p>DEBUG: User does not have manage_options capability</p>';
             return;
         }
+
+        echo '<p>DEBUG: User has admin capabilities, proceeding...</p>';
 
         $sso_global_id = get_user_meta($user->ID, 'sso_global_id', true);
         $sso_mobile_number = get_user_meta($user->ID, 'sso_mobile_number', true);
