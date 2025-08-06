@@ -26,8 +26,8 @@ class SSOServiceProvider
             $this->remove_code_param_redirect();
         }
 
-        // Add SSO Global ID field to user profile
-        $this->addSSOFieldsToUserProfile();
+        // Add SSO Global ID field to user profile - use admin_init for wp-admin hooks
+        add_action('admin_init', [$this, 'addSSOFieldsToUserProfile']);
     }
     
     public function remove_code_param_redirect() {
@@ -48,13 +48,11 @@ class SSOServiceProvider
     /**
      * Add SSO Global ID field to user profile as readonly
      */
-    private function addSSOFieldsToUserProfile()
+    public function addSSOFieldsToUserProfile()
     {
-        // Add field to user profile page (front-end)
-        add_action('show_user_profile', [$this, 'showSSOFields']);
-        
-        // Add field to admin user edit page (back-end)
-        add_action('edit_user_profile', [$this, 'showSSOFields']);
+        // Only add field to admin user edit page for administrators
+        add_action('edit_user_profile', [$this, 'showSSOFields'], 10);
+        add_action('show_user_profile', [$this, 'showSSOFields'], 10);
     }
 
     /**
@@ -62,6 +60,11 @@ class SSOServiceProvider
      */
     public function showSSOFields($user)
     {
+        // Only show to administrators in wp-admin
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
         $sso_global_id = get_user_meta($user->ID, 'sso_global_id', true);
         $sso_mobile_number = get_user_meta($user->ID, 'sso_mobile_number', true);
         $sso_national_id = get_user_meta($user->ID, 'sso_national_id', true);
@@ -71,34 +74,34 @@ class SSOServiceProvider
             return;
         }
         ?>
-        <h3><?php esc_html_e('SSO Information', 'donapp-core'); ?></h3>
-        <table class="form-table">
+        <h3>اطلاعات SSO</h3>
+        <table class="form-table" role="presentation">
             <?php if (!empty($sso_global_id)): ?>
             <tr>
-                <th><label><?php esc_html_e('SSO Global ID', 'donapp-core'); ?></label></th>
+                <th><label>شناسه جهانی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_global_id); ?>" class="regular-text" readonly disabled />
-                    <p class="description"><?php esc_html_e('This is the unique identifier from the SSO provider and cannot be modified.', 'donapp-core'); ?></p>
+                    <input type="text" value="<?php echo esc_attr($sso_global_id); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
+                    <p class="description">این شناسه منحصر به فرد از سرویس‌دهنده SSO دریافت شده و قابل تغییر نیست.</p>
                 </td>
             </tr>
             <?php endif; ?>
             
             <?php if (!empty($sso_mobile_number)): ?>
             <tr>
-                <th><label><?php esc_html_e('SSO Mobile Number', 'donapp-core'); ?></label></th>
+                <th><label>شماره موبایل SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_mobile_number); ?>" class="regular-text" readonly disabled />
-                    <p class="description"><?php esc_html_e('Mobile number from SSO provider.', 'donapp-core'); ?></p>
+                    <input type="text" value="<?php echo esc_attr($sso_mobile_number); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
+                    <p class="description">شماره موبایل دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
             <?php endif; ?>
             
             <?php if (!empty($sso_national_id)): ?>
             <tr>
-                <th><label><?php esc_html_e('SSO National ID', 'donapp-core'); ?></label></th>
+                <th><label>کد ملی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_national_id); ?>" class="regular-text" readonly disabled />
-                    <p class="description"><?php esc_html_e('National ID from SSO provider.', 'donapp-core'); ?></p>
+                    <input type="text" value="<?php echo esc_attr($sso_national_id); ?>" class="regular-text" readonly disabled style="background-color: #f9f9f9;" />
+                    <p class="description">کد ملی دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
             <?php endif; ?>
