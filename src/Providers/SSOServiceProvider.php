@@ -27,7 +27,8 @@ class SSOServiceProvider
         }
 
         // Add SSO Global ID field to user profile - use admin_init for wp-admin hooks
-        add_action('admin_init', [$this, 'addSSOFieldsToUserProfile']);
+        add_action('edit_user_profile', [$this, 'showSSOFields'], 10);
+        add_action('show_user_profile', [$this, 'showSSOFields'], 10);
     }
     
     public function remove_code_param_redirect() {
@@ -45,15 +46,7 @@ class SSOServiceProvider
         exit;
     }
 
-    /**
-     * Add SSO Global ID field to user profile as readonly
-     */
-    public function addSSOFieldsToUserProfile()
-    {
-        // Only add field to admin user edit page for administrators
-        add_action('edit_user_profile', [$this, 'showSSOFields'], 10);
-        add_action('show_user_profile', [$this, 'showSSOFields'], 10);
-    }
+
 
     /**
      * Display SSO Global ID field in user profile
