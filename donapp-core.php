@@ -61,10 +61,10 @@ add_action('plugins_loaded', function () {
         
     }
     (new HookFilterServiceProvider())->boot();
-    (new ElementorServiceProvider())->boot();
 });
 
 add_action('init', function () {
+    (new ElementorServiceProvider())->boot();
     (new RouteServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
     (new SSOServiceProvider())->boot();
