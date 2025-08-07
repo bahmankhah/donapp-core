@@ -70,7 +70,6 @@ class SSOServiceProvider
         ?>
         <h3>اطلاعات SSO</h3>
         <table class="form-table" role="presentation">
-            <?php if (!empty($sso_global_id)): ?>
             <tr>
                 <th><label>شناسه جهانی SSO</label></th>
                 <td>
@@ -78,9 +77,7 @@ class SSOServiceProvider
                     <p class="description">این شناسه منحصر به فرد از سرویس‌دهنده SSO دریافت شده و قابل تغییر نیست.</p>
                 </td>
             </tr>
-            <?php endif; ?>
             
-            <?php if (!empty($sso_mobile_number)): ?>
             <tr>
                 <th><label>شماره موبایل SSO</label></th>
                 <td>
@@ -88,9 +85,7 @@ class SSOServiceProvider
                     <p class="description">شماره موبایل دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
-            <?php endif; ?>
             
-            <?php if (!empty($sso_national_id)): ?>
             <tr>
                 <th><label>کد ملی SSO</label></th>
                 <td>
@@ -98,7 +93,6 @@ class SSOServiceProvider
                     <p class="description">کد ملی دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
-            <?php endif; ?>
         </table>
         <?php
     }
