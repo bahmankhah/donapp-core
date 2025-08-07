@@ -62,18 +62,13 @@ class SSOServiceProvider
         $sso_mobile_number = get_user_meta($user->ID, 'sso_mobile_number', true);
         $sso_national_id = get_user_meta($user->ID, 'sso_national_id', true);
         
-        // Only show the section if user has SSO data
-        if (empty($sso_global_id) && empty($sso_mobile_number) && empty($sso_national_id)) {
-            return;
-        }
-        
         ?>
         <h3>اطلاعات SSO</h3>
         <table class="form-table" role="presentation">
             <tr>
                 <th><label>شناسه جهانی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_global_id); ?>" class="regular-text" style="background-color: #f9f9f9;" />
+                    <input type="text" value="<?php echo esc_attr($sso_global_id ?? ''); ?>" class="regular-text" style="background-color: #f9f9f9;" />
                     <p class="description">این شناسه منحصر به فرد از سرویس‌دهنده SSO دریافت شده و قابل تغییر نیست.</p>
                 </td>
             </tr>
@@ -81,7 +76,7 @@ class SSOServiceProvider
             <tr>
                 <th><label>شماره موبایل SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_mobile_number); ?>" class="regular-text" style="background-color: #f9f9f9;" />
+                    <input type="text" value="<?php echo esc_attr($sso_mobile_number ?? ''); ?>" class="regular-text" style="background-color: #f9f9f9;" />
                     <p class="description">شماره موبایل دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
@@ -89,7 +84,7 @@ class SSOServiceProvider
             <tr>
                 <th><label>کد ملی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_national_id); ?>" class="regular-text" style="background-color: #f9f9f9;" />
+                    <input type="text" value="<?php echo esc_attr($sso_national_id ?? ''); ?>" class="regular-text" style="background-color: #f9f9f9;" />
                     <p class="description">کد ملی دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
