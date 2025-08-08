@@ -21,7 +21,10 @@ class VirtualCreditCash extends Wallet{
     {
         $creditWallet = FacadesWallet::credit()->findWallet($identifier);
         $cashWallet = FacadesWallet::cash()->findWallet($identifier);
-        if ($cashWallet['balance'] ?? 0 + $creditWallet['balance'] ?? 0 < $amount) {
+        appLogger('VirtualCreditCash::decreaseBalance() called with identifier: ' . $identifier . ', amount: ' . $amount);
+        appLogger('Credit Wallet: ' . json_encode($creditWallet));
+        appLogger('Cash Wallet: ' . json_encode($cashWallet));
+        if (($cashWallet['balance'] ?? 0) + ($creditWallet['balance'] ?? 0) < $amount) {
             throw new \Exception('Insufficient balance', 400);
         }
 
