@@ -22,7 +22,18 @@ class SSOServiceProvider
     {
         // appLogger($_GET['code'] ?? 'no state');
         if (isset($_GET['code'])) {
-            Auth::sso()->attempt(['code'=>$_GET['code'], 'session_state'=>$_GET['session_state'] ?? null]);
+            // Prevent page caching during the SSO callback handling.
+            if (!defined('DONOTCACHEPAGE')) {
+                define('DONOTCACHEPAGE', true);
+            }
+            if (!headers_sent()) {
+                nocache_headers();
+            }
+
+            Auth::sso()->attempt([
+                'code' => $_GET['code'],
+                'session_state' => $_GET['session_state'] ?? null
+            ]);
             $this->remove_code_param_redirect();
         }
 
@@ -37,12 +48,21 @@ class SSOServiceProvider
         $url_parts = parse_url($current_url);
         parse_str($url_parts['query'] ?? '', $query_params);
 
-        unset($query_params['code']);
+        if(isset($query_params['code'])){
+            unset($query_params['code']);
+        }
+        if(isset($query_params['session_state'])){
+            unset( $query_params['session_state']);
+        }
+        if(isset( $query_params['iss'])){
+            unset( $query_params['iss']);
+        }
 
         $new_query_string = http_build_query($query_params);
         $new_url = $url_parts['path'] . ($new_query_string ? '?' . $new_query_string : '');
 
-        wp_redirect($new_url);
+    // Safe redirect after login; ensure cookies are already set
+    wp_redirect($new_url, 302, 'DonappSSO');
         exit;
     }
 
