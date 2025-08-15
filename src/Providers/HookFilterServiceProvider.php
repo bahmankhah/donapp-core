@@ -7,7 +7,6 @@ use Kernel\Container;
 use Kernel\Facades\Auth;
 use Kernel\Facades\Wordpress;
 use Exception;
-use App\Facades\Vendor; // For deferred redirect target
 
 class HookFilterServiceProvider
 {
@@ -146,32 +145,5 @@ class HookFilterServiceProvider
                 $processWalletTopup($order_id, 'woocommerce_order_status_changed');
             }
         }, 10, 3);
-
-        // Handle deferred redirect after checkout (executed on order received page)
-        add_action('template_redirect', function(){
-            if (function_exists('is_order_received_page') && is_order_received_page()) {
-                $order_received_var = '';
-                if (function_exists('get_query_var')) {
-                    $order_received_var = get_query_var('order-received');
-                }
-                $order_id = is_numeric($order_received_var) ? intval($order_received_var) : 0;
-                if ($order_id) {
-                    $order = wc_get_order($order_id);
-                    if ($order) {
-                        $slug = $order->get_meta('_dnp_redirect_slug');
-                        if ($slug) {
-                            $order->delete_meta_data('_dnp_redirect_slug');
-                            $order->save();
-                            $url = Vendor::donap()->getPurchasedProductUrl($slug);
-                            appLogger('Performing deferred redirect for order #' . $order_id . ' to ' . $url);
-                            if ($url) {
-                                wp_safe_redirect($url);
-                                exit;
-                            }
-                        }
-                    }
-                }
-            }
-        });
     }
 }
