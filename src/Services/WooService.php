@@ -332,8 +332,23 @@ class WooService
         if (empty($productIds)) {
             return;
         }
-        wp_redirect(Vendor::donap()->getPurchasedProductUrl($slug));
-        exit;
+        // Avoid redirect during AJAX checkout response (would break JSON and show generic error)
+        if (function_exists('wp_doing_ajax') && wp_doing_ajax()) {
+            if ($slug) {
+                $order->update_meta_data('_dnp_redirect_slug', $slug);
+                $order->save();
+                appLogger('Deferred redirect slug stored on order #' . $orderId . ' slug=' . $slug);
+            }
+            return; // Let WooCommerce finish normally
+        }
+
+        // Non-AJAX context: perform immediate safe redirect
+        if ($slug) {
+            $url = Vendor::donap()->getPurchasedProductUrl($slug);
+            appLogger('Immediate redirect to purchased product URL: ' . $url);
+            wp_safe_redirect($url);
+            exit;
+        }
     }
 
 

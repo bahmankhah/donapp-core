@@ -96,7 +96,6 @@ class WCDonapGateway extends \WC_Payment_Gateway {
             return false;
         }
 
-        appLogger('WCDonapGateway: Gateway is enabled, checking conditions...');
         
         // Check if cart contains wallet top-up items - if so, hide this gateway
         if (WC()->cart && !WC()->cart->is_empty()) {
