@@ -26,7 +26,8 @@ class HookFilterServiceProvider
         });
 
         add_action('woocommerce_checkout_create_order_line_item', [Container::resolve('WooService'), 'addUserIdToOrderItem'], 10, 4);
-        add_action('woocommerce_payment_complete', [Container::resolve('WooService'), 'processUserIdAfterPayment'], 10, 1);
+        // Use a later priority to avoid interfering with the payment gateway flow
+        add_action('woocommerce_payment_complete', [Container::resolve('WooService'), 'processUserIdAfterPayment'], 20, 1);
         add_action('woocommerce_after_add_to_cart_button', [Container::resolve('WooService'), 'productPageButton'], 35);
         add_action('woocommerce_check_cart_items', [Container::resolve('WooService'), 'beforeCheckout']);
 
@@ -145,5 +146,33 @@ class HookFilterServiceProvider
                 $processWalletTopup($order_id, 'woocommerce_order_status_changed');
             }
         }, 10, 3);
+
+        // Handle redirect on WooCommerce thank you page for donap products
+        add_action('woocommerce_thankyou', function($order_id) {
+            if (!$order_id) return;
+            
+            $order = wc_get_order($order_id);
+            if (!$order) return;
+            
+            $redirect_url = $order->get_meta('_donap_redirect_url');
+            if ($redirect_url) {
+                appLogger("Found donap redirect URL for order {$order_id}: {$redirect_url}");
+                // Use JavaScript to redirect after a short delay to ensure the thank you page loads first
+                echo '<script>
+                setTimeout(function() {
+                    window.location.href = "' . esc_url($redirect_url) . '";
+                }, 2000);
+                </script>';
+                echo '<div style="background: #e8f5e8; border: 1px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                    <p style="margin: 0; color: #2e7d32;">شما در حال انتقال به صفحه محصول خریداری شده هستید...</p>
+                </div>';
+            }
+        });
+
+        // Remove the scheduled redirect functionality as we're using the thank you page approach
+        add_action('donap_redirect_after_purchase', function($slug) {
+            // This is now deprecated but keeping for backward compatibility
+            appLogger("Donap redirect scheduled action called (deprecated): {$slug}");
+        });
     }
 }

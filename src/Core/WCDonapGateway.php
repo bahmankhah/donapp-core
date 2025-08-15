@@ -177,10 +177,16 @@ class WCDonapGateway extends \WC_Payment_Gateway {
             $order->payment_complete();
             $order->add_order_note('پرداخت با کیف پول انجام شد.');
 
-            return [
+            $return_url = $this->get_return_url($order);
+            appLogger('WCDonapGateway: Return URL: ' . $return_url);
+
+            $result = [
                 'result'   => 'success',
-                'redirect' => $this->get_return_url($order),
+                'redirect' => $return_url,
             ];
+            
+            appLogger('WCDonapGateway: Returning success result: ' . json_encode($result));
+            return $result;
         } catch (Exception $e) {
             appLogger('WCDonapGateway: Exception in process_payment: ' . $e->getMessage());
             wc_add_notice('خطا در پردازش پرداخت.', 'error');

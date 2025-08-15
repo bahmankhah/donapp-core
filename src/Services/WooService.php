@@ -299,41 +299,65 @@ class WooService
 
     public function processUserIdAfterPayment($orderId)
     {
+        appLogger("WooService::processUserIdAfterPayment called for order ID: {$orderId}");
+        
         $order = wc_get_order($orderId);
         $productIds = [];
         $slug = '';
+        
         foreach ($order->get_items() as $item_id => $item) {
             // Retrieve the 'dnpuser' metadata from the order item
             $dnpuser = $item->get_meta('dnpuser');
             if ($dnpuser) {
-                $slug = get_post_meta($item->get_product_id(), '_dnp_product_slug', true);
-                $dnpProductId = get_post_meta($item->get_product_id(), '_dnp_product_id', true);
-                $ownerId = get_post_meta($item->get_product_id(), '_dnp_product_owner_identifier');
-                $isIncomeShared = get_post_meta($item->get_product_id(), '_dnp_product_is_income_shared');
-                if ($ownerId && $isIncomeShared) {
-                    $product = $item->get_product();
-                    $regular_price = $product ? $product->get_regular_price() : 0;
-                    $this->walletService->updateBalance($ownerId, WalletType::CREDIT, $regular_price * (2/10), TransactionType::SHARED_INCOME);
+                appLogger("Found dnpuser metadata: {$dnpuser} for item ID: {$item_id}");
+                
+                // Get product ID using array access or WooCommerce method
+                $product_id = $item['product_id'] ?? null;
+                if (!$product_id && method_exists($item, 'get_product_id')) {
+                    $product_id = $item->get_product_id();
                 }
-                if (empty($productIds[(string) $dnpuser])) {
-                    $productIds[(string) $dnpuser] = [(string) $dnpProductId];
-                } else {
-                    $productIds[(string) $dnpuser][] = (string) $dnpProductId;
+                
+                if ($product_id) {
+                    $slug = get_post_meta($product_id, '_dnp_product_slug', true);
+                    $dnpProductId = get_post_meta($product_id, '_dnp_product_id', true);
+                    $ownerId = get_post_meta($product_id, '_dnp_product_owner_identifier');
+                    $isIncomeShared = get_post_meta($product_id, '_dnp_product_is_income_shared');
+                    
+                    if ($ownerId && $isIncomeShared) {
+                        // Get product using WooCommerce function
+                        $product = wc_get_product($product_id);
+                        $regular_price = $product ? $product->get_regular_price() : 0;
+                        $this->walletService->updateBalance($ownerId, WalletType::CREDIT, $regular_price * (2/10), TransactionType::SHARED_INCOME);
+                        appLogger("Revenue sharing: Added {$regular_price} * 0.2 = " . ($regular_price * 0.2) . " to owner {$ownerId}");
+                    }
+                    
+                    if (empty($productIds[(string) $dnpuser])) {
+                        $productIds[(string) $dnpuser] = [(string) $dnpProductId];
+                    } else {
+                        $productIds[(string) $dnpuser][] = (string) $dnpProductId;
+                    }
                 }
             }
         }
-        foreach ($productIds as $dnpuser => $products) {
-            Vendor::donap()->giveAccess($dnpuser, $products);
-            // $this->giveAccess($dnpuser, $productIds);
+        
+        if (!empty($productIds)) {
+            foreach ($productIds as $dnpuser => $products) {
+                appLogger("Granting access for user {$dnpuser} to products: " . json_encode($products));
+                Vendor::donap()->giveAccess($dnpuser, $products);
+            }
         }
 
-        WC()->cart->empty_cart();
-
-        if (empty($productIds)) {
-            return;
+        // For products with dnpuser metadata, we don't want to interrupt the checkout flow
+        // Instead, we'll let WooCommerce complete normally and handle the redirect on the thank you page
+        appLogger("Processed order {$orderId} successfully. Skipping immediate redirect to allow normal checkout flow.");
+        
+        // Store the redirect URL in order meta for later use on thank you page
+        if (!empty($productIds) && $slug) {
+            $redirect_url = Vendor::donap()->getPurchasedProductUrl($slug);
+            $order->update_meta_data('_donap_redirect_url', $redirect_url);
+            $order->save();
+            appLogger("Stored redirect URL in order meta: {$redirect_url}");
         }
-        wp_redirect(Vendor::donap()->getPurchasedProductUrl($slug));
-        exit;
     }
 
 
