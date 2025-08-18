@@ -70,7 +70,9 @@ add_action('init', function () {
     (new SSOServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
-    if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false && !is_user_logged_in()) {
+    if ((strpos($_SERVER['REQUEST_URI'], '?login=true') !== false || 
+         (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && strpos($_SERVER['REQUEST_URI'], 'action=logout') === false)) 
+        && !is_user_logged_in()) {
         wp_redirect(Auth::sso()->getLoginUrl()); 
         exit;
     }
