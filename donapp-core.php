@@ -72,18 +72,28 @@ add_action('init', function () {
     (new AdminServiceProvider())->boot();
 });
 
-// Handle login page redirects - use template_redirect for better timing
-add_action('template_redirect', function () {
-    // Only redirect on frontend (not admin)
+// Handle login page redirects - intercept wp-login.php specifically
+add_action('login_init', function () {
+    // Check if it's not a logout action
+    if (!isset($_GET['action']) || $_GET['action'] !== 'logout') {
+        // If user is not logged in, redirect to SSO
+        if (!is_user_logged_in()) {
+            wp_redirect(Auth::sso()->getLoginUrl());
+            exit;
+        }
+    }
+});
+
+// Handle other login attempts (like ?login=true)
+add_action('wp', function () {
+    // Only on frontend (not admin)
     if (is_admin()) {
         return;
     }
     
-    // Check if user is trying to access login page (but not logout)
-    if ((strpos($_SERVER['REQUEST_URI'], '?login=true') !== false || 
-         (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && strpos($_SERVER['REQUEST_URI'], 'action=logout') === false)) 
-        && !is_user_logged_in()) {
-        wp_redirect(Auth::sso()->getLoginUrl()); 
+    // Check for ?login=true parameter
+    if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false && !is_user_logged_in()) {
+        wp_redirect(Auth::sso()->getLoginUrl());
         exit;
     }
 });
