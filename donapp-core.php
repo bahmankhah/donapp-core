@@ -70,7 +70,7 @@ add_action('init', function () {
     (new SSOServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
-    appLogger($_SERVER['REQUEST_URI']);
+    appLogger($_SERVER['REQUEST_URI'] . ' '. var_dump((strpos($_SERVER['REQUEST_URI'], 'wp-login.php'))));
     if ((strpos($_SERVER['REQUEST_URI'], '?login=true') !== false || 
          (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false && strpos($_SERVER['REQUEST_URI'], 'action=logout') === false)) 
         && !is_user_logged_in()) {
