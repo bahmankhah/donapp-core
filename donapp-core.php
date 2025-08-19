@@ -63,6 +63,47 @@ add_action('plugins_loaded', function () {
     (new HookFilterServiceProvider())->boot();
 });
 
+// Function to check and redirect login attempts
+function donapp_check_login_redirect() {
+    // Skip if user is already logged in
+    if (is_user_logged_in()) {
+        return;
+    }
+    
+    // Skip admin area
+    if (is_admin()) {
+        return;
+    }
+    
+    // Skip logout actions
+    if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+        return;
+    }
+    
+    // Check for login page access or login parameter
+    $should_redirect = false;
+    
+    // Check for wp-login.php
+    if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false) {
+        $should_redirect = true;
+    }
+    
+    // Check for ?login=true
+    if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false) {
+        $should_redirect = true;
+    }
+    
+    // Check for login action parameter (but not logout)
+    if (isset($_GET['action']) && $_GET['action'] === 'login') {
+        $should_redirect = true;
+    }
+    
+    if ($should_redirect) {
+        wp_redirect(Auth::sso()->getLoginUrl());
+        exit;
+    }
+}
+
 add_action('init', function () {
     (new ElementorServiceProvider())->boot();
     (new RouteServiceProvider())->boot();
@@ -70,33 +111,19 @@ add_action('init', function () {
     (new SSOServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
-});
-
-// Handle login page redirects - intercept wp-login.php specifically
-add_action('login_init', function () {
-    // Check if it's not a logout action
-    if (!isset($_GET['action']) || $_GET['action'] !== 'logout') {
-        // If user is not logged in, redirect to SSO
-        if (!is_user_logged_in()) {
-            wp_redirect(Auth::sso()->getLoginUrl());
-            exit;
-        }
-    }
-});
-
-// Handle other login attempts (like ?login=true)
-add_action('wp', function () {
-    // Only on frontend (not admin)
-    if (is_admin()) {
-        return;
-    }
     
-    // Check for ?login=true parameter
-    if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false && !is_user_logged_in()) {
-        wp_redirect(Auth::sso()->getLoginUrl());
-        exit;
-    }
+    // Add login redirect check in init
+    donapp_check_login_redirect();
 });
+
+// Multiple hooks to ensure we catch all login attempts
+add_action('plugins_loaded', 'donapp_check_login_redirect', 999);
+add_action('setup_theme', 'donapp_check_login_redirect', 999);
+add_action('after_setup_theme', 'donapp_check_login_redirect', 999);
+add_action('login_init', 'donapp_check_login_redirect', 1);
+add_action('wp_loaded', 'donapp_check_login_redirect', 999);
+add_action('wp', 'donapp_check_login_redirect', 999);
+add_action('template_redirect', 'donapp_check_login_redirect', 1);
 
 
 
