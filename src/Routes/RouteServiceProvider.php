@@ -25,6 +25,7 @@ class RouteServiceProvider {
         Route::post('cart', [WooController::class, 'addToCart'])->middleware(ApiKeyMiddleware::class)->make();
 
         Route::post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make()->name('wallet-post');
+        Route::get('wallet/credit', [WalletController::class, 'getWallet'])->middleware(ApiKeyMiddleware::class)->make()->name('wallet-get');
 
     }
 }
