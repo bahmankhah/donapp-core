@@ -40,6 +40,10 @@ class SSOServiceProvider
         // Add SSO Global ID field to user profile
         add_action('edit_user_profile', [$this, 'showSSOFields'], 10);
         add_action('show_user_profile', [$this, 'showSSOFields'], 10);
+        
+        // Save SSO fields when user profile is updated
+        add_action('edit_user_profile_update', [$this, 'saveSSOFields'], 10);
+        add_action('personal_options_update', [$this, 'saveSSOFields'], 10);
     }
     
     public function remove_code_param_redirect() {
@@ -86,29 +90,63 @@ class SSOServiceProvider
         <h3>اطلاعات SSO</h3>
         <table class="form-table" role="presentation">
             <tr>
-                <th><label>شناسه جهانی SSO</label></th>
+                <th><label for="sso_global_id">شناسه جهانی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_global_id ?? ''); ?>" class="regular-text" style="background-color: #f9f9f9;" />
-                    <p class="description">این شناسه منحصر به فرد از سرویس‌دهنده SSO دریافت شده و قابل تغییر نیست.</p>
+                    <input type="text" name="sso_global_id" id="sso_global_id" value="<?php echo esc_attr($sso_global_id ?? ''); ?>" class="regular-text" />
+                    <p class="description">این شناسه منحصر به فرد از سرویس‌دهنده SSO دریافت شده.</p>
                 </td>
             </tr>
             
             <tr>
-                <th><label>شماره موبایل SSO</label></th>
+                <th><label for="sso_mobile_number">شماره موبایل SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_mobile_number ?? ''); ?>" class="regular-text" style="background-color: #f9f9f9;" />
+                    <input type="text" name="sso_mobile_number" id="sso_mobile_number" value="<?php echo esc_attr($sso_mobile_number ?? ''); ?>" class="regular-text" />
                     <p class="description">شماره موبایل دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
             
             <tr>
-                <th><label>کد ملی SSO</label></th>
+                <th><label for="sso_national_id">کد ملی SSO</label></th>
                 <td>
-                    <input type="text" value="<?php echo esc_attr($sso_national_id ?? ''); ?>" class="regular-text" style="background-color: #f9f9f9;" />
+                    <input type="text" name="sso_national_id" id="sso_national_id" value="<?php echo esc_attr($sso_national_id ?? ''); ?>" class="regular-text" />
                     <p class="description">کد ملی دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
         </table>
         <?php
+    }
+
+    /**
+     * Save SSO fields when user profile is updated
+     */
+    public function saveSSOFields($user_id)
+    {
+        // Only allow administrators to save SSO fields
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Verify nonce for security (WordPress handles this automatically for user profile forms)
+        if (!wp_verify_nonce($_POST['_wpnonce'] ?? '', 'update-user_' . $user_id)) {
+            return;
+        }
+
+        // Save SSO Global ID
+        if (isset($_POST['sso_global_id'])) {
+            $sso_global_id = sanitize_text_field($_POST['sso_global_id']);
+            update_user_meta($user_id, 'sso_global_id', $sso_global_id);
+        }
+
+        // Save SSO Mobile Number
+        if (isset($_POST['sso_mobile_number'])) {
+            $sso_mobile_number = sanitize_text_field($_POST['sso_mobile_number']);
+            update_user_meta($user_id, 'sso_mobile_number', $sso_mobile_number);
+        }
+
+        // Save SSO National ID
+        if (isset($_POST['sso_national_id'])) {
+            $sso_national_id = sanitize_text_field($_POST['sso_national_id']);
+            update_user_meta($user_id, 'sso_national_id', $sso_national_id);
+        }
     }
 }
