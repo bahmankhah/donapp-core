@@ -6,7 +6,6 @@ use App\Services\AuthService;
 use App\Services\BlogService;
 use App\Services\GiftService;
 use App\Services\GravityFlowInboxService;
-use App\Services\SimpleGravityInboxService;
 use App\Services\GravityService;
 use App\Services\Modules\Proxy\ProxyService;
 use App\Services\ProductService;
@@ -124,10 +123,6 @@ class AppServiceProvider
         
         Container::bind('GravityFlowInboxService', function () {
             return new GravityFlowInboxService();
-        });
-        
-        Container::bind('SimpleGravityInboxService', function () {
-            return new SimpleGravityInboxService();
         });
     }
 }

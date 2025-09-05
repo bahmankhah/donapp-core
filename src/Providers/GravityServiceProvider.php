@@ -25,13 +25,9 @@ class GravityServiceProvider
      */
     private function initializeInboxExport()
     {
-        // Use the simpler service that injects via JavaScript
-        $inboxService = Container::resolve('SimpleGravityInboxService');
+        // Use the JavaScript-based service that actually works
+        $inboxService = Container::resolve('GravityFlowInboxService');
         $inboxService->addInboxExportFunctionality();
-        
-        // Keep the original complex service as backup
-        $complexInboxService = Container::resolve('GravityFlowInboxService');
-        $complexInboxService->addInboxExportFunctionality();
     }
 
     /**
