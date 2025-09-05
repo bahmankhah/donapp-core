@@ -20,14 +20,27 @@ class GravityFlowInboxService
      */
     public function addInboxExportFunctionality()
     {
-        // Hook into gravity flow shortcode output to add our export buttons
+        // Multiple hooks to catch different Gravity Flow scenarios
         add_filter('gravityflow_shortcode_output', [$this, 'addExportButtonsToInbox'], 10, 3);
+        add_filter('gravity_flow_shortcode_output', [$this, 'addExportButtonsToInbox'], 10, 3);
+        add_filter('gf_shortcode_output', [$this, 'addExportButtonsToInbox'], 10, 3);
+        
+        // Try hooking into gravity flow content
+        add_filter('gravityflow_inbox_content', [$this, 'addExportButtonsToInboxContent'], 10, 2);
+        add_filter('gravity_flow_inbox_content', [$this, 'addExportButtonsToInboxContent'], 10, 2);
+        
+        // Hook into shortcode processing directly - this is the most reliable approach
+        add_filter('do_shortcode_tag', [$this, 'processGravityFlowShortcode'], 10, 4);
+        
+        // Alternative: Hook into the content after shortcodes are processed
+        add_filter('the_content', [$this, 'addExportToGravityFlowContent'], 20);
         
         // Handle CSV export requests
         add_action('init', [$this, 'handleInboxExportRequests']);
         
         // Add custom CSS and JS for export buttons
         add_action('wp_enqueue_scripts', [$this, 'enqueueInboxExportAssets']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueueInboxExportAssets']);
     }
 
     /**
@@ -526,5 +539,75 @@ class GravityFlowInboxService
                 }
             ');
         }
+    }
+
+    /**
+     * Alternative hook for inbox content
+     */
+    public function addExportButtonsToInboxContent($content, $atts = [])
+    {
+        if (!is_user_logged_in()) {
+            return $content;
+        }
+
+        $export_nonce = wp_create_nonce('export_gravity_inbox');
+        $export_button = $this->getInboxExportButton($export_nonce);
+        
+        return $export_button . $content;
+    }
+
+    /**
+     * Process shortcode directly
+     */
+    public function processGravityFlowShortcode($output, $tag, $attr, $m)
+    {
+        // Check if it's a gravityflow shortcode with inbox page
+        if ($tag !== 'gravityflow') {
+            return $output;
+        }
+
+        if (!isset($attr['page']) || $attr['page'] !== 'inbox') {
+            return $output;
+        }
+
+        if (!is_user_logged_in()) {
+            return $output;
+        }
+
+        // Add our export functionality
+        $export_nonce = wp_create_nonce('export_gravity_inbox');
+        $export_button = $this->getInboxExportButton($export_nonce);
+        
+        // Add export button to the top and individual buttons to rows
+        $output = $export_button . $output;
+        $output = $this->addIndividualExportButtons($output);
+        
+        return $output;
+    }
+
+    /**
+     * Add export functionality to content containing Gravity Flow shortcodes
+     */
+    public function addExportToGravityFlowContent($content)
+    {
+        // Only process if user is logged in and content contains gravityflow shortcode
+        if (!is_user_logged_in() || strpos($content, '[gravityflow') === false) {
+            return $content;
+        }
+
+        // Check if this is an inbox shortcode
+        if (preg_match('/\[gravityflow[^\]]*page=["\']inbox["\'][^\]]*\]/', $content)) {
+            $export_nonce = wp_create_nonce('export_gravity_inbox');
+            $export_button = $this->getInboxExportButton($export_nonce);
+            
+            // Add export button before the shortcode
+            $content = preg_replace(
+                '/(\[gravityflow[^\]]*page=["\']inbox["\'][^\]]*\])/',
+                $export_button . '$1',
+                $content
+            );
+        }
+
+        return $content;
     }
 }

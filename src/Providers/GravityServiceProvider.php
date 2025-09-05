@@ -25,11 +25,13 @@ class GravityServiceProvider
      */
     private function initializeInboxExport()
     {
-        // Only initialize on frontend or when shortcodes might be processed
-        if (!is_admin()) {
-            $inboxService = Container::resolve('GravityFlowInboxService');
-            $inboxService->addInboxExportFunctionality();
-        }
+        // Use the simpler service that injects via JavaScript
+        $inboxService = Container::resolve('SimpleGravityInboxService');
+        $inboxService->addInboxExportFunctionality();
+        
+        // Keep the original complex service as backup
+        $complexInboxService = Container::resolve('GravityFlowInboxService');
+        $complexInboxService->addInboxExportFunctionality();
     }
 
     /**
