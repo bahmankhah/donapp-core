@@ -15,6 +15,21 @@ class GravityServiceProvider
     public function boot()
     {
         add_action('admin_menu', [$this, 'register_gravity_menu'], 20);
+        
+        // Initialize inbox export functionality
+        $this->initializeInboxExport();
+    }
+
+    /**
+     * Initialize Gravity Flow inbox export functionality
+     */
+    private function initializeInboxExport()
+    {
+        // Only initialize on frontend or when shortcodes might be processed
+        if (!is_admin()) {
+            $inboxService = Container::resolve('GravityFlowInboxService');
+            $inboxService->addInboxExportFunctionality();
+        }
     }
 
     /**
