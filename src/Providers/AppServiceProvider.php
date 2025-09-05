@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\AuthService;
 use App\Services\BlogService;
 use App\Services\GiftService;
+use App\Services\GravityService;
 use App\Services\Modules\Proxy\ProxyService;
 use App\Services\ProductService;
 use App\Services\TransactionService;
@@ -113,6 +114,10 @@ class AppServiceProvider
         
         Container::bind('UserService', function () {
             return new UserService();
+        });
+        
+        Container::bind('GravityService', function () {
+            return new GravityService();
         });
     }
 }

@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
 use App\Providers\AdminServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\ElementorServiceProvider;
+use App\Providers\GravityServiceProvider;
 use App\Providers\HookFilterServiceProvider;
 use App\Providers\ShortcodeServiceProvider;
 use App\Providers\SSOServiceProvider;
@@ -111,6 +112,7 @@ add_action('init', function () {
     (new SSOServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
+    (new GravityServiceProvider())->boot();
     
     // Add login redirect check in init
     donapp_check_login_redirect();
