@@ -7,7 +7,7 @@
 
     <?php if ($show_stats && !empty($stats)): ?>
         <!-- Statistics Cards -->
-        <!-- <div class="donap-stats-grid">
+        <div class="donap-stats-grid">
             <div class="donap-stat-card">
                 <h3>تعداد کل فرم‌های تأیید شده</h3>
                 <div class="donap-stat-value"><?php echo esc_html($stats['total_entries'] ?? 0); ?></div>
@@ -24,7 +24,7 @@
                 <h3>فرم‌های این هفته</h3>
                 <div class="donap-stat-value"><?php echo esc_html($stats['this_week'] ?? 0); ?></div>
             </div>
-        </div> -->
+        </div>
     <?php endif; ?>
 
     <?php if ($show_filters || $show_export): ?>
@@ -32,7 +32,7 @@
         <div class="donap-controls-section">
             <?php if ($show_export): ?>
                 <div class="donap-export-section">
-                <a target="_blank" href="<?php echo rest_url('dnp/v1/gravity/export-csv?uid=' . get_current_user_id()); ?>" 
+                    <a href="<?php echo add_query_arg(['export_gravity_csv' => '1', 'gravity_nonce' => urlencode($export_nonce)], $base_url); ?>" 
                        class="donap-btn donap-btn-primary">
                         <span class="donap-icon">⬇</span>
                         خروجی CSV
@@ -114,7 +114,7 @@
                                 <small>فرم شماره: <?php echo esc_html($entry['form_id']); ?></small>
                             </td>
                             <td>
-                                <?php echo esc_html($entry['date_created']); ?>
+                                <?php echo esc_html(date('Y/m/d H:i', strtotime($entry['date_created']))); ?>
                             </td>
                             <td>
                                 <span class="donap-status-badge donap-status-approved">
@@ -135,15 +135,6 @@
                                                 و <?php echo count($entry['entry_data']) - 2; ?> فیلد دیگر...
                                             </small>
                                         <?php endif; ?>
-                                    </div>
-                                    <!-- Hidden full data for modal -->
-                                    <div class="donap-full-entry-data" style="display: none;">
-                                        <?php foreach ($entry['entry_data'] as $field_data): ?>
-                                            <div class="donap-modal-field-item">
-                                                <span class="donap-modal-field-label"><?php echo esc_html($field_data['label']); ?></span>
-                                                <div class="donap-modal-field-value"><?php echo wp_kses_post($field_data['value']); ?></div>
-                                            </div>
-                                        <?php endforeach; ?>
                                     </div>
                                 <?php else: ?>
                                     <em>بدون اطلاعات</em>
@@ -210,7 +201,7 @@
                 <span class="donap-modal-close">&times;</span>
             </div>
             <div class="donap-modal-body">
-                <div id="donap-entry-details" class="donap-modal-scrollable"></div>
+                <div id="donap-entry-details"></div>
             </div>
         </div>
     </div>
@@ -504,36 +495,6 @@
     overflow-y: auto;
 }
 
-.donap-modal-scrollable {
-    max-height: 55vh;
-    overflow-y: auto;
-}
-
-.donap-modal-field-item {
-    margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #e1e1e1;
-    border-radius: 4px;
-    background: #f9f9f9;
-}
-
-.donap-modal-field-item:last-child {
-    margin-bottom: 0;
-}
-
-.donap-modal-field-label {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.donap-modal-field-value {
-    color: #666;
-    word-wrap: break-word;
-    line-height: 1.5;
-}
-
 @media (max-width: 768px) {
     .donap-stats-grid {
         grid-template-columns: 1fr;
@@ -571,20 +532,10 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             var entryId = this.getAttribute('data-entry-id');
             var entryRow = this.closest('tr');
+            var entryData = entryRow.querySelector('.donap-entry-data');
+            var entryDataHtml = entryData ? entryData.innerHTML : 'بدون اطلاعات اضافی';
             
-            // Get full entry data from hidden div
-            var fullEntryData = entryRow.querySelector('.donap-full-entry-data');
-            var fullEntryDataHtml = fullEntryData ? fullEntryData.innerHTML : '';
-            
-            if (fullEntryDataHtml && fullEntryDataHtml.trim() !== '') {
-                document.getElementById('donap-entry-details').innerHTML = fullEntryDataHtml;
-            } else {
-                // Fallback to visible data if no full data available
-                var entryData = entryRow.querySelector('.donap-entry-data');
-                var entryDataHtml = entryData ? entryData.innerHTML : 'بدون اطلاعات اضافی';
-                document.getElementById('donap-entry-details').innerHTML = entryDataHtml;
-            }
-            
+            document.getElementById('donap-entry-details').innerHTML = entryDataHtml;
             document.getElementById('donap-entry-modal').style.display = 'block';
         });
     });
