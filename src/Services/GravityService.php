@@ -55,13 +55,14 @@ class GravityService
                 continue;
             }
 
-            // Get entries for this form that are approved
+            // Get entries for this form (consider changing 'active' to a wider criteria)
             $search_criteria = [
-                'status' => 'active'
+                'status' => 'active' // Modify if needed
             ];
-
             $entries = class_exists('GFAPI') ? \GFAPI::get_entries($form['id'], $search_criteria) : [];
-            
+
+            appLogger('Form ID: ' . $form['id'] . ' - Entries: ' . print_r($entries, true)); // Debug line
+
             foreach ($entries as $entry) {
                 // Check if entry is approved and user has access
                 if ($this->isEntryApproved($entry) && $this->userHasAccessToEntry($entry, $current_user->ID)) {
@@ -79,7 +80,7 @@ class GravityService
         }
 
         // Sort by date created (newest first)
-        usort($approved_entries, function($a, $b) {
+        usort($approved_entries, function ($a, $b) {
             return strtotime($b['date_created']) - strtotime($a['date_created']);
         });
 
@@ -121,7 +122,7 @@ class GravityService
             ],
             [
                 'id' => '102',
-                'form_id' => '2', 
+                'form_id' => '2',
                 'form_title' => 'فرم ثبت‌نام دوره آموزشی',
                 'date_created' => date('Y-m-d H:i:s', strtotime('-5 days')),
                 'status' => 'approved',
@@ -198,26 +199,26 @@ class GravityService
         if (isset($entry['workflow_final_status']) && $entry['workflow_final_status'] === 'approved') {
             return true;
         }
-        
+
         if (isset($entry['gravityflow_status']) && $entry['gravityflow_status'] === 'approved') {
             return true;
         }
-        
+
         // Additional checks for Gravity Flow approval can be added here
         // For now, we'll also consider entries with specific meta values
         $entry_id = $entry['id'];
         $form_id = $entry['form_id'];
-        
+
         // Check gravity flow step status
         $step_status = '';
         if (function_exists('gform_get_meta')) {
             $step_status = gform_get_meta($entry_id, 'workflow_step_status_' . $form_id);
         }
-        
+
         if ($step_status === 'approved' || $step_status === 'complete') {
             return true;
         }
-        
+
         return false;
     }
 
@@ -231,11 +232,11 @@ class GravityService
         if (isset($entry['workflow_final_status'])) {
             return $entry['workflow_final_status'];
         }
-        
+
         if (isset($entry['gravityflow_status'])) {
             return $entry['gravityflow_status'];
         }
-        
+
         return 'approved';
     }
 
@@ -260,7 +261,7 @@ class GravityService
 
         // Additional checks can be added here based on your workflow requirements
         // For example, checking if user was assigned to approve this entry
-        
+
         return false;
     }
 
@@ -273,12 +274,12 @@ class GravityService
     private function formatEntryData($entry, $form)
     {
         $formatted_data = [];
-        
+
         foreach ($form['fields'] as $field) {
             $field_id = $field->id;
             $field_label = $field->label;
             $field_value = isset($entry[$field_id]) ? $entry[$field_id] : '';
-            
+
             // Skip empty values and system fields
             if (empty($field_value) || in_array($field->type, ['page', 'section', 'html'])) {
                 continue;
@@ -299,14 +300,14 @@ class GravityService
                     $field_value = esc_html($field_value);
                     break;
             }
-            
+
             $formatted_data[] = [
                 'label' => $field_label,
                 'value' => $field_value,
                 'type' => $field->type
             ];
         }
-        
+
         return $formatted_data;
     }
 
@@ -320,13 +321,13 @@ class GravityService
         if (empty($value)) {
             return '';
         }
-        
+
         // If it's a URL, create a link
         if (filter_var($value, FILTER_VALIDATE_URL)) {
             $filename = basename($value);
             return '<a href="' . esc_url($value) . '" target="_blank">' . esc_html($filename) . '</a>';
         }
-        
+
         return esc_html($value);
     }
 
@@ -340,12 +341,12 @@ class GravityService
         if (empty($value)) {
             return '';
         }
-        
+
         $timestamp = strtotime($value);
         if ($timestamp) {
             return date('Y/m/d', $timestamp);
         }
-        
+
         return esc_html($value);
     }
 
@@ -368,7 +369,7 @@ class GravityService
         // Get all entries without pagination
         $all_entries_result = $this->getApprovedGravityFlowEntries(1, 1000);
         $entries = $all_entries_result['data'];
-        
+
         if (empty($entries)) {
             return [
                 'success' => false,
@@ -437,14 +438,14 @@ class GravityService
 
         foreach ($entries as $entry) {
             $unique_forms[$entry['form_id']] = true;
-            
+
             $entry_date = date('Y-m-d', strtotime($entry['date_created']));
             $entry_month = date('Y-m', strtotime($entry['date_created']));
-            
+
             if ($entry_month === $current_month) {
                 $stats['this_month']++;
             }
-            
+
             if ($entry_date >= $current_week_start) {
                 $stats['this_week']++;
             }
