@@ -67,11 +67,53 @@ class GravityService
         foreach ($forms as $form) {
             // appLogger('GravityService: Processing form ID: ' . $form['id'] . ', Title: ' . $form['title']);
             
-            // Check if this form has Gravity Flow enabled
+            // Check multiple possible ways to detect Gravity Flow
             $flow_settings = get_option('gravityflow_settings_' . $form['id'], array());
-            if (empty($flow_settings)) {
-                continue;
+            $flow_settings_alt = get_option('gravityflow_form_settings_' . $form['id'], array());
+            
+            // Get form meta if RGFormsModel exists
+            $form_meta = null;
+            if (class_exists('RGFormsModel')) {
+                $form_meta = \RGFormsModel::get_form_meta($form['id']);
             }
+            
+            appLogger('GravityService: Form ID ' . $form['id'] . ' - gravityflow_settings_: ' . (empty($flow_settings) ? 'empty' : 'has data'));
+            appLogger('GravityService: Form ID ' . $form['id'] . ' - gravityflow_form_settings_: ' . (empty($flow_settings_alt) ? 'empty' : 'has data'));
+            
+            // Check if form has gravityflow settings in the form meta
+            $has_gravityflow = false;
+            if (is_array($form_meta) && isset($form_meta['gravityflow'])) {
+                $has_gravityflow = true;
+                appLogger('GravityService: Form ID ' . $form['id'] . ' has gravityflow in form meta');
+            }
+            
+            // Alternative: Check if Gravity Flow API has methods to detect workflow forms
+            if (class_exists('Gravity_Flow_API')) {
+                $api = new \Gravity_Flow_API();
+                if (method_exists($api, 'get_workflow_forms')) {
+                    $workflow_forms = $api->get_workflow_forms();
+                    if (in_array($form['id'], array_column($workflow_forms, 'id'))) {
+                        $has_gravityflow = true;
+                        appLogger('GravityService: Form ID ' . $form['id'] . ' found in Gravity Flow API workflow forms');
+                    }
+                }
+            }
+            
+            // Check for any option that contains the form ID and gravityflow
+            if ($this->wpdb) {
+                $gravityflow_options = $this->wpdb->get_results($this->wpdb->prepare(
+                    "SELECT option_name FROM {$this->wpdb->options} WHERE option_name LIKE %s",
+                    '%gravityflow%' . $form['id'] . '%'
+                ));
+                
+                if (!empty($gravityflow_options)) {
+                    appLogger('GravityService: Form ID ' . $form['id'] . ' - Found related options: ' . implode(', ', array_column($gravityflow_options, 'option_name')));
+                    $has_gravityflow = true;
+                }
+            }
+            
+            // TEMPORARY: Process all forms to debug, regardless of Gravity Flow settings
+            appLogger('GravityService: Form ID ' . $form['id'] . ' - Processing ALL forms for debugging (ignoring Gravity Flow requirement)');
 
             // Get entries for this form (consider changing 'active' to a wider criteria)
             $search_criteria = [
