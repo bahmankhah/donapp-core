@@ -68,20 +68,9 @@ class GravityService
             // appLogger('GravityService: Processing form ID: ' . $form['id'] . ', Title: ' . $form['title']);
             
             // Check if this form has Gravity Flow enabled
-            $form_id = $form['id'];
-            
-            // Check if Gravity_Flow_Form class exists before using it
-            if (class_exists('Gravity_Flow_Form')) {
-                $settings = \Gravity_Flow_Form::get_setting($form_id);
-                // appLogger('GravityService: Form ID ' . $form_id . ' Gravity Flow settings: ' . json_encode($settings));
-                
-                // Check if Flow is enabled for this form using Gravity Flow settings
-                if (!isset($settings['workflow']) || empty($settings['workflow'])) {
-                    // appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
-                    continue; // Skip forms without a workflow
-                }
-            } else {
-                // appLogger('GravityService: Gravity_Flow_Form class not available, processing all forms');
+            $flow_settings = get_option('gravityflow_settings_' . $form['id'], array());
+            if (empty($flow_settings)) {
+                continue;
             }
 
             // Get entries for this form (consider changing 'active' to a wider criteria)
@@ -90,7 +79,7 @@ class GravityService
             ];
             $entries = class_exists('GFAPI') ? \GFAPI::get_entries($form['id'], $search_criteria) : [];
 
-            // appLogger('GravityService: Form ID: ' . $form['id'] . ' - Found ' . count($entries) . ' entries with search criteria: ' . json_encode($search_criteria));
+            appLogger('Form ID: ' . $form['id'] . ' - Entries: ' . print_r($entries, true)); // Debug line
 
             foreach ($entries as $entry) {
                 // appLogger(json_encode($entry));
@@ -342,7 +331,6 @@ class GravityService
             return true;
         }
 
-        // appLogger('GravityService: Entry ' . $entry['id'] . ' is NOT approved. Available fields: ' . implode(', ', array_keys($entry)));
         return false;
     }
 
@@ -389,8 +377,6 @@ class GravityService
 
         // Additional checks can be added here based on your workflow requirements
         // For example, checking if user was assigned to approve this entry
-        
-        // appLogger('GravityService: User ' . $user_id . ' does NOT have access to entry ' . $entry['id'] . '. Entry created_by: ' . (isset($entry['created_by']) ? $entry['created_by'] : 'not set'));
 
         return false;
     }
