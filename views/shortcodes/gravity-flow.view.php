@@ -32,7 +32,7 @@
         <div class="donap-controls-section">
             <?php if ($show_export): ?>
                 <div class="donap-export-section">
-                    <a href="<?php echo add_query_arg(['export_gravity_csv' => '1', 'gravity_nonce' => urlencode($export_nonce)], $base_url); ?>" 
+                    <a href="<?php echo rest_url('dnp/v1/gravity/export-csv?nonce=' . urlencode($export_nonce)); ?>" 
                        class="donap-btn donap-btn-primary">
                         <span class="donap-icon">⬇</span>
                         خروجی CSV
