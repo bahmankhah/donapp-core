@@ -15,7 +15,8 @@
 
     <!-- Statistics Cards -->
     <div class="donap-dashboard-grid">
-        <?php 
+        <?php
+        /* 
         echo view('admin/components/stat-card', [
             'title' => 'تعداد کل فرم‌های تأیید شده',
             'value' => $stats['total_entries'] ?? 0
@@ -35,6 +36,7 @@
             'title' => 'فرم‌های این هفته',
             'value' => $stats['this_week'] ?? 0
         ]);
+        */
         ?>
     </div>
 
