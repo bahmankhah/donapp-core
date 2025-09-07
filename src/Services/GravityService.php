@@ -89,16 +89,16 @@ class GravityService
             // appLogger('GravityService: Form ID: ' . $form['id'] . ' - Found ' . count($entries) . ' entries with search criteria: ' . json_encode($search_criteria));
 
             foreach ($entries as $entry) {
-                appLogger(json_encode($entry));
+                // appLogger(json_encode($entry));
                 // appLogger('GravityService: Processing entry ID: ' . $entry['id'] . ', Status: ' . (isset($entry['status']) ? $entry['status'] : 'unknown'));
                 
                 // Check if entry is approved and user has access
                 $is_approved = $this->isEntryApproved($entry);
                 $has_access = $this->userHasAccessToEntry($entry, $current_user->ID);
-                
+                $is_approved_by_user = $this->isFormApprovedByUser($form, $entry,$current_user->ID);
                 // appLogger('GravityService: Entry ID ' . $entry['id'] . ' - Is Approved: ' . ($is_approved ? 'Yes' : 'No') . ', Has Access: ' . ($has_access ? 'Yes' : 'No'));
-                
-                if ($is_approved && $has_access) {
+
+                if ($is_approved && $has_access && $is_approved_by_user) {
                     $approved_entries[] = [
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
@@ -134,6 +134,22 @@ class GravityService
                 'total_pages' => ceil($total_count / $per_page)
             ]
         ];
+    }
+
+    private function isFormApprovedByUser($form,$entry, $user_id)
+    {
+        foreach ($form['fields'] as $field) {
+            if($field['type'] == 'workflow_user'){
+                $field_id = $field->id;
+                $field_label = $field->label;
+                $field_value = isset($entry[$field_id]) ? $entry[$field_id] : '';
+                if ($field_value == $user_id) {
+                    return true;
+                }
+                break;
+            }
+        }
+        return false;
     }
 
     /**
