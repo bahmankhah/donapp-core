@@ -29,11 +29,11 @@ class GravityController
             // }
 
             // Verify nonce for security
-            if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'export_gravity_csv')) {
-                http_response_code(403);
-                wp_die('خطای امنیتی: نانس نامعتبر است.', 'خطای امنیتی', ['response' => 403]);
-                return;
-            }
+            // if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'export_gravity_csv')) {
+            //     http_response_code(403);
+            //     wp_die('خطای امنیتی: نانس نامعتبر است.', 'خطای امنیتی', ['response' => 403]);
+            //     return;
+            // }
 
             // Get export data from service
             $export_result = $this->gravityService->exportApprovedEntriesToCSV();
