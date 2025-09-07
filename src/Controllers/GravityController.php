@@ -22,11 +22,11 @@ class GravityController
     {
         try {
             // Check user permissions
-            if (!current_user_can('manage_options')) {
-                http_response_code(403);
-                wp_die('شما اجازه دسترسی به این بخش را ندارید.', 'خطای دسترسی', ['response' => 403]);
-                return;
-            }
+            // if (!current_user_can('manage_options')) {
+            //     http_response_code(403);
+            //     wp_die('شما اجازه دسترسی به این بخش را ندارید.', 'خطای دسترسی', ['response' => 403]);
+            //     return;
+            // }
 
             // Verify nonce for security
             if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'export_gravity_csv')) {
