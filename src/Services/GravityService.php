@@ -137,7 +137,7 @@ class GravityService
     private function isFormApprovedByUser($form,$entry, $user_id)
     {
         foreach ($form['fields'] as $field) {
-            if($field['type'] == 'workflow_user'){
+            if($field->type == 'workflow_user'){
                 $field_id = $field->id;
                 $field_label = $field->label;
                 $field_value = isset($entry[$field_id]) ? $entry[$field_id] : '';

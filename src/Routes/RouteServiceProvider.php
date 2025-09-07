@@ -4,6 +4,7 @@ namespace App\Routes;
 use App\Controllers\Modules\Proxy\ProxyController;
 use App\Controllers\AuthController;
 use App\Controllers\BlogController;
+use App\Controllers\GravityController;
 use App\Controllers\ProductController;
 use App\Controllers\TestController;
 use App\Controllers\VideoController;
@@ -26,6 +27,10 @@ class RouteServiceProvider {
 
         Route::post('wallet/{type}', [WalletController::class, 'addToWallet'])->middleware(ApiKeyMiddleware::class)->make()->name('wallet-post');
         Route::get('wallet/credit', [WalletController::class, 'getWallet'])->middleware(ApiKeyMiddleware::class)->make()->name('wallet-get');
+
+        // Gravity Flow routes
+        Route::get('gravity/export-csv', [GravityController::class, 'exportCSV'])->make()->name('gravity-export-csv');
+        Route::get('gravity/entries', [GravityController::class, 'getApprovedEntries'])->make()->name('gravity-entries-api');
 
     }
 }
