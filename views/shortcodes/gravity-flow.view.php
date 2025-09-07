@@ -136,6 +136,15 @@
                                             </small>
                                         <?php endif; ?>
                                     </div>
+                                    <!-- Hidden full data for modal -->
+                                    <div class="donap-full-entry-data" style="display: none;">
+                                        <?php foreach ($entry['entry_data'] as $field_data): ?>
+                                            <div class="donap-modal-field-item">
+                                                <span class="donap-modal-field-label"><?php echo esc_html($field_data['label']); ?></span>
+                                                <div class="donap-modal-field-value"><?php echo wp_kses_post($field_data['value']); ?></div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 <?php else: ?>
                                     <em>بدون اطلاعات</em>
                                 <?php endif; ?>
@@ -201,7 +210,7 @@
                 <span class="donap-modal-close">&times;</span>
             </div>
             <div class="donap-modal-body">
-                <div id="donap-entry-details"></div>
+                <div id="donap-entry-details" class="donap-modal-scrollable"></div>
             </div>
         </div>
     </div>
@@ -495,6 +504,36 @@
     overflow-y: auto;
 }
 
+.donap-modal-scrollable {
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.donap-modal-field-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #e1e1e1;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.donap-modal-field-item:last-child {
+    margin-bottom: 0;
+}
+
+.donap-modal-field-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.donap-modal-field-value {
+    color: #666;
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+
 @media (max-width: 768px) {
     .donap-stats-grid {
         grid-template-columns: 1fr;
@@ -532,10 +571,20 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             var entryId = this.getAttribute('data-entry-id');
             var entryRow = this.closest('tr');
-            var entryData = entryRow.querySelector('.donap-entry-data');
-            var entryDataHtml = entryData ? entryData.innerHTML : 'بدون اطلاعات اضافی';
             
-            document.getElementById('donap-entry-details').innerHTML = entryDataHtml;
+            // Get full entry data from hidden div
+            var fullEntryData = entryRow.querySelector('.donap-full-entry-data');
+            var fullEntryDataHtml = fullEntryData ? fullEntryData.innerHTML : '';
+            
+            if (fullEntryDataHtml && fullEntryDataHtml.trim() !== '') {
+                document.getElementById('donap-entry-details').innerHTML = fullEntryDataHtml;
+            } else {
+                // Fallback to visible data if no full data available
+                var entryData = entryRow.querySelector('.donap-entry-data');
+                var entryDataHtml = entryData ? entryData.innerHTML : 'بدون اطلاعات اضافی';
+                document.getElementById('donap-entry-details').innerHTML = entryDataHtml;
+            }
+            
             document.getElementById('donap-entry-modal').style.display = 'block';
         });
     });
