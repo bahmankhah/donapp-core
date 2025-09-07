@@ -89,6 +89,7 @@ class GravityService
             // appLogger('GravityService: Form ID: ' . $form['id'] . ' - Found ' . count($entries) . ' entries with search criteria: ' . json_encode($search_criteria));
 
             foreach ($entries as $entry) {
+                appLogger(json_encode($entry));
                 // appLogger('GravityService: Processing entry ID: ' . $entry['id'] . ', Status: ' . (isset($entry['status']) ? $entry['status'] : 'unknown'));
                 
                 // Check if entry is approved and user has access
