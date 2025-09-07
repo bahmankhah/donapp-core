@@ -499,7 +499,7 @@ class GravityService
     public function exportApprovedEntriesToCSV($user = null)
     {
         // Get all entries without pagination
-        $all_entries_result = $this->getApprovedGravityFlowEntries(1, 1000, $user);
+        $all_entries_result = $this->getApprovedGravityFlowEntries(1, 1000);
         appLogger(json_encode($all_entries_result));
         $entries = $all_entries_result['data'];
 
