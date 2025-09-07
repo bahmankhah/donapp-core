@@ -35,8 +35,22 @@ class GravityController
             //     return;
             // }
 
+            $uid = $_GET['uid'];
+            if(!$uid) {
+                http_response_code(403);
+                wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
+                return;
+            }
+
+            $user = get_user_by('ID', $uid);
+            if (!$user) {
+                http_response_code(404);
+                wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
+                return;
+            }
+
             // Get export data from service
-            $export_result = $this->gravityService->exportApprovedEntriesToCSV();
+            $export_result = $this->gravityService->exportApprovedEntriesToCSV($user);
 
             if (!$export_result['success']) {
                 http_response_code(400);
