@@ -36,6 +36,7 @@ class GravityService
         // appLogger('GravityService: Gravity Forms and Gravity Flow are available');
 
         $current_user = wp_get_current_user();
+        appLogger('GravityService: Current user ID: ' . $current_user->ID . ', Login: ' . $current_user->user_login);
         if (!$current_user || !$current_user->ID) {
             // appLogger('GravityService: No current user found or user ID is 0');
             return [
