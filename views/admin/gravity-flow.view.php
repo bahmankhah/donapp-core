@@ -45,7 +45,7 @@
         <div class="donap-filters-header">
             <h2>فیلترها و عملیات</h2>
             <div class="donap-export-section">
-                <a href="<?php echo rest_url('dnp/v1/gravity/export-csv?uid=' . get_current_user_id()); ?>" 
+                <a target="_blank" href="<?php echo rest_url('dnp/v1/gravity/export-csv?uid=' . get_current_user_id()); ?>" 
                    class="button button-primary donap-export-btn">
                     <span class="dashicons dashicons-download"></span>
                     خروجی CSV
