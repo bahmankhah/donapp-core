@@ -16,6 +16,7 @@ class WooController{
     public function addToCart($request){
         try{
             $data = $request->get_json_params();
+            appLogger('Add to cart request data: ' . json_encode($data));
             if(!isset($data['product']) || !isset($data['id'])){
                 throw new Exception('product and id are required', 400);
             }
