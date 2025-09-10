@@ -75,10 +75,10 @@ class GravityService
                 // appLogger('GravityService: Form ID ' . $form_id . ' Gravity Flow settings: ' . json_encode($settings));
                 
                 // Check if Flow is enabled for this form using Gravity Flow settings
-                if (!isset($settings['workflow']) || empty($settings['workflow'])) {
-                    // appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
-                    continue; // Skip forms without a workflow
-                }
+                // if (!isset($settings['workflow']) || empty($settings['workflow'])) {
+                //     appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
+                //     continue; // Skip forms without a workflow
+                // }
             } else {
                 // appLogger('GravityService: Gravity_Flow_Form class not available, processing all forms');
             }
@@ -92,7 +92,7 @@ class GravityService
             // appLogger('GravityService: Form ID: ' . $form['id'] . ' - Found ' . count($entries) . ' entries with search criteria: ' . json_encode($search_criteria));
 
             foreach ($entries as $entry) {
-                // appLogger(json_encode($entry));
+                appLogger(json_encode($entry));
                 // appLogger('GravityService: Processing entry ID: ' . $entry['id'] . ', Status: ' . (isset($entry['status']) ? $entry['status'] : 'unknown'));
                 
                 // Check if entry is approved and user has access
@@ -101,8 +101,8 @@ class GravityService
                 // $is_approved_by_user = $this->isFormApprovedByUser($form, $entry,$current_user->ID);
                 
                 // Additionally check if user has approved this form in activity log
-                $has_approved_in_log = $this->userHasApprovedForm($form['id'], $current_user->ID);
-                
+                $has_approved_in_log = $this->userHasApprovedForm($form['id'], $entry['id'], $current_user->ID);
+
                 // appLogger('GravityService: Entry ID ' . $entry['id'] . ' - Is Approved: ' . ($is_approved ? 'Yes' : 'No') . ', Has Access: ' . ($has_access ? 'Yes' : 'No') . ', Approved by User: ' . ($is_approved_by_user ? 'Yes' : 'No') . ', Approved in Log: ' . ($has_approved_in_log ? 'Yes' : 'No'));
 
                 // Entry must be approved AND user must have either approved it via form field OR via activity log
@@ -150,7 +150,7 @@ class GravityService
      * @param int $userId
      * @return bool
      */
-    private function userHasApprovedForm($formId, $userId)
+    private function userHasApprovedForm($formId, $entryId, $userId)
     {
         try {
             // Use the DB class following the pattern from getCategoryId method
@@ -162,7 +162,8 @@ class GravityService
                     SELECT COUNT(*) 
                     FROM {$db->wpdbMain()->prefix}gravityflow_activity_log 
                     WHERE form_id = %d 
-                    AND assignee_id = %s 
+                    AND assignee_id = %s
+                    AND lead_id = %s 
                     AND log_event = %s 
                     AND log_object = %s 
                     AND log_value = %s 
@@ -170,6 +171,7 @@ class GravityService
                 ", 
                 $formId,
                 $userId,
+                $entryId,
                 'status',
                 'assignee', 
                 'approved',
