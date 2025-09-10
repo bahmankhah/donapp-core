@@ -75,10 +75,10 @@ class GravityService
                 // appLogger('GravityService: Form ID ' . $form_id . ' Gravity Flow settings: ' . json_encode($settings));
                 
                 // Check if Flow is enabled for this form using Gravity Flow settings
-                // if (!isset($settings['workflow']) || empty($settings['workflow'])) {
-                //     appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
-                //     continue; // Skip forms without a workflow
-                // }
+                if (!isset($settings['workflow']) || empty($settings['workflow'])) {
+                    appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
+                    continue; // Skip forms without a workflow
+                }
             } else {
                 // appLogger('GravityService: Gravity_Flow_Form class not available, processing all forms');
             }
@@ -92,7 +92,7 @@ class GravityService
             // appLogger('GravityService: Form ID: ' . $form['id'] . ' - Found ' . count($entries) . ' entries with search criteria: ' . json_encode($search_criteria));
 
             foreach ($entries as $entry) {
-                appLogger(json_encode($entry));
+                // appLogger(json_encode($entry));
                 // appLogger('GravityService: Processing entry ID: ' . $entry['id'] . ', Status: ' . (isset($entry['status']) ? $entry['status'] : 'unknown'));
                 
                 // Check if entry is approved and user has access
