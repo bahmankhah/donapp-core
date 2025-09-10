@@ -106,7 +106,7 @@ class GravityService
                 // appLogger('GravityService: Entry ID ' . $entry['id'] . ' - Is Approved: ' . ($is_approved ? 'Yes' : 'No') . ', Has Access: ' . ($has_access ? 'Yes' : 'No') . ', Approved by User: ' . ($is_approved_by_user ? 'Yes' : 'No') . ', Approved in Log: ' . ($has_approved_in_log ? 'Yes' : 'No'));
 
                 // Entry must be approved AND user must have either approved it via form field OR via activity log
-                if (true || ($has_approved_in_log)) {
+                if (($has_approved_in_log)) {
                     $approved_entries[] = [
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
