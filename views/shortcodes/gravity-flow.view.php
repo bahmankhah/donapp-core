@@ -7,7 +7,7 @@
 
     <?php if ($show_stats && !empty($stats)): ?>
         <!-- Statistics Cards -->
-        <div class="donap-stats-grid">
+        <!-- <div class="donap-stats-grid">
             <div class="donap-stat-card">
                 <h3>تعداد کل فرم‌های تأیید شده</h3>
                 <div class="donap-stat-value"><?php echo esc_html($stats['total_entries'] ?? 0); ?></div>
@@ -24,7 +24,7 @@
                 <h3>فرم‌های این هفته</h3>
                 <div class="donap-stat-value"><?php echo esc_html($stats['this_week'] ?? 0); ?></div>
             </div>
-        </div>
+        </div> -->
     <?php endif; ?>
 
     <?php if ($show_filters || $show_export): ?>
@@ -32,7 +32,7 @@
         <div class="donap-controls-section">
             <?php if ($show_export): ?>
                 <div class="donap-export-section">
-                    <a href="<?php echo rest_url('dnp/v1/gravity/export-csv?nonce=' . urlencode($export_nonce)); ?>" 
+                <a target="_blank" href="<?php echo rest_url('dnp/v1/gravity/export-csv?uid=' . get_current_user_id()); ?>" 
                        class="donap-btn donap-btn-primary">
                         <span class="donap-icon">⬇</span>
                         خروجی CSV
