@@ -76,7 +76,7 @@ class GravityService
                 
                 // Check if Flow is enabled for this form using Gravity Flow settings
                 if (!isset($settings['workflow']) || empty($settings['workflow'])) {
-                    appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
+                    // appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
                     continue; // Skip forms without a workflow
                 }
             } else {
@@ -106,7 +106,7 @@ class GravityService
                 // appLogger('GravityService: Entry ID ' . $entry['id'] . ' - Is Approved: ' . ($is_approved ? 'Yes' : 'No') . ', Has Access: ' . ($has_access ? 'Yes' : 'No') . ', Approved by User: ' . ($is_approved_by_user ? 'Yes' : 'No') . ', Approved in Log: ' . ($has_approved_in_log ? 'Yes' : 'No'));
 
                 // Entry must be approved AND user must have either approved it via form field OR via activity log
-                if (($has_approved_in_log)) {
+                if ($has_approved_in_log) {
                     $approved_entries[] = [
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
@@ -180,13 +180,12 @@ class GravityService
             );
             
             // Log the query for debugging (can be removed later)
-            appLogger("GravityService: Checking approval for Form ID: {$formId}, User ID: {$userId}, Result: " . (int)$result);
+            // appLogger("GravityService: Checking approval for Form ID: {$formId}, User ID: {$userId}, Result: " . (int)$result);
             
             // Return true if any matching records found
             return (int)$result > 0;
             
         } catch (Exception $e) {
-            error_log('GravityService userHasApprovedForm Error: ' . $e->getMessage());
             appLogger('GravityService userHasApprovedForm Error: ' . $e->getMessage());
             return false;
         }
