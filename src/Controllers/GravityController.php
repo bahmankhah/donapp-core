@@ -69,7 +69,7 @@ class GravityController
             }
 
             // Clean any output that might have been sent
-            if (ob_get_level()) {
+            while (ob_get_level()) {
                 ob_end_clean();
             }
 
@@ -78,19 +78,36 @@ class GravityController
             header('Content-Disposition: attachment; filename="' . $filename . '"');
             header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
             header('Pragma: public');
-            header('Content-Length: ' . $this->calculateCSVSize($csv_data));
-
+            // Remove Content-Length header as it can cause issues with dynamic content
+            
             // Add BOM for proper UTF-8 handling in Excel
             echo "\xEF\xBB\xBF";
 
-            // Output CSV data
-            $output = fopen('php://output', 'w');
+            // Output CSV data directly without buffering
             foreach ($csv_data as $row) {
-                fputcsv($output, $row);
+                // Convert each row to CSV format and output immediately
+                $line = '';
+                $first = true;
+                foreach ($row as $field) {
+                    if (!$first) {
+                        $line .= ',';
+                    }
+                    // Escape quotes and wrap in quotes if needed
+                    if (strpos($field, ',') !== false || strpos($field, '"') !== false || strpos($field, "\n") !== false) {
+                        $line .= '"' . str_replace('"', '""', $field) . '"';
+                    } else {
+                        $line .= $field;
+                    }
+                    $first = false;
+                }
+                echo $line . "\n";
             }
-            fclose($output);
 
-            exit;
+            // Force output and exit cleanly
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+            exit();
 
         } catch (Exception $e) {
             error_log('Gravity CSV Export Error: ' . $e->getMessage());
@@ -135,19 +152,5 @@ class GravityController
             error_log('Gravity Entries API Error: ' . $e->getMessage());
             wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
         }
-    }
-
-    /**
-     * Calculate the approximate size of CSV data for Content-Length header
-     */
-    private function calculateCSVSize($csv_data)
-    {
-        $size = 0;
-        foreach ($csv_data as $row) {
-            $size += strlen(implode(',', array_map(function($field) {
-                return '"' . str_replace('"', '""', $field) . '"';
-            }, $row))) + 2; // +2 for \r\n
-        }
-        return $size + 3; // +3 for BOM
     }
 }
