@@ -114,7 +114,7 @@
                                 <small>فرم شماره: <?php echo esc_html($entry['form_id']); ?></small>
                             </td>
                             <td>
-                                <?php echo esc_html(date('Y/m/d H:i', strtotime($entry['date_created']))); ?>
+                                <?php echo esc_html($entry['date_created']); ?>
                             </td>
                             <td>
                                 <span class="donap-status-badge donap-status-approved">
