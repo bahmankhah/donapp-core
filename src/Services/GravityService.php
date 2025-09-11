@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Exception;
 use Kernel\DB;
+use App\Utils\JalaliUtils;
 
 class GravityService
 {
@@ -107,11 +108,14 @@ class GravityService
 
                 // Entry must be approved AND user must have either approved it via form field OR via activity log
                 if ($has_approved_in_log) {
+                    // Convert Gregorian date to Jalali
+                    $jalaliUtils = new JalaliUtils();
+                    $jalali_date = $jalaliUtils->jdate('Y/m/d H:i', strtotime($entry['date_created']));
                     $approved_entries[] = [
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
                         'form_title' => $form['title'],
-                        'date_created' => $entry['date_created'],
+                        'date_created' => $jalali_date,
                         'status' => $this->getEntryStatus($entry),
                         'entry_data' => $this->formatEntryData($entry, $form)
                     ];

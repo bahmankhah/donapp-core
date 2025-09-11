@@ -1,6 +1,6 @@
 <?php
 
-namespace Kernel;
+namespace App\Utils;
 
 use Exception;
 use ZipArchive;
