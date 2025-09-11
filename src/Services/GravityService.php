@@ -111,19 +111,7 @@ class GravityService
                     // Convert Gregorian date to Jalali
                     $jalaliUtils = new JalaliUtils();
                     
-                    // Debug the original date
-                    appLogger('Original date_created: ' . $entry['date_created']);
-                    
-                    // Parse the date more carefully
-                    $timestamp = strtotime($entry['date_created']);
-                    if ($timestamp === false || $timestamp <= 0) {
-                        // If strtotime fails, try to use current time as fallback
-                        $timestamp = time();
-                        appLogger('strtotime failed for: ' . $entry['date_created'] . ', using current time');
-                    }
-                    
-                    $jalali_date = $jalaliUtils->jdate('Y/m/d H:i', $timestamp);
-                    appLogger('Converted to Jalali: ' . $jalali_date);
+                    $jalali_date = $jalaliUtils->jdate('Y/m/d H:i', strtotime($entry['date_created']));
                     
                     $approved_entries[] = [
                         'id' => $entry['id'],
