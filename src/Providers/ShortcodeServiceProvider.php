@@ -11,7 +11,7 @@ class ShortcodeServiceProvider
 
     public function boot()
     {
-        Wordpress::shortcode('donap_wallet_topup',function () {
+        Wordpress::shortcode('donap_wallet_topup', function () {
             if (!\is_user_logged_in()) {
                 return '<p>برای شارژ کیف پول ابتدا وارد شوید.</p>';
             }
@@ -42,7 +42,17 @@ class ShortcodeServiceProvider
                 'show_pdf' => 'true'
             ], $atts);
 
-            return view('shortcodes/gravity-export-buttons', ['attributes' => $atts]);
+            // Convert string values to boolean for template
+            $view_data = [
+                'style' => $atts['style'],
+                'align' => $atts['align'],
+                'show_csv' => $atts['show_csv'] === 'true',
+                'show_excel' => $atts['show_excel'] === 'true',
+                'show_pdf' => $atts['show_pdf'] === 'true',
+                'user_id' => \get_current_user_id()
+            ];
+
+            return view('shortcodes/gravity-export-buttons', $view_data);
         });
 
         // Single entry export shortcode (existing)
@@ -56,7 +66,17 @@ class ShortcodeServiceProvider
                 'auto_detect' => 'false'
             ], $atts);
 
-            return view('shortcodes/gravity-single-export', ['attributes' => $atts]);
+            // Convert string values to boolean for template
+            $view_data = [
+                'entry_id' => $atts['entry_id'],
+                'form_id' => $atts['form_id'],
+                'style' => $atts['style'],
+                'show_pdf' => $atts['show_pdf'] === 'true',
+                'show_excel' => $atts['show_excel'] === 'true',
+                'auto_detect' => $atts['auto_detect'] === 'true'
+            ];
+
+            return view('shortcodes/gravity-single-export', $view_data);
         });
     }
 
@@ -67,14 +87,14 @@ class ShortcodeServiceProvider
     {
         try {
             $gravityService = \Kernel\Container::resolve('GravityService');
-            
+
             // Get current page from query params
             $current_page = max(1, intval($_GET['gf_page'] ?? 1));
             $per_page = intval($atts['per_page']);
-            
+
             // Get entries data
             $result = $gravityService->getEnhancedGravityFlowEntries($current_page, $per_page);
-            
+
             // Prepare view data
             $view_data = [
                 'entries' => $result['data'],
@@ -85,7 +105,6 @@ class ShortcodeServiceProvider
             ];
 
             return view('shortcodes/gravity-flow-inbox', $view_data);
-            
         } catch (Exception $e) {
             error_log('Gravity Flow Inbox Shortcode Error: ' . $e->getMessage());
             return '<div class="error">خطا در بارگیری صندوق ورودی گردش کاری</div>';
