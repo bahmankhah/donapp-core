@@ -42,6 +42,9 @@ class RouteServiceProvider
         Route::get('gravity/entry/export-pdf', [GravityController::class, 'exportSingleEntryPDF'])->make()->name('gravity-entry-export-pdf');
         Route::get('gravity/entry/export-excel', [GravityController::class, 'exportSingleEntryExcel'])->make()->name('gravity-entry-export-excel');
 
+        // Enhanced Gravity Flow inbox bulk actions
+        Route::post('gravity/bulk-action', [GravityController::class, 'handleBulkAction'])->make()->name('gravity-bulk-action');
+
         // Workflow automation API routes
         Route::get('workflow/dashboard', [WorkflowController::class, 'getDashboardData'])->make()->name('workflow-dashboard-api');
         Route::post('workflow/task-action', [WorkflowController::class, 'handleTaskAction'])->make()->name('workflow-task-action');

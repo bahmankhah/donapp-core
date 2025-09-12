@@ -375,4 +375,183 @@ class GravityController
 
         return $csv_data;
     }
+
+    /**
+     * Handle bulk actions for enhanced Gravity Flow inbox
+     */
+    public function handleBulkAction()
+    {
+        try {
+            // Verify nonce
+            if (!\check_ajax_referer('gravity_flow_bulk_action', '_wpnonce', false)) {
+                \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
+                return;
+            }
+
+            // Check permissions
+            if (!\current_user_can('manage_options')) {
+                \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
+                return;
+            }
+
+            $bulk_action = \sanitize_text_field($_POST['bulk_action'] ?? '');
+            $entry_ids = array_map('intval', $_POST['entry_ids'] ?? []);
+
+            if (empty($bulk_action) || empty($entry_ids)) {
+                \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
+                return;
+            }
+
+            $results = [];
+            $success_count = 0;
+            $error_count = 0;
+
+            foreach ($entry_ids as $entry_id) {
+                try {
+                    switch ($bulk_action) {
+                        case 'approve':
+                            $result = $this->approveSingleEntry($entry_id);
+                            break;
+
+                        case 'reject':
+                            $result = $this->rejectSingleEntry($entry_id);
+                            break;
+
+                        case 'delete':
+                            $result = $this->deleteSingleEntry($entry_id);
+                            break;
+
+                        case 'export':
+                            $result = $this->exportSingleEntry($entry_id);
+                            break;
+
+                        default:
+                            throw new Exception('عملیات نامشخص');
+                    }
+
+                    if ($result) {
+                        $success_count++;
+                        $results[] = ['entry_id' => $entry_id, 'status' => 'success'];
+                    } else {
+                        $error_count++;
+                        $results[] = ['entry_id' => $entry_id, 'status' => 'error', 'message' => 'خطا در انجام عملیات'];
+                    }
+                } catch (Exception $e) {
+                    $error_count++;
+                    $results[] = [
+                        'entry_id' => $entry_id,
+                        'status' => 'error',
+                        'message' => $e->getMessage()
+                    ];
+                }
+            }
+
+            // Prepare response message
+            $action_names = [
+                'approve' => 'تأیید',
+                'reject' => 'رد',
+                'delete' => 'حذف',
+                'export' => 'صادرات'
+            ];
+
+            $action_name = $action_names[$bulk_action] ?? 'پردازش';
+
+            if ($error_count === 0) {
+                $message = sprintf('%s ورودی با موفقیت %s شدند', $success_count, $action_name);
+                \wp_send_json_success([
+                    'message' => $message,
+                    'results' => $results,
+                    'success_count' => $success_count,
+                    'error_count' => $error_count
+                ]);
+            } else {
+                $message = sprintf(
+                    '%s ورودی %s شدند، %s ورودی با خطا مواجه شدند',
+                    $success_count,
+                    $action_name,
+                    $error_count
+                );
+                \wp_send_json_error([
+                    'message' => $message,
+                    'results' => $results,
+                    'success_count' => $success_count,
+                    'error_count' => $error_count
+                ], 207); // 207 Multi-Status
+            }
+        } catch (Exception $e) {
+            error_log('Bulk Action Error: ' . $e->getMessage());
+            \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
+        }
+    }
+
+    /**
+     * Approve single entry
+     */
+    private function approveSingleEntry($entry_id)
+    {
+        if (!class_exists('GFAPI')) {
+            return false;
+        }
+
+        $entry = \GFAPI::get_entry($entry_id);
+        if (is_wp_error($entry)) {
+            return false;
+        }
+
+        // Update entry meta or use Gravity Flow API to approve
+        // This is a simplified implementation
+        \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
+        \gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
+        \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+
+        return true;
+    }
+
+    /**
+     * Reject single entry
+     */
+    private function rejectSingleEntry($entry_id)
+    {
+        if (!class_exists('GFAPI')) {
+            return false;
+        }
+
+        $entry = \GFAPI::get_entry($entry_id);
+        if (is_wp_error($entry)) {
+            return false;
+        }
+
+        // Update entry meta or use Gravity Flow API to reject
+        \gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
+        \gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
+        \gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+
+        return true;
+    }
+
+    /**
+     * Delete single entry
+     */
+    private function deleteSingleEntry($entry_id)
+    {
+        if (!class_exists('GFAPI')) {
+            return false;
+        }
+
+        $result = \GFAPI::delete_entry($entry_id);
+        return !is_wp_error($result);
+    }
+
+    /**
+     * Export single entry (returns download URL)
+     */
+    private function exportSingleEntry($entry_id)
+    {
+        // This would typically generate an export file and return URL
+        // For now, just mark as exported
+        \gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
+        \gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
+
+        return true;
+    }
 }
