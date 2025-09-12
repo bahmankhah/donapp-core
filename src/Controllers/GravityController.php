@@ -229,8 +229,8 @@ class GravityController
                 return;
             }
 
-            // Get export data from service
-            $export_result = $this->gravityService->exportApprovedEntriesToCSV($user);
+            // Get export data from service (CSV method doesn't take user parameter)
+            $export_result = $this->gravityService->exportApprovedEntriesToCSV();
 
             if (!$export_result['success']) {
                 http_response_code(400);

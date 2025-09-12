@@ -11,6 +11,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Start output buffering early to prevent header issues
+if (!defined('DONAPP_OB_STARTED')) {
+    ob_start();
+    define('DONAPP_OB_STARTED', true);
+}
+
 use App\Providers\AdminServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\ElementorServiceProvider;
@@ -106,7 +112,13 @@ function donapp_check_login_redirect()
     }
 }
 
+add_action('plugins_loaded', function () {
+    // Initialize core services
+    (new AppServiceProvider())->boot();
+}, 10);
+
 add_action('init', function () {
+    // Initialize providers that need WordPress to be fully loaded
     (new ElementorServiceProvider())->boot();
     (new RouteServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
@@ -115,10 +127,11 @@ add_action('init', function () {
     (new AdminServiceProvider())->boot();
     (new GravityServiceProvider())->boot();
     (new WorkflowServiceProvider())->boot();
+    (new HookFilterServiceProvider())->boot();
 
     // Add login redirect check in init
     donapp_check_login_redirect();
-});
+}, 20);
 
 // Multiple hooks to ensure we catch all login attempts
 add_action('plugins_loaded', 'donapp_check_login_redirect', 999);
