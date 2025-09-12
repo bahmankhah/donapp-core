@@ -712,4 +712,85 @@ class GravityService
             ];
         }, $forms);
     }
+
+    /**
+     * Get single entry for export
+     * @param string $form_id
+     * @param string $entry_id
+     * @return array
+     */
+    public function getSingleEntryForExport($form_id, $entry_id)
+    {
+        try {
+            // Check if Gravity Forms is active
+            if (!class_exists('GFAPI')) {
+                return [
+                    'success' => false,
+                    'message' => 'Gravity Forms غیر فعال است',
+                    'data' => null
+                ];
+            }
+
+            // Get the entry
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry) || empty($entry)) {
+                return [
+                    'success' => false,
+                    'message' => 'ورودی یافت نشد',
+                    'data' => null
+                ];
+            }
+
+            // Verify entry belongs to the specified form
+            if ($entry['form_id'] != $form_id) {
+                return [
+                    'success' => false,
+                    'message' => 'ورودی متعلق به فرم مشخص شده نیست',
+                    'data' => null
+                ];
+            }
+
+            // Get form details
+            $form = \GFAPI::get_form($form_id);
+            if (is_wp_error($form) || empty($form)) {
+                return [
+                    'success' => false,
+                    'message' => 'فرم یافت نشد',
+                    'data' => null
+                ];
+            }
+
+            // Check user access (basic security check)
+            $current_user = wp_get_current_user();
+            if (!$current_user || !$this->userHasAccessToEntry($entry, $current_user->ID)) {
+                return [
+                    'success' => false,
+                    'message' => 'دسترسی به این ورودی مجاز نیست',
+                    'data' => null
+                ];
+            }
+
+            // Format entry data for export
+            $formatted_entry = [
+                'id' => $entry['id'],
+                'form_id' => $form['id'],
+                'form_title' => $form['title'],
+                'date_created' => $entry['date_created'],
+                'status' => $this->getEntryStatus($entry),
+                'entry_data' => $this->formatEntryData($entry, $form)
+            ];
+
+            return [
+                'success' => true,
+                'message' => 'ورودی با موفقیت بازیابی شد',
+                'data' => $formatted_entry
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'خطا در بازیابی ورودی: ' . $e->getMessage(),
+                'data' => null
+            ];
+        }
+    }
 }
