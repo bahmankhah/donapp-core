@@ -19,6 +19,7 @@ use App\Providers\HookFilterServiceProvider;
 use App\Providers\ShortcodeServiceProvider;
 use App\Providers\SSOServiceProvider;
 use App\Providers\WooServiceProvider;
+use App\Providers\WorkflowServiceProvider;
 use App\Routes\RouteServiceProvider;
 use Kernel\Facades\Auth;
 
@@ -52,53 +53,53 @@ register_activation_hook(__FILE__, function () {
 });
 add_action('plugins_loaded', function () {
     (new AppServiceProvider())->boot();
-    
+
     // Make sure WooCommerce is active before registering the gateway
     if (class_exists('WooCommerce') && class_exists('WC_Payment_Gateway')) {
         add_filter('woocommerce_payment_gateways', function ($gateways) {
             $gateways[] = \App\Core\WCDonapGateway::class;
             return $gateways;
         });
-        
     }
     (new HookFilterServiceProvider())->boot();
 });
 
 // Function to check and redirect login attempts
-function donapp_check_login_redirect() {
+function donapp_check_login_redirect()
+{
     // Skip if user is already logged in
     if (is_user_logged_in()) {
         return;
     }
-    
+
     // Skip admin area
     if (is_admin()) {
         return;
     }
-    
+
     // Skip logout actions
     if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         return;
     }
-    
+
     // Check for login page access or login parameter
     $should_redirect = false;
-    
+
     // Check for wp-login.php
     if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false) {
         $should_redirect = true;
     }
-    
+
     // Check for ?login=true
     if (strpos($_SERVER['REQUEST_URI'], '?login=true') !== false) {
         $should_redirect = true;
     }
-    
+
     // Check for login action parameter (but not logout)
     if (isset($_GET['action']) && $_GET['action'] === 'login') {
         $should_redirect = true;
     }
-    
+
     if ($should_redirect) {
         wp_redirect(Auth::sso()->getLoginUrl());
         exit;
@@ -113,7 +114,8 @@ add_action('init', function () {
     (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
     (new GravityServiceProvider())->boot();
-    
+    (new WorkflowServiceProvider())->boot();
+
     // Add login redirect check in init
     donapp_check_login_redirect();
 });
