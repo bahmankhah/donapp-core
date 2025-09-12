@@ -57,18 +57,6 @@ spl_autoload_register(function ($class) {
 register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
-add_action('plugins_loaded', function () {
-    (new AppServiceProvider())->boot();
-
-    // Make sure WooCommerce is active before registering the gateway
-    if (class_exists('WooCommerce') && class_exists('WC_Payment_Gateway')) {
-        add_filter('woocommerce_payment_gateways', function ($gateways) {
-            $gateways[] = \App\Core\WCDonapGateway::class;
-            return $gateways;
-        });
-    }
-    (new HookFilterServiceProvider())->boot();
-});
 
 // Function to check and redirect login attempts
 function donapp_check_login_redirect()
@@ -113,12 +101,21 @@ function donapp_check_login_redirect()
 }
 
 add_action('plugins_loaded', function () {
-    // Initialize core services
+    // Initialize core services first
     (new AppServiceProvider())->boot();
+
+    // Make sure WooCommerce is active before registering the gateway
+    if (class_exists('WooCommerce') && class_exists('WC_Payment_Gateway')) {
+        add_filter('woocommerce_payment_gateways', function ($gateways) {
+            $gateways[] = \App\Core\WCDonapGateway::class;
+            return $gateways;
+        });
+    }
 }, 10);
 
 add_action('init', function () {
     // Initialize providers that need WordPress to be fully loaded
+    // Using priority 99 to ensure all translation domains are loaded first
     (new ElementorServiceProvider())->boot();
     (new RouteServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
@@ -131,7 +128,7 @@ add_action('init', function () {
 
     // Add login redirect check in init
     donapp_check_login_redirect();
-}, 20);
+}, 99);
 
 // Multiple hooks to ensure we catch all login attempts
 add_action('plugins_loaded', 'donapp_check_login_redirect', 999);
