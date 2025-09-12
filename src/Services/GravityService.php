@@ -25,11 +25,15 @@ class GravityService
         // Check if Gravity Forms and Gravity Flow are active
         if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
             // Return sample data for demonstration purposes
+            error_log('GravityService: Gravity Forms/Flow not available, returning sample data');
             return $this->getSampleData($page, $per_page);
         }
 
+        error_log('GravityService: Gravity Forms/Flow available, attempting to get real data');
+
         $current_user = wp_get_current_user();
         if (!$current_user || !$current_user->ID) {
+            error_log('GravityService: No current user found');
             return [
                 'data' => [],
                 'pagination' => [
@@ -40,6 +44,8 @@ class GravityService
                 ]
             ];
         }
+
+        error_log('GravityService: Current user ID: ' . $current_user->ID);
 
         $offset = ($page - 1) * $per_page;
 
@@ -369,10 +375,55 @@ class GravityService
         $all_entries_result = $this->getApprovedGravityFlowEntries(1, 1000);
         $entries = $all_entries_result['data'];
 
+        // Debug information about what we received
+        error_log('GravityService: exportApprovedEntriesToCSV called');
+        error_log('GravityService: Retrieved ' . count($entries) . ' entries');
+
         if (empty($entries)) {
+            // Check if Gravity Forms is available or we should use sample data
+            if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
+                error_log('GravityService: Gravity Forms/Flow not available, forcing sample data');
+                // Force sample data for testing/demo purposes when no real data is available
+                $entries = [
+                    [
+                        'id' => '101',
+                        'form_id' => '1',
+                        'form_title' => 'فرم درخواست مرخصی (نمونه)',
+                        'date_created' => date('Y-m-d H:i:s', strtotime('-2 days')),
+                        'status' => 'approved',
+                        'entry_data' => [
+                            ['label' => 'نام کامل', 'value' => 'احمد احمدی', 'type' => 'text'],
+                            ['label' => 'نوع مرخصی', 'value' => 'استعلاجی', 'type' => 'select'],
+                            ['label' => 'تاریخ شروع', 'value' => '1403/01/15', 'type' => 'date'],
+                            ['label' => 'مدت مرخصی', 'value' => '3 روز', 'type' => 'text']
+                        ]
+                    ],
+                    [
+                        'id' => '102',
+                        'form_id' => '2',
+                        'form_title' => 'فرم ثبت‌نام دوره آموزشی (نمونه)',
+                        'date_created' => date('Y-m-d H:i:s', strtotime('-5 days')),
+                        'status' => 'approved',
+                        'entry_data' => [
+                            ['label' => 'نام و نام خانوادگی', 'value' => 'فاطمه محمدی', 'type' => 'text'],
+                            ['label' => 'شماره تماس', 'value' => '09123456789', 'type' => 'phone'],
+                            ['label' => 'دوره مورد نظر', 'value' => 'برنامه‌نویسی پایتون', 'type' => 'select']
+                        ]
+                    ]
+                ];
+
+                error_log('GravityService: Using fallback sample data with ' . count($entries) . ' entries');
+            }
+        }
+
+        // Final check - if still no data, return error
+        if (empty($entries)) {
+            $gravity_status = class_exists('GFForms') ? 'فعال' : 'غیرفعال';
+            $gravity_flow_status = class_exists('Gravity_Flow') ? 'فعال' : 'غیرفعال';
+
             return [
                 'success' => false,
-                'message' => 'هیچ ورودی تأیید شده‌ای یافت نشد.'
+                'message' => 'هیچ ورودی تأیید شده‌ای یافت نشد. وضعیت افزونه‌ها: Gravity Forms: ' . $gravity_status . ', Gravity Flow: ' . $gravity_flow_status . '. لطفاً ابتدا برخی از ورودی‌های Gravity Flow را تأیید کنید.'
             ];
         }
 
@@ -408,13 +459,14 @@ class GravityService
             ];
         }
 
+        error_log('GravityService: Generated CSV data with ' . count($csv_data) . ' rows (including header)');
+
         return [
             'success' => true,
             'data' => $csv_data,
             'filename' => 'gravity-flow-approved-entries-' . date('Y-m-d-H-i-s') . '.csv'
         ];
     }
-
     /**
      * Get statistics for approved entries
      * @return array
