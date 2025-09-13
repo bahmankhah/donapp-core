@@ -215,7 +215,14 @@ class GravityController
 
             if (!$entry_id || !$form_id) {
                 http_response_code(400);
-                wp_die('شناسه ورودی یا فرم مشخص نشده است.', 'خطا', ['response' => 400]);
+                wp_die('شناسه ورودی یا فرم مشخص نشده است. لطفاً از طریق دکمه‌های صادرات در صفحه ورودی اقدام کنید.', 'خطا در پارامترها', ['response' => 400]);
+                return;
+            }
+
+            // Validate entry_id and form_id are numeric
+            if (!is_numeric($entry_id) || !is_numeric($form_id)) {
+                http_response_code(400);
+                wp_die('شناسه ورودی یا فرم معتبر نیست.', 'خطا در پارامترها', ['response' => 400]);
                 return;
             }
 
@@ -260,7 +267,14 @@ class GravityController
 
             if (!$entry_id || !$form_id) {
                 http_response_code(400);
-                wp_die('شناسه ورودی یا فرم مشخص نشده است.', 'خطا', ['response' => 400]);
+                wp_die('شناسه ورودی یا فرم مشخص نشده است. لطفاً از طریق دکمه‌های صادرات در صفحه ورودی اقدام کنید.', 'خطا در پارامترها', ['response' => 400]);
+                return;
+            }
+
+            // Validate entry_id and form_id are numeric
+            if (!is_numeric($entry_id) || !is_numeric($form_id)) {
+                http_response_code(400);
+                wp_die('شناسه ورودی یا فرم معتبر نیست.', 'خطا در پارامترها', ['response' => 400]);
                 return;
             }
 
