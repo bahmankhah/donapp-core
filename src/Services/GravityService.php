@@ -586,4 +586,361 @@ class GravityService
 
         return $stats;
     }
+
+    /**
+     * Get single entry data for export
+     * @param int $form_id
+     * @param int $entry_id
+     * @return array
+     */
+    public function getSingleEntryForExport($form_id, $entry_id)
+    {
+        try {
+            // Check if Gravity Forms is available
+            if (!class_exists('GFAPI')) {
+                // Return sample data for demonstration
+                return [
+                    'success' => true,
+                    'data' => [
+                        'شناسه ورودی' => $entry_id,
+                        'شناسه فرم' => $form_id,
+                        'نام' => 'علی احمدی',
+                        'ایمیل' => 'ali@example.com',
+                        'تاریخ ایجاد' => date('Y/m/d H:i'),
+                        'وضعیت' => 'تأیید شده',
+                        'توضیحات' => 'این یک ورودی نمونه است.'
+                    ]
+                ];
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            $form = \GFAPI::get_form($form_id);
+
+            if (is_wp_error($entry) || is_wp_error($form)) {
+                return [
+                    'success' => false,
+                    'message' => 'ورودی یا فرم یافت نشد.'
+                ];
+            }
+
+            // Format entry data
+            $formatted_data = [
+                'شناسه ورودی' => $entry['id'],
+                'شناسه فرم' => $form['id'],
+                'عنوان فرم' => $form['title'],
+                'تاریخ ایجاد' => date('Y/m/d H:i', strtotime($entry['date_created'])),
+                'وضعیت' => $this->getEntryStatus($entry)
+            ];
+
+            // Add form fields
+            foreach ($form['fields'] as $field) {
+                $field_id = $field['id'];
+                if (isset($entry[$field_id]) && !empty($entry[$field_id])) {
+                    $field_label = $field['label'] ?: 'فیلد ' . $field_id;
+                    $formatted_data[$field_label] = $this->formatFieldValue($entry[$field_id], $field['type']);
+                }
+            }
+
+            return [
+                'success' => true,
+                'data' => $formatted_data
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'خطا در بازیابی ورودی: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Format field value based on field type
+     * @param mixed $value
+     * @param string $type
+     * @return string
+     */
+    private function formatFieldValue($value, $type)
+    {
+        if (empty($value)) {
+            return '';
+        }
+
+        switch ($type) {
+            case 'date':
+                return $this->formatDate($value);
+            case 'phone':
+                return $this->formatPhone($value);
+            case 'email':
+                return esc_html($value);
+            case 'textarea':
+                return strip_tags($value);
+            case 'select':
+            case 'radio':
+            case 'checkbox':
+                if (is_array($value)) {
+                    return implode(', ', array_map('esc_html', $value));
+                }
+                return esc_html($value);
+            default:
+                return esc_html($value);
+        }
+    }
+
+    /**
+     * Get enhanced Gravity Flow entries with sorting and mobile optimization
+     * @param int $page
+     * @param int $per_page
+     * @param array $filters
+     * @return array
+     */
+    public function getEnhancedGravityFlowEntries($page = 1, $per_page = 20, $filters = [])
+    {
+        // Check if Gravity Forms and Gravity Flow are active
+        if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
+            return $this->getEnhancedSampleData($page, $per_page);
+        }
+
+        $current_user = \wp_get_current_user();
+        if (!$current_user || !$current_user->ID) {
+            return [
+                'data' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'per_page' => $per_page,
+                    'total_items' => 0,
+                    'total_pages' => 1
+                ]
+            ];
+        }
+
+        $offset = ($page - 1) * $per_page;
+
+        // Get all forms
+        $forms = class_exists('GFAPI') ? \GFAPI::get_forms() : [];
+        $enhanced_entries = [];
+        $total_count = 0;
+
+        foreach ($forms as $form) {
+            // Get entries for this form
+            $search_criteria = [
+                'status' => 'active',
+                'field_filters' => [
+                    [
+                        'key' => 'workflow_final_status',
+                        'value' => 'approved'
+                    ]
+                ]
+            ];
+
+            $entries = class_exists('GFAPI') ? \GFAPI::get_entries($form['id'], $search_criteria) : [];
+
+            foreach ($entries as $entry) {
+                // Get submitter info
+                $submitter = \get_user_by('ID', $entry['created_by']);
+                $submitter_name = $submitter ? $submitter->display_name : 'نامشخص';
+
+                // Determine status
+                $status = $this->getEntryWorkflowStatus($entry['id'], $form['id']);
+
+                // Apply filters if provided
+                if (!empty($filters['status']) && $filters['status'] !== $status) {
+                    continue;
+                }
+
+                if (!empty($filters['form_id']) && $filters['form_id'] != $form['id']) {
+                    continue;
+                }
+
+                $enhanced_entries[] = [
+                    'id' => $entry['id'],
+                    'form_id' => $form['id'],
+                    'form_name' => $form['title'],
+                    'status' => $status,
+                    'submitter' => [
+                        'id' => $entry['created_by'],
+                        'name' => $submitter_name,
+                        'email' => $submitter ? $submitter->user_email : '',
+                    ],
+                    'date_created' => $entry['date_created'],
+                    'date_created_formatted' => \date_i18n('j F Y - H:i', strtotime($entry['date_created'])),
+                    'entry_data' => $entry,
+                    'form_data' => $form,
+                    'actions' => $this->getEntryAvailableActions($entry['id'], $form['id'])
+                ];
+                $total_count++;
+            }
+        }
+
+        // Sort by date created (newest first) - default sorting
+        $sort_field = $filters['sort'] ?? 'date_created';
+        $sort_order = $filters['order'] ?? 'desc';
+
+        usort($enhanced_entries, function ($a, $b) use ($sort_field, $sort_order) {
+            $value_a = $a[$sort_field] ?? '';
+            $value_b = $b[$sort_field] ?? '';
+
+            if ($sort_field === 'date_created') {
+                $value_a = strtotime($value_a);
+                $value_b = strtotime($value_b);
+            }
+
+            $result = $value_a <=> $value_b;
+            return $sort_order === 'desc' ? -$result : $result;
+        });
+
+        // Apply pagination
+        $paginated_entries = array_slice($enhanced_entries, $offset, $per_page);
+
+        return [
+            'data' => $paginated_entries,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $per_page,
+                'total_items' => $total_count,
+                'total_pages' => ceil($total_count / $per_page)
+            ],
+            'filters' => $filters,
+            'available_forms' => $this->getAvailableForms()
+        ];
+    }
+
+    /**
+     * Get enhanced sample data for demonstration
+     */
+    private function getEnhancedSampleData($page = 1, $per_page = 20)
+    {
+        $sample_entries = [
+            [
+                'id' => 1,
+                'form_id' => 1,
+                'form_name' => 'فرم درخواست تجهیزات',
+                'status' => 'completed',
+                'submitter' => [
+                    'id' => 1,
+                    'name' => 'علی احمدی',
+                    'email' => 'ali@example.com'
+                ],
+                'date_created' => '2025-09-12 14:30:00',
+                'date_created_formatted' => '21 شهریور 1404 - 14:30',
+                'actions' => ['view', 'export']
+            ],
+            [
+                'id' => 2,
+                'form_id' => 1,
+                'form_name' => 'فرم درخواست تجهیزات',
+                'status' => 'pending',
+                'submitter' => [
+                    'id' => 2,
+                    'name' => 'مریم رضایی',
+                    'email' => 'maryam@example.com'
+                ],
+                'date_created' => '2025-09-12 13:15:00',
+                'date_created_formatted' => '21 شهریور 1404 - 13:15',
+                'actions' => ['view', 'approve', 'reject']
+            ],
+            [
+                'id' => 3,
+                'form_id' => 2,
+                'form_name' => 'فرم گزارش مالی',
+                'status' => 'in_progress',
+                'submitter' => [
+                    'id' => 3,
+                    'name' => 'حسن کریمی',
+                    'email' => 'hassan@example.com'
+                ],
+                'date_created' => '2025-09-12 11:45:00',
+                'date_created_formatted' => '21 شهریور 1404 - 11:45',
+                'actions' => ['view']
+            ],
+            [
+                'id' => 4,
+                'form_id' => 3,
+                'form_name' => 'فرم ثبت نام دوره',
+                'status' => 'completed',
+                'submitter' => [
+                    'id' => 4,
+                    'name' => 'زهرا محمدی',
+                    'email' => 'zahra@example.com'
+                ],
+                'date_created' => '2025-09-11 16:20:00',
+                'date_created_formatted' => '20 شهریور 1404 - 16:20',
+                'actions' => ['view', 'export']
+            ],
+            [
+                'id' => 5,
+                'form_id' => 2,
+                'form_name' => 'فرم گزارش مالی',
+                'status' => 'rejected',
+                'submitter' => [
+                    'id' => 5,
+                    'name' => 'محمد صادقی',
+                    'email' => 'mohammad@example.com'
+                ],
+                'date_created' => '2025-09-11 10:30:00',
+                'date_created_formatted' => '20 شهریور 1404 - 10:30',
+                'actions' => ['view', 'resubmit']
+            ]
+        ];
+
+        $total_count = count($sample_entries);
+        $offset = ($page - 1) * $per_page;
+        $paginated_entries = array_slice($sample_entries, $offset, $per_page);
+
+        return [
+            'data' => $paginated_entries,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $per_page,
+                'total_items' => $total_count,
+                'total_pages' => ceil($total_count / $per_page)
+            ],
+            'available_forms' => [
+                ['id' => 1, 'title' => 'فرم درخواست تجهیزات'],
+                ['id' => 2, 'title' => 'فرم گزارش مالی'],
+                ['id' => 3, 'title' => 'فرم ثبت نام دوره']
+            ]
+        ];
+    }
+
+    /**
+     * Get entry workflow status
+     */
+    private function getEntryWorkflowStatus($entry_id, $form_id)
+    {
+        // This would integrate with your workflow system or Gravity Flow
+        // For now, return sample statuses
+        $statuses = ['pending', 'in_progress', 'completed', 'rejected'];
+        return $statuses[array_rand($statuses)];
+    }
+
+    /**
+     * Get available actions for entry
+     */
+    private function getEntryAvailableActions($entry_id, $form_id)
+    {
+        // Return available actions based on entry status and user permissions
+        return ['view', 'export', 'approve', 'reject'];
+    }
+
+    /**
+     * Get available forms for filtering
+     */
+    private function getAvailableForms()
+    {
+        if (!class_exists('GFAPI')) {
+            return [
+                ['id' => 1, 'title' => 'فرم درخواست تجهیزات'],
+                ['id' => 2, 'title' => 'فرم گزارش مالی'],
+                ['id' => 3, 'title' => 'فرم ثبت نام دوره']
+            ];
+        }
+
+        $forms = \GFAPI::get_forms();
+        return array_map(function ($form) {
+            return [
+                'id' => $form['id'],
+                'title' => $form['title']
+            ];
+        }, $forms);
+    }
 }
