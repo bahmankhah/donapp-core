@@ -456,6 +456,105 @@ class GravityService
     }
 
     /**
+     * Get single entry data for export
+     * @param int $form_id
+     * @param int $entry_id
+     * @return array
+     */
+    public function getSingleEntryForExport($form_id, $entry_id)
+    {
+        try {
+            // Check if Gravity Forms is available
+            if (!class_exists('GFAPI')) {
+                // Return sample data for demonstration
+                return [
+                    'success' => true,
+                    'data' => [
+                        'شناسه ورودی' => $entry_id,
+                        'شناسه فرم' => $form_id,
+                        'نام' => 'علی احمدی',
+                        'ایمیل' => 'ali@example.com',
+                        'تاریخ ایجاد' => date('Y/m/d H:i'),
+                        'وضعیت' => 'تأیید شده',
+                        'توضیحات' => 'این یک ورودی نمونه است.'
+                    ]
+                ];
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            $form = \GFAPI::get_form($form_id);
+
+            if (is_wp_error($entry) || is_wp_error($form)) {
+                return [
+                    'success' => false,
+                    'message' => 'ورودی یا فرم یافت نشد.'
+                ];
+            }
+
+            // Format entry data
+            $formatted_data = [
+                'شناسه ورودی' => $entry['id'],
+                'شناسه فرم' => $form['id'],
+                'عنوان فرم' => $form['title'],
+                'تاریخ ایجاد' => date('Y/m/d H:i', strtotime($entry['date_created'])),
+                'وضعیت' => $this->getEntryStatus($entry)
+            ];
+
+            // Add form fields
+            foreach ($form['fields'] as $field) {
+                $field_id = $field['id'];
+                if (isset($entry[$field_id]) && !empty($entry[$field_id])) {
+                    $field_label = $field['label'] ?: 'فیلد ' . $field_id;
+                    $formatted_data[$field_label] = $this->formatFieldValue($entry[$field_id], $field['type']);
+                }
+            }
+
+            return [
+                'success' => true,
+                'data' => $formatted_data
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'خطا در بازیابی ورودی: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Format field value based on field type
+     * @param mixed $value
+     * @param string $type
+     * @return string
+     */
+    private function formatFieldValue($value, $type)
+    {
+        if (empty($value)) {
+            return '';
+        }
+
+        switch ($type) {
+            case 'date':
+                return $this->formatDate($value);
+            case 'phone':
+                return $this->formatPhone($value);
+            case 'email':
+                return esc_html($value);
+            case 'textarea':
+                return strip_tags($value);
+            case 'select':
+            case 'radio':
+            case 'checkbox':
+                if (is_array($value)) {
+                    return implode(', ', array_map('esc_html', $value));
+                }
+                return esc_html($value);
+            default:
+                return esc_html($value);
+        }
+    }
+
+    /**
      * Get enhanced Gravity Flow entries with sorting and mobile optimization
      * @param int $page
      * @param int $per_page

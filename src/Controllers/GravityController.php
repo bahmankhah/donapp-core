@@ -5,7 +5,11 @@ namespace App\Controllers;
 use App\Services\GravityService;
 use Exception;
 use Kernel\Container;
-use App\Utils\FileHelper;
+use App\Utils\Export\Concrete\GravityApprovedEntriesCsv;
+use App\Utils\Export\Concrete\GravityApprovedEntriesXlsx;
+use App\Utils\Export\Concrete\GravityApprovedEntriesPdf;
+use App\Utils\Export\Concrete\GravitySingleEntryPdf;
+use App\Utils\Export\Concrete\GravitySingleEntryXlsx;
 
 class GravityController
 {
@@ -22,23 +26,9 @@ class GravityController
     public function exportCSV()
     {
         try {
-            // Check user permissions
-            // if (!current_user_can('manage_options')) {
-            //     http_response_code(403);
-            //     wp_die('شما اجازه دسترسی به این بخش را ندارید.', 'خطای دسترسی', ['response' => 403]);
-            //     return;
-            // }
-
-            // Verify nonce for security
-            // if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'export_gravity_csv')) {
-            //     http_response_code(403);
-            //     wp_die('خطای امنیتی: نانس نامعتبر است.', 'خطای امنیتی', ['response' => 403]);
-            //     return;
-            // }
-
             $uid = $_GET['uid'];
             if (!$uid) {
-                http_response_code(403);
+                http_response_code(404);
                 wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
                 return;
             }
@@ -50,65 +40,28 @@ class GravityController
                 return;
             }
 
-            // Get export data from service
-            $export_result = $this->gravityService->exportApprovedEntriesToCSV($user);
+            // Get all entries without pagination
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000);
+            $entries = $all_entries_result['data'];
 
-            if (!$export_result['success']) {
-                http_response_code(400);
-                wp_die('خطا در تولید CSV: ' . $export_result['message'], 'خطا در صادرات', ['response' => 400]);
-                return;
-            }
-
-            $csv_data = $export_result['data'];
-            $filename = $export_result['filename'];
-
-            // Check if we have data
-            if (empty($csv_data) || count($csv_data) <= 1) {
+            if (empty($entries)) {
                 http_response_code(404);
                 wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
                 return;
             }
 
-            // Clean any output that might have been sent
-            while (ob_get_level()) {
-                ob_end_clean();
+            // Create CSV exporter and generate file
+            $csvExporter = new GravityApprovedEntriesCsv();
+            $result = $csvExporter->setEntriesData($entries)->generate();
+
+            if (!$result['success']) {
+                http_response_code(500);
+                wp_die('خطا در تولید CSV: ' . $result['message'], 'خطای سرور', ['response' => 500]);
+                return;
             }
 
-            // Set headers for CSV download
-            header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
-            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-            header('Pragma: public');
-            // Remove Content-Length header as it can cause issues with dynamic content
-
-            // Add BOM for proper UTF-8 handling in Excel
-            echo "\xEF\xBB\xBF";
-
-            // Output CSV data directly without buffering
-            foreach ($csv_data as $row) {
-                // Convert each row to CSV format and output immediately
-                $line = '';
-                $first = true;
-                foreach ($row as $field) {
-                    if (!$first) {
-                        $line .= ',';
-                    }
-                    // Escape quotes and wrap in quotes if needed
-                    if (strpos($field, ',') !== false || strpos($field, '"') !== false || strpos($field, "\n") !== false) {
-                        $line .= '"' . str_replace('"', '""', $field) . '"';
-                    } else {
-                        $line .= $field;
-                    }
-                    $first = false;
-                }
-                echo $line . "\n";
-            }
-
-            // Force output and exit cleanly
-            if (function_exists('fastcgi_finish_request')) {
-                fastcgi_finish_request();
-            }
-            exit();
+            // Serve CSV download
+            $csvExporter->serve($result['data'], $result['filename']);
         } catch (Exception $e) {
             error_log('Gravity CSV Export Error: ' . $e->getMessage());
             http_response_code(500);
@@ -136,35 +89,28 @@ class GravityController
                 return;
             }
 
-            // Get export data from service
-            $export_result = $this->gravityService->exportApprovedEntriesToCSV($user);
+            // Get all entries without pagination
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000);
+            $entries = $all_entries_result['data'];
 
-            if (!$export_result['success']) {
-                http_response_code(400);
-                wp_die('خطا در تولید XLSX: ' . $export_result['message'], 'خطا در صادرات', ['response' => 400]);
-                return;
-            }
-
-            $csv_data = $export_result['data'];
-
-            // Check if we have data
-            if (empty($csv_data) || count($csv_data) <= 1) {
+            if (empty($entries)) {
                 http_response_code(404);
                 wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
                 return;
             }
 
-            // Convert CSV data to XLSX using FileHelper
-            $xlsx_result = FileHelper::csv2Xlsx($csv_data, 'فرم‌های تأیید شده');
+            // Create XLSX exporter and generate file
+            $xlsxExporter = new GravityApprovedEntriesXlsx();
+            $result = $xlsxExporter->setEntriesData($entries)->generate();
 
-            if (!$xlsx_result['success']) {
+            if (!$result['success']) {
                 http_response_code(500);
-                wp_die('خطا در تولید XLSX: ' . $xlsx_result['message'], 'خطای سرور', ['response' => 500]);
+                wp_die('خطا در تولید XLSX: ' . $result['message'], 'خطای سرور', ['response' => 500]);
                 return;
             }
 
             // Serve XLSX download
-            FileHelper::serveXlsxDownload($xlsx_result['data'], $xlsx_result['filename']);
+            $xlsxExporter->serve($result['data'], $result['filename']);
         } catch (Exception $e) {
             error_log('Gravity XLSX Export Error: ' . $e->getMessage());
             http_response_code(500);
@@ -229,36 +175,28 @@ class GravityController
                 return;
             }
 
-            // Get export data from service (CSV method doesn't take user parameter)
-            $export_result = $this->gravityService->exportApprovedEntriesToCSV();
+            // Get all entries without pagination
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000);
+            $entries = $all_entries_result['data'];
 
-            if (!$export_result['success']) {
-                http_response_code(400);
-                wp_die('خطا در تولید PDF: ' . $export_result['message'], 'خطا در صادرات', ['response' => 400]);
-                return;
-            }
-
-            $csv_data = $export_result['data'];
-            $filename = str_replace('.csv', '.pdf', $export_result['filename']);
-
-            // Check if we have data
-            if (empty($csv_data) || count($csv_data) <= 1) {
+            if (empty($entries)) {
                 http_response_code(404);
                 wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
                 return;
             }
 
-            // Convert CSV data to PDF using FileHelper
-            $pdf_result = FileHelper::csv2Pdf($csv_data, 'فرم‌های تأیید شده گرویتی فلو');
+            // Create PDF exporter and generate file
+            $pdfExporter = new GravityApprovedEntriesPdf();
+            $result = $pdfExporter->setEntriesData($entries)->generate();
 
-            if (!$pdf_result['success']) {
+            if (!$result['success']) {
                 http_response_code(500);
-                wp_die('خطا در تولید PDF: ' . $pdf_result['message'], 'خطای سرور', ['response' => 500]);
+                wp_die('خطا در تولید PDF: ' . $result['message'], 'خطای سرور', ['response' => 500]);
                 return;
             }
 
             // Serve PDF download
-            FileHelper::servePdfDownload($pdf_result['data'], $filename);
+            $pdfExporter->serve($result['data'], $result['filename']);
         } catch (Exception $e) {
             error_log('Gravity PDF Export Error: ' . $e->getMessage());
             http_response_code(500);
@@ -291,19 +229,19 @@ class GravityController
             }
 
             $entry_data = $entry_result['data'];
-            $filename = 'entry-' . $entry_id . '-' . date('Y-m-d-H-i-s') . '.pdf';
 
-            // Convert entry to PDF
-            $pdf_result = FileHelper::entry2Pdf($entry_data, 'جزئیات ورودی #' . $entry_id);
+            // Create PDF exporter and generate file
+            $pdfExporter = new GravitySingleEntryPdf(intval($entry_id));
+            $result = $pdfExporter->setSingleEntryData($entry_data)->generate();
 
-            if (!$pdf_result['success']) {
+            if (!$result['success']) {
                 http_response_code(500);
-                wp_die('خطا در تولید PDF: ' . $pdf_result['message'], 'خطای سرور', ['response' => 500]);
+                wp_die('خطا در تولید PDF: ' . $result['message'], 'خطای سرور', ['response' => 500]);
                 return;
             }
 
             // Serve PDF download
-            FileHelper::servePdfDownload($pdf_result['data'], $filename);
+            $pdfExporter->serve($result['data'], $result['filename']);
         } catch (Exception $e) {
             error_log('Single Entry PDF Export Error: ' . $e->getMessage());
             http_response_code(500);
@@ -336,44 +274,24 @@ class GravityController
             }
 
             $entry_data = $entry_result['data'];
-            $filename = 'entry-' . $entry_id . '-' . date('Y-m-d-H-i-s') . '.xlsx';
 
-            // Convert entry to Excel format (convert to CSV-like array first)
-            $csv_data = $this->entryToCsvFormat($entry_data);
+            // Create XLSX exporter and generate file
+            $xlsxExporter = new GravitySingleEntryXlsx(intval($entry_id));
+            $result = $xlsxExporter->setSingleEntryData($entry_data)->generate();
 
-            $xlsx_result = FileHelper::csv2Xlsx($csv_data, 'جزئیات ورودی #' . $entry_id);
-
-            if (!$xlsx_result['success']) {
+            if (!$result['success']) {
                 http_response_code(500);
-                wp_die('خطا در تولید Excel: ' . $xlsx_result['message'], 'خطای سرور', ['response' => 500]);
+                wp_die('خطا در تولید Excel: ' . $result['message'], 'خطای سرور', ['response' => 500]);
                 return;
             }
 
             // Serve Excel download
-            FileHelper::serveXlsxDownload($xlsx_result['data'], $filename);
+            $xlsxExporter->serve($result['data'], $result['filename']);
         } catch (Exception $e) {
             error_log('Single Entry Excel Export Error: ' . $e->getMessage());
             http_response_code(500);
             wp_die('خطای داخلی سرور: ' . $e->getMessage(), 'خطای سرور', ['response' => 500]);
         }
-    }
-
-    /**
-     * Helper method to convert single entry to CSV format for Excel export
-     */
-    private function entryToCsvFormat($entry_data)
-    {
-        $csv_data = [];
-
-        // Headers
-        $csv_data[] = ['فیلد', 'مقدار'];
-
-        // Add entry data
-        foreach ($entry_data as $field => $value) {
-            $csv_data[] = [$field, $value];
-        }
-
-        return $csv_data;
     }
 
     /**
