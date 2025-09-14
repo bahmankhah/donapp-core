@@ -752,7 +752,7 @@ class GravityController
 
             // Get all inbox entries without pagination
             $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
-            
+            appLogger(json_encode($result));
             if (!$result['success']) {
                 http_response_code(500);
                 wp_die('خطا در دریافت داده‌ها: ' . $result['message'], 'خطای سرور', ['response' => 500]);
@@ -760,7 +760,7 @@ class GravityController
             }
 
             $entries = $result['data'];
-
+            
             if (empty($entries)) {
                 http_response_code(404);
                 wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
