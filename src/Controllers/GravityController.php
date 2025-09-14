@@ -758,8 +758,8 @@ class GravityController
                 return;
             }
 
-            $entries = $result['data'];
-            appLogger(json_encode($result['data']));
+            $entries = json_decode($result['data']);
+            appLogger(json_encode($entries));
             if (empty($entries)) {
                 http_response_code(404);
                 wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
