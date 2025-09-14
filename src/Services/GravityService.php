@@ -962,6 +962,7 @@ class GravityService
             $user_id = $current_user->ID ?? get_current_user_id();
 
             if (!$user_id) {
+                die('fku');
                 return [
                     'success' => false,
                     'message' => 'کاربر وارد نشده است',
