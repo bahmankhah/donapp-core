@@ -38,6 +38,11 @@ class RouteServiceProvider
         // Route::get('gravity/export-pdf', [GravityController::class, 'exportPDF'])->make()->name('gravity-export-pdf');
         // Route::get('gravity/entries', [GravityController::class, 'getApprovedEntries'])->make()->name('gravity-entries-api');
 
+        // Gravity Flow Inbox export routes
+        Route::get('gravity/inbox/export-csv', [GravityController::class, 'exportInboxCSV'])->make()->name('gravity-inbox-export-csv');
+        Route::get('gravity/inbox/export-xlsx', [GravityController::class, 'exportInboxXLSX'])->make()->name('gravity-inbox-export-xlsx');
+        Route::get('gravity/inbox/export-pdf', [GravityController::class, 'exportInboxPDF'])->make()->name('gravity-inbox-export-pdf');
+
         // Single entry export routes
         Route::get('gravity/entry/export-pdf', [GravityController::class, 'exportSingleEntryPDF'])->make()->name('gravity-entry-export-pdf');
         Route::get('gravity/entry/export-excel', [GravityController::class, 'exportSingleEntryExcel'])->make()->name('gravity-entry-export-excel');

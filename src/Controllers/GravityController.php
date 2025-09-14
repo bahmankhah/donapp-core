@@ -10,6 +10,9 @@ use App\Utils\Export\Concrete\GravityApprovedEntriesXlsx;
 use App\Utils\Export\Concrete\GravityApprovedEntriesPdf;
 use App\Utils\Export\Concrete\GravitySingleEntryPdf;
 use App\Utils\Export\Concrete\GravitySingleEntryXlsx;
+use App\Utils\Export\Concrete\GravityFlowInboxCsv;
+use App\Utils\Export\Concrete\GravityFlowInboxXlsx;
+use App\Utils\Export\Concrete\GravityFlowInboxPdf;
 
 class GravityController
 {
@@ -432,9 +435,11 @@ class GravityController
 
         // Update entry meta or use Gravity Flow API to approve
         // This is a simplified implementation
-        \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
-        \gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
-        \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+        if (function_exists('gform_update_meta')) {
+            gform_update_meta($entry_id, 'workflow_final_status', 'approved');
+            gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
+            gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+        }
 
         return true;
     }
@@ -454,9 +459,11 @@ class GravityController
         }
 
         // Update entry meta or use Gravity Flow API to reject
-        \gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
-        \gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
-        \gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+        if (function_exists('gform_update_meta')) {
+            gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
+            gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
+            gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+        }
 
         return true;
     }
@@ -481,9 +488,180 @@ class GravityController
     {
         // This would typically generate an export file and return URL
         // For now, just mark as exported
-        \gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
-        \gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
+        if (function_exists('gform_update_meta')) {
+            gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
+            gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
+        }
 
         return true;
     }
+
+    /**
+     * Export Gravity Flow inbox entries to CSV
+     */
+    public function exportInboxCSV()
+    {
+        try {
+            $uid = $_GET['uid'] ?? null;
+            if (!$uid) {
+                http_response_code(400);
+                wp_die('کاربر مشخص نشده است.', 'خطا', ['response' => 400]);
+                return;
+            }
+
+            $user = get_user_by('ID', $uid);
+            if (!$user) {
+                http_response_code(404);
+                wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
+                return;
+            }
+
+            // Get all inbox entries without pagination
+            $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
+            
+            if (!$result['success']) {
+                http_response_code(500);
+                wp_die('خطا در دریافت داده‌ها: ' . $result['message'], 'خطای سرور', ['response' => 500]);
+                return;
+            }
+
+            $entries = $result['data'];
+
+            if (empty($entries)) {
+                http_response_code(404);
+                wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
+                return;
+            }
+
+            // Create CSV exporter and generate file
+            $csvExporter = new GravityFlowInboxCsv();
+            $exportResult = $csvExporter->setInboxEntriesData($entries)->generate();
+
+            if (!$exportResult['success']) {
+                http_response_code(500);
+                wp_die('خطا در تولید CSV: ' . $exportResult['message'], 'خطای سرور', ['response' => 500]);
+                return;
+            }
+
+            // Serve CSV download
+            $csvExporter->serve($exportResult['data'], $exportResult['filename']);
+        } catch (Exception $e) {
+            error_log('Gravity Inbox CSV Export Error: ' . $e->getMessage());
+            http_response_code(500);
+            wp_die('خطای داخلی سرور: ' . $e->getMessage(), 'خطای سرور', ['response' => 500]);
+        }
+    }
+
+    /**
+     * Export Gravity Flow inbox entries to XLSX
+     */
+    public function exportInboxXLSX()
+    {
+        try {
+            $uid = $_GET['uid'] ?? null;
+            if (!$uid) {
+                http_response_code(400);
+                wp_die('کاربر مشخص نشده است.', 'خطا', ['response' => 400]);
+                return;
+            }
+
+            $user = get_user_by('ID', $uid);
+            if (!$user) {
+                http_response_code(404);
+                wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
+                return;
+            }
+
+            // Get all inbox entries without pagination
+            $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
+            
+            if (!$result['success']) {
+                http_response_code(500);
+                wp_die('خطا در دریافت داده‌ها: ' . $result['message'], 'خطای سرور', ['response' => 500]);
+                return;
+            }
+
+            $entries = $result['data'];
+
+            if (empty($entries)) {
+                http_response_code(404);
+                wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
+                return;
+            }
+
+            // Create XLSX exporter and generate file
+            $xlsxExporter = new GravityFlowInboxXlsx();
+            $exportResult = $xlsxExporter->setInboxEntriesData($entries)->generate();
+
+            if (!$exportResult['success']) {
+                http_response_code(500);
+                wp_die('خطا در تولید XLSX: ' . $exportResult['message'], 'خطای سرور', ['response' => 500]);
+                return;
+            }
+
+            // Serve XLSX download
+            $xlsxExporter->serve($exportResult['data'], $exportResult['filename']);
+        } catch (Exception $e) {
+            error_log('Gravity Inbox XLSX Export Error: ' . $e->getMessage());
+            http_response_code(500);
+            wp_die('خطای داخلی سرور: ' . $e->getMessage(), 'خطای سرور', ['response' => 500]);
+        }
+    }
+
+    /**
+     * Export Gravity Flow inbox entries to PDF
+     */
+    public function exportInboxPDF()
+    {
+        try {
+            $uid = $_GET['uid'] ?? null;
+            if (!$uid) {
+                http_response_code(400);
+                wp_die('کاربر مشخص نشده است.', 'خطا', ['response' => 400]);
+                return;
+            }
+
+            $user = get_user_by('ID', $uid);
+            if (!$user) {
+                http_response_code(404);
+                wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
+                return;
+            }
+
+            // Get all inbox entries without pagination
+            $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
+            
+            if (!$result['success']) {
+                http_response_code(500);
+                wp_die('خطا در دریافت داده‌ها: ' . $result['message'], 'خطای سرور', ['response' => 500]);
+                return;
+            }
+
+            $entries = $result['data'];
+
+            if (empty($entries)) {
+                http_response_code(404);
+                wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
+                return;
+            }
+
+            // Create PDF exporter and generate file
+            $pdfExporter = new GravityFlowInboxPdf();
+            $exportResult = $pdfExporter->setInboxEntriesData($entries)->generate();
+
+            if (!$exportResult['success']) {
+                http_response_code(500);
+                wp_die('خطا در تولید PDF: ' . $exportResult['message'], 'خطای سرور', ['response' => 500]);
+                return;
+            }
+
+            // Serve PDF download
+            $pdfExporter->serve($exportResult['data'], $exportResult['filename']);
+        } catch (Exception $e) {
+            error_log('Gravity Inbox PDF Export Error: ' . $e->getMessage());
+            http_response_code(500);
+            wp_die('خطای داخلی سرور: ' . $e->getMessage(), 'خطای سرور', ['response' => 500]);
+        }
+    }
+
 }

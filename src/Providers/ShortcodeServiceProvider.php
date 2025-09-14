@@ -19,14 +19,15 @@ class ShortcodeServiceProvider
         });
 
         // Enhanced Gravity Flow Inbox Shortcode
-        Wordpress::shortcode('donap_gravity_flow_inbox', function ($atts) {
+        Wordpress::shortcode('donap_gravityflow_inbox', function ($atts) {
             $atts = \shortcode_atts([
                 'per_page' => 20,
                 'show_bulk_actions' => 'true',
                 'show_filters' => 'true',
                 'mobile_responsive' => 'true',
                 'show_pagination' => 'true',
-                'table_class' => 'donap-gravity-flow-table'
+                'table_class' => 'donap-gravity-flow-table',
+                'show_stats' => 'true'
             ], $atts);
 
             return $this->renderGravityFlowInbox($atts);
@@ -78,6 +79,21 @@ class ShortcodeServiceProvider
 
             return view('shortcodes/gravity-single-export', $view_data);
         });
+
+        // Gravity Flow Inbox Export Buttons Shortcode
+        Wordpress::shortcode('donap_gravityflow_inbox_export', function ($atts) {
+            $atts = \shortcode_atts([
+                'style' => 'buttons',
+                'align' => 'right',
+                'show_csv' => 'true',
+                'show_excel' => 'true',
+                'show_pdf' => 'true',
+                'button_text' => 'صادرات صندوق ورودی',
+                'user_id' => get_current_user_id()
+            ], $atts);
+
+            return $this->renderInboxExportButtons($atts);
+        });
     }
 
     /**
@@ -92,22 +108,53 @@ class ShortcodeServiceProvider
             $current_page = max(1, intval($_GET['gf_page'] ?? 1));
             $per_page = intval($atts['per_page']);
 
-            // Get entries data
-            $result = $gravityService->getEnhancedGravityFlowEntries($current_page, $per_page);
+            // Get inbox entries data using the new method
+            $result = $gravityService->getGravityFlowInboxPage($current_page, $per_page);
+
+            if (!$result['success']) {
+                return '<div class="donap-error-message"><i class="fas fa-exclamation-triangle"></i> ' . esc_html($result['message']) . '</div>';
+            }
 
             // Prepare view data
             $view_data = [
                 'entries' => $result['data'],
                 'pagination' => $result['pagination'],
+                'stats' => $result['stats'] ?? [],
                 'attributes' => $atts,
                 'current_page' => $current_page,
-                'nonce' => \wp_create_nonce('gravity_flow_bulk_action')
+                'nonce' => \wp_create_nonce('gravity_flow_inbox_action'),
+                'success' => $result['success']
             ];
 
-            return view('shortcodes/gravity-flow-inbox', $view_data);
+            return view('shortcodes/gravityflow-inbox', $view_data);
         } catch (Exception $e) {
             error_log('Gravity Flow Inbox Shortcode Error: ' . $e->getMessage());
-            return '<div class="error">خطا در بارگیری صندوق ورودی گردش کاری</div>';
+            return '<div class="donap-error-message"><i class="fas fa-exclamation-triangle"></i> خطا در بارگیری صندوق ورودی: ' . esc_html($e->getMessage()) . '</div>';
         }
     }
+
+    /**
+     * Render Gravity Flow inbox export buttons
+     */
+    private function renderInboxExportButtons($atts)
+    {
+        try {
+            // Convert string values to boolean for template
+            $view_data = [
+                'style' => $atts['style'],
+                'align' => $atts['align'],
+                'show_csv' => $atts['show_csv'] === 'true',
+                'show_excel' => $atts['show_excel'] === 'true',
+                'show_pdf' => $atts['show_pdf'] === 'true',
+                'button_text' => $atts['button_text'],
+                'user_id' => intval($atts['user_id'])
+            ];
+
+            return view('shortcodes/gravityflow-inbox-export-buttons', $view_data);
+        } catch (Exception $e) {
+            error_log('Inbox Export Buttons Shortcode Error: ' . $e->getMessage());
+            return '<div class="donap-error-message"><i class="fas fa-exclamation-triangle"></i> خطا در بارگیری دکمه‌های صادرات: ' . esc_html($e->getMessage()) . '</div>';
+        }
+    }
+
 }

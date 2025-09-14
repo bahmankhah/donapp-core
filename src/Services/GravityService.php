@@ -881,4 +881,430 @@ class GravityService
             ];
         }
     }
+
+    /**
+     * Get Gravity Flow inbox entries for current user with pagination
+     * @param int $page
+     * @param int $per_page
+     * @param mixed $user
+     * @return array
+     */
+    public function getGravityFlowInboxPage($page = 1, $per_page = 20, $user = null)
+    {
+        try {
+            // Check if required classes exist
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                return [
+                    'success' => false,
+                    'message' => 'Gravity Forms یا Gravity Flow فعال نیست',
+                    'data' => $this->getInboxSampleData($page, $per_page),
+                    'pagination' => [
+                        'current_page' => $page,
+                        'per_page' => $per_page,
+                        'total_items' => 5,
+                        'total_pages' => 1
+                    ]
+                ];
+            }
+
+            // Get current user
+            $current_user = $user ?? wp_get_current_user();
+            $user_id = $current_user->ID ?? get_current_user_id();
+
+            if (!$user_id) {
+                return [
+                    'success' => false,
+                    'message' => 'کاربر وارد نشده است',
+                    'data' => [],
+                    'pagination' => [
+                        'current_page' => 1,
+                        'per_page' => $per_page,
+                        'total_items' => 0,
+                        'total_pages' => 0
+                    ]
+                ];
+            }
+
+            $inbox_entries = [];
+            $total_count = 0;
+
+            // Get all forms with Gravity Flow steps
+            $forms = \GFAPI::get_forms();
+
+            foreach ($forms as $form) {
+                $form_id = $form['id'];
+
+                // Check if form has Gravity Flow enabled
+                if (!$this->hasGravityFlowEnabled($form_id)) {
+                    continue;
+                }
+
+                // Get workflow entries for this form
+                $search_criteria = [
+                    'status' => 'active',
+                    'field_filters' => [
+                        [
+                            'key' => 'workflow_current_status',
+                            'operator' => 'in',
+                            'value' => ['pending', 'in_progress', 'user_input']
+                        ]
+                    ]
+                ];
+
+                $entries = \GFAPI::get_entries($form_id, $search_criteria);
+
+                foreach ($entries as $entry) {
+                    try {
+                        $api = new \Gravity_Flow_API($form_id);
+                        $current_step = $api->get_current_step($entry);
+
+                        // Check if current user is assignee for this step
+                        if ($current_step && $this->isUserAssignee($current_step, $user_id)) {
+                            $submitter = get_user_by('ID', $entry['created_by']);
+                            
+                            $inbox_entries[] = [
+                                'id' => $entry['id'],
+                                'entry_id' => $entry['id'],
+                                'form_id' => $form_id,
+                                'form_title' => $form['title'],
+                                'step_id' => $current_step->get_id(),
+                                'step_name' => $current_step->get_name(),
+                                'step_type' => $current_step->get_type(),
+                                'date_created' => $entry['date_created'],
+                                'date_created_formatted' => date_i18n('j F Y - H:i', strtotime($entry['date_created'])),
+                                'status' => $this->translateStatus($entry['workflow_current_status'] ?? 'pending'),
+                                'status_class' => $this->getStatusClass($entry['workflow_current_status'] ?? 'pending'),
+                                'submitter' => [
+                                    'id' => $entry['created_by'],
+                                    'name' => $submitter ? $submitter->display_name : 'نامشخص',
+                                    'email' => $submitter ? $submitter->user_email : ''
+                                ],
+                                'entry_url' => admin_url("admin.php?page=gravityflow-inbox&view=entry&id={$form_id}&lid={$entry['id']}"),
+                                'actions' => $this->getInboxEntryActions($entry, $current_step),
+                                'priority' => $this->getEntryPriority($entry, $current_step),
+                                'due_date' => $this->getEntryDueDate($current_step),
+                                'entry_summary' => $this->getEntrySummary($entry, $form)
+                            ];
+                            $total_count++;
+                        }
+                    } catch (Exception $e) {
+                        error_log('Error processing inbox entry: ' . $e->getMessage());
+                        continue;
+                    }
+                }
+            }
+
+            // Sort by priority and date
+            usort($inbox_entries, function ($a, $b) {
+                // First sort by priority (higher priority first)
+                if ($a['priority'] !== $b['priority']) {
+                    return $b['priority'] - $a['priority'];
+                }
+                // Then by date (newest first)
+                return strtotime($b['date_created']) - strtotime($a['date_created']);
+            });
+
+            // Apply pagination
+            $offset = ($page - 1) * $per_page;
+            $paginated_entries = array_slice($inbox_entries, $offset, $per_page);
+
+            return [
+                'success' => true,
+                'data' => $paginated_entries,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $per_page,
+                    'total_items' => $total_count,
+                    'total_pages' => ceil($total_count / $per_page)
+                ],
+                'stats' => [
+                    'pending' => count(array_filter($inbox_entries, fn($e) => $e['status'] === 'در انتظار')),
+                    'in_progress' => count(array_filter($inbox_entries, fn($e) => $e['status'] === 'در حال پردازش')),
+                    'total' => $total_count
+                ]
+            ];
+        } catch (Exception $e) {
+            error_log('GravityFlowInboxPage Error: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'خطا در بارگذاری صندوق ورودی: ' . $e->getMessage(),
+                'data' => $this->getInboxSampleData($page, $per_page),
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $per_page,
+                    'total_items' => 5,
+                    'total_pages' => 1
+                ]
+            ];
+        }
+    }
+
+    /**
+     * Check if form has Gravity Flow enabled
+     * @param int $form_id
+     * @return bool
+     */
+    private function hasGravityFlowEnabled($form_id)
+    {
+        if (!class_exists('Gravity_Flow')) {
+            return false;
+        }
+        
+        $form_settings = get_option('gravityflow_settings_' . $form_id, []);
+        return !empty($form_settings);
+    }
+
+    /**
+     * Check if user is assignee for the step
+     * @param object $step
+     * @param int $user_id
+     * @return bool
+     */
+    private function isUserAssignee($step, $user_id)
+    {
+        if (!$step || !method_exists($step, 'is_user_assignee')) {
+            return false;
+        }
+        
+        return $step->is_user_assignee($user_id);
+    }
+
+    /**
+     * Translate workflow status to Persian
+     * @param string $status
+     * @return string
+     */
+    private function translateStatus($status)
+    {
+        $translations = [
+            'pending' => 'در انتظار',
+            'in_progress' => 'در حال پردازش',
+            'user_input' => 'نیاز به ورودی کاربر',
+            'approved' => 'تأیید شده',
+            'rejected' => 'رد شده',
+            'complete' => 'تکمیل شده'
+        ];
+        
+        return $translations[$status] ?? $status;
+    }
+
+    /**
+     * Get CSS class for status
+     * @param string $status
+     * @return string
+     */
+    private function getStatusClass($status)
+    {
+        $classes = [
+            'pending' => 'status-pending',
+            'in_progress' => 'status-in-progress',
+            'user_input' => 'status-user-input',
+            'approved' => 'status-approved',
+            'rejected' => 'status-rejected',
+            'complete' => 'status-complete'
+        ];
+        
+        return $classes[$status] ?? 'status-default';
+    }
+
+    /**
+     * Get available actions for inbox entry
+     * @param array $entry
+     * @param object $step
+     * @return array
+     */
+    private function getInboxEntryActions($entry, $step)
+    {
+        $actions = [];
+        
+        // Basic actions
+        $actions[] = [
+            'type' => 'view',
+            'label' => 'مشاهده',
+            'url' => admin_url("admin.php?page=gravityflow-inbox&view=entry&id={$entry['form_id']}&lid={$entry['id']}")
+        ];
+        
+        // Step-specific actions based on step type
+        if ($step && method_exists($step, 'get_type')) {
+            $step_type = $step->get_type();
+            
+            switch ($step_type) {
+                case 'approval':
+                    $actions[] = ['type' => 'approve', 'label' => 'تأیید'];
+                    $actions[] = ['type' => 'reject', 'label' => 'رد'];
+                    break;
+                case 'user_input':
+                    $actions[] = ['type' => 'complete', 'label' => 'تکمیل'];
+                    break;
+                case 'notification':
+                    $actions[] = ['type' => 'acknowledge', 'label' => 'تأیید دریافت'];
+                    break;
+            }
+        }
+        
+        return $actions;
+    }
+
+    /**
+     * Get entry priority
+     * @param array $entry
+     * @param object $step
+     * @return int
+     */
+    private function getEntryPriority($entry, $step)
+    {
+        // Check if there's a priority field or meta
+        $priority = null;
+        if (function_exists('gform_get_meta')) {
+            $priority = gform_get_meta($entry['id'], 'priority');
+        }
+        if ($priority) {
+            return (int) $priority;
+        }
+        
+        // Default priority based on step type
+        if ($step && method_exists($step, 'get_type')) {
+            $step_type = $step->get_type();
+            switch ($step_type) {
+                case 'approval':
+                    return 3; // High priority
+                case 'user_input':
+                    return 2; // Medium priority
+                default:
+                    return 1; // Normal priority
+            }
+        }
+        
+        return 1;
+    }
+
+    /**
+     * Get entry due date
+     * @param object $step
+     * @return string|null
+     */
+    private function getEntryDueDate($step)
+    {
+        if (!$step || !method_exists($step, 'get_setting')) {
+            return null;
+        }
+        
+        $due_date = $step->get_setting('due_date');
+        if ($due_date) {
+            return date_i18n('j F Y', strtotime($due_date));
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get entry summary for display
+     * @param array $entry
+     * @param array $form
+     * @return string
+     */
+    private function getEntrySummary($entry, $form)
+    {
+        $summary_parts = [];
+        
+        // Get first few important fields
+        foreach ($form['fields'] as $field) {
+            if (count($summary_parts) >= 3) break;
+            
+            $field_id = $field->id;
+            $value = $entry[$field_id] ?? '';
+            
+            if (!empty($value) && !in_array($field->type, ['page', 'section', 'html', 'hidden'])) {
+                $summary_parts[] = $field->label . ': ' . wp_trim_words(strip_tags($value), 5);
+            }
+        }
+        
+        return implode(' | ', $summary_parts);
+    }
+
+    /**
+     * Get sample inbox data for demonstration
+     * @param int $page
+     * @param int $per_page
+     * @return array
+     */
+    private function getInboxSampleData($page = 1, $per_page = 20)
+    {
+        $sample_entries = [
+            [
+                'id' => 1,
+                'entry_id' => 1,
+                'form_id' => 1,
+                'form_title' => 'فرم درخواست تجهیزات',
+                'step_name' => 'تأیید مدیر',
+                'step_type' => 'approval',
+                'date_created' => date('Y-m-d H:i:s', strtotime('-2 hours')),
+                'date_created_formatted' => 'امروز - ' . date('H:i', strtotime('-2 hours')),
+                'status' => 'در انتظار',
+                'status_class' => 'status-pending',
+                'submitter' => [
+                    'name' => 'علی احمدی',
+                    'email' => 'ali@example.com'
+                ],
+                'actions' => [
+                    ['type' => 'view', 'label' => 'مشاهده'],
+                    ['type' => 'approve', 'label' => 'تأیید'],
+                    ['type' => 'reject', 'label' => 'رد']
+                ],
+                'priority' => 3,
+                'due_date' => date_i18n('j F Y', strtotime('+2 days')),
+                'entry_summary' => 'نام: علی احمدی | تجهیزات: لپ تاپ | توضیحات: برای کار طراحی'
+            ],
+            [
+                'id' => 2,
+                'entry_id' => 2,
+                'form_id' => 2,
+                'form_title' => 'فرم گزارش مالی',
+                'step_name' => 'بررسی اولیه',
+                'step_type' => 'user_input',
+                'date_created' => date('Y-m-d H:i:s', strtotime('-4 hours')),
+                'date_created_formatted' => 'امروز - ' . date('H:i', strtotime('-4 hours')),
+                'status' => 'نیاز به ورودی کاربر',
+                'status_class' => 'status-user-input',
+                'submitter' => [
+                    'name' => 'مریم رضایی',
+                    'email' => 'maryam@example.com'
+                ],
+                'actions' => [
+                    ['type' => 'view', 'label' => 'مشاهده'],
+                    ['type' => 'complete', 'label' => 'تکمیل']
+                ],
+                'priority' => 2,
+                'due_date' => date_i18n('j F Y', strtotime('+3 days')),
+                'entry_summary' => 'نوع گزارش: ماهانه | دوره: شهریور ۱۴۰۳ | مبلغ: ۵۰,۰۰۰,۰۰۰ تومان'
+            ],
+            [
+                'id' => 3,
+                'entry_id' => 3,
+                'form_id' => 3,
+                'form_title' => 'فرم ثبت نام دوره',
+                'step_name' => 'تأیید نهایی',
+                'step_type' => 'notification',
+                'date_created' => date('Y-m-d H:i:s', strtotime('-1 day')),
+                'date_created_formatted' => 'دیروز - ' . date('H:i', strtotime('-1 day')),
+                'status' => 'در حال پردازش',
+                'status_class' => 'status-in-progress',
+                'submitter' => [
+                    'name' => 'حسن کریمی',
+                    'email' => 'hassan@example.com'
+                ],
+                'actions' => [
+                    ['type' => 'view', 'label' => 'مشاهده'],
+                    ['type' => 'acknowledge', 'label' => 'تأیید دریافت']
+                ],
+                'priority' => 1,
+                'due_date' => null,
+                'entry_summary' => 'دوره: برنامه‌نویسی پایتون | سطح: مقدماتی | تاریخ شروع: ۱۰ مهر'
+            ]
+        ];
+
+        $offset = ($page - 1) * $per_page;
+        return array_slice($sample_entries, $offset, $per_page);
+    }
+
 }
