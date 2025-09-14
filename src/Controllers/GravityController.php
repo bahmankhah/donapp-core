@@ -751,7 +751,7 @@ class GravityController
             }
 
             // Get all inbox entries without pagination
-            $result = $this->gravityService->getGravityFlowInboxPage(1, 15, $user);
+            $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
             if (!$result['success']) {
                 http_response_code(500);
                 wp_die('خطا در دریافت داده‌ها: ' . $result['message'], 'خطای سرور', ['response' => 500]);
