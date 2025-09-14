@@ -27,7 +27,8 @@ class ShortcodeServiceProvider
                 'mobile_responsive' => 'true',
                 'show_pagination' => 'true',
                 'table_class' => 'donap-gravity-flow-table',
-                'show_stats' => 'true'
+                'show_stats' => 'true',
+                'show_export_buttons' => 'true'
             ], $atts);
 
             return $this->renderGravityFlowInbox($atts);

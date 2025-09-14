@@ -53,7 +53,7 @@ $status_colors = [
             </h3>
             <span class="entry-count"><?= $pagination['total_items'] ?? 0 ?> ورودی</span>
         </div>
-        
+        <?php echo $show_export_buttons ?>
         <?php if ($show_export_buttons && !empty($entries)): ?>
         <div class="inbox-export-buttons">
             <div class="export-dropdown">
