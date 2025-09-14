@@ -974,19 +974,57 @@ class GravityService
                 ];
             }
 
+            // IMPORTANT: Set current user if passed explicitly (for REST API calls)
+            if ($user && $user !== wp_get_current_user()) {
+                wp_set_current_user($user_id);
+                appLogger('Set current user to: ' . $user_id . ' for REST API context');
+            }
+
             // Use Gravity Flow API static methods to get inbox entries
+            // The key issue: filter_key needs to be set properly for the user
             $args = [
                 'user_id' => $user_id,
-                'paging' => [
+                'filter_key' => 'workflow_user_id_' . $user_id  // Explicitly set the filter key
+            ];
+            
+            // Add pagination if supported
+            if ($per_page && $per_page > 0) {
+                $args['paging'] = [
                     'page_size' => $per_page,
                     'offset' => ($page - 1) * $per_page
-                ]
-            ];
+                ];
+            }
 
             $total_count = 0;
-            $inbox_entries_raw = \Gravity_Flow_API::get_inbox_entries($args, $total_count);
+            
+            // Debug logging
+            appLogger('Calling Gravity Flow API with user_id: ' . $user_id);
+            appLogger('Current WordPress user after setting: ' . wp_get_current_user()->ID);
+            appLogger('Args being passed: ' . json_encode($args));
+            
+            // Get inbox entries using the API
+            $inbox_entries_raw = [];
+            
+            try {
+                $inbox_entries_raw = \Gravity_Flow_API::get_inbox_entries($args, $total_count);
+                appLogger('API call successful - result count: ' . count($inbox_entries_raw));
+                appLogger('Total count: ' . $total_count);
+            } catch (Exception $e) {
+                appLogger('API call failed: ' . $e->getMessage());
+                
+                // Fallback: try with minimal args if filter_key approach fails
+                try {
+                    $fallback_args = ['user_id' => $user_id];
+                    $inbox_entries_raw = \Gravity_Flow_API::get_inbox_entries($fallback_args, $total_count);
+                    appLogger('Fallback API call result count: ' . count($inbox_entries_raw));
+                    appLogger('Fallback total count: ' . $total_count);
+                } catch (Exception $e2) {
+                    appLogger('Fallback API call also failed: ' . $e2->getMessage());
+                }
+            }
+            
             $inbox_entries = [];
-            appLogger('Total inbox entries found: ' . $total_count);
+            appLogger('Final inbox entries count: ' . count($inbox_entries_raw));
             foreach ($inbox_entries_raw as $entry) {
                 appLogger('Processing entry ID: ' . $entry['id']);
                 $form = \GFAPI::get_form($entry['form_id']);
