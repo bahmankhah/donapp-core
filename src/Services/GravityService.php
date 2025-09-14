@@ -982,6 +982,7 @@ class GravityService
                     'offset' => ($page - 1) * $per_page
                 ]
             ];
+            appLogger('Fetching inbox entries with args: ' . json_encode($args));
 
             $total_count = 0;
             $inbox_entries_raw = \Gravity_Flow_API::get_inbox_entries($args, $total_count);
