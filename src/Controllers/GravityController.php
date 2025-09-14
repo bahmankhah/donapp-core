@@ -420,11 +420,11 @@ class GravityController
     }
 
     /**
-     * Approve single entry
+     * Approve single entry using Gravity Flow API
      */
     private function approveSingleEntry($entry_id)
     {
-        if (!class_exists('GFAPI')) {
+        if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
             return false;
         }
 
@@ -433,23 +433,45 @@ class GravityController
             return false;
         }
 
-        // Update entry meta or use Gravity Flow API to approve
-        // This is a simplified implementation
+        // Initialize Gravity Flow API for this form
+        $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+        
+        // Get current step
+        $current_step = $gravity_flow_api->get_current_step($entry);
+        
+        if (!$current_step) {
+            // If no current step, try to update the workflow final status directly
+            if (function_exists('gform_update_meta')) {
+                gform_update_meta($entry_id, 'workflow_final_status', 'approved');
+                gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
+                gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+            }
+            return true;
+        }
+
+        // If current step supports approval, we would typically call step-specific approval method
+        // For now, we'll use the API to add a timeline note and update meta
+        $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . wp_get_current_user()->display_name . ' تأیید شد.');
+        $gravity_flow_api->log_activity('step', 'approved', $entry['form_id'], $entry_id, '', $current_step->get_id());
+
         if (function_exists('gform_update_meta')) {
             gform_update_meta($entry_id, 'workflow_final_status', 'approved');
             gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
             gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
         }
 
+        // Process workflow to move to next step
+        $gravity_flow_api->process_workflow($entry_id);
+
         return true;
     }
 
     /**
-     * Reject single entry
+     * Reject single entry using Gravity Flow API
      */
     private function rejectSingleEntry($entry_id)
     {
-        if (!class_exists('GFAPI')) {
+        if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
             return false;
         }
 
@@ -458,12 +480,34 @@ class GravityController
             return false;
         }
 
-        // Update entry meta or use Gravity Flow API to reject
+        // Initialize Gravity Flow API for this form
+        $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+        
+        // Get current step
+        $current_step = $gravity_flow_api->get_current_step($entry);
+        
+        if (!$current_step) {
+            // If no current step, try to update the workflow final status directly
+            if (function_exists('gform_update_meta')) {
+                gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
+                gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
+                gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+            }
+            return true;
+        }
+
+        // Use API to add timeline note and log activity
+        $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . wp_get_current_user()->display_name . ' رد شد.');
+        $gravity_flow_api->log_activity('step', 'rejected', $entry['form_id'], $entry_id, '', $current_step->get_id());
+
         if (function_exists('gform_update_meta')) {
             gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
             gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
             gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
         }
+
+        // Process workflow to handle rejection
+        $gravity_flow_api->process_workflow($entry_id);
 
         return true;
     }
@@ -482,18 +526,208 @@ class GravityController
     }
 
     /**
-     * Export single entry (returns download URL)
+     * Export single entry (returns download URL) using Gravity Flow API
      */
     private function exportSingleEntry($entry_id)
     {
-        // This would typically generate an export file and return URL
-        // For now, just mark as exported
+        if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+            return false;
+        }
+
+        $entry = \GFAPI::get_entry($entry_id);
+        if (is_wp_error($entry)) {
+            return false;
+        }
+
+        // Initialize Gravity Flow API for this form
+        $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+        
+        // Add timeline note about export
+        $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . wp_get_current_user()->display_name . ' صادر شد.');
+        $gravity_flow_api->log_activity('entry', 'exported', $entry['form_id'], $entry_id);
+
+        // Mark as exported
         if (function_exists('gform_update_meta')) {
             gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
             gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
         }
 
         return true;
+    }
+
+    /**
+     * Restart workflow for entry using Gravity Flow API
+     */
+    public function restartWorkflow()
+    {
+        try {
+            // Verify nonce
+            if (!\check_ajax_referer('gravity_flow_restart_workflow', '_wpnonce', false)) {
+                \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
+                return;
+            }
+
+            // Check permissions
+            if (!\current_user_can('manage_options')) {
+                \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
+                return;
+            }
+
+            $entry_id = intval($_POST['entry_id'] ?? 0);
+            $form_id = intval($_POST['form_id'] ?? 0);
+
+            if (!$entry_id || !$form_id) {
+                \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
+                return;
+            }
+
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
+                return;
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry) || $entry['form_id'] != $form_id) {
+                \wp_send_json_error(['message' => 'ورودی یافت نشد'], 404);
+                return;
+            }
+
+            // Initialize Gravity Flow API
+            $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Restart the workflow
+            $gravity_flow_api->restart_workflow($entry);
+
+            \wp_send_json_success([
+                'message' => 'گردش کار با موفقیت مجدداً راه‌اندازی شد',
+                'entry_id' => $entry_id
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Restart Workflow Error: ' . $e->getMessage());
+            \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
+        }
+    }
+
+    /**
+     * Cancel workflow for entry using Gravity Flow API
+     */
+    public function cancelWorkflow()
+    {
+        try {
+            // Verify nonce
+            if (!\check_ajax_referer('gravity_flow_cancel_workflow', '_wpnonce', false)) {
+                \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
+                return;
+            }
+
+            // Check permissions
+            if (!\current_user_can('manage_options')) {
+                \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
+                return;
+            }
+
+            $entry_id = intval($_POST['entry_id'] ?? 0);
+            $form_id = intval($_POST['form_id'] ?? 0);
+
+            if (!$entry_id || !$form_id) {
+                \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
+                return;
+            }
+
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
+                return;
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry) || $entry['form_id'] != $form_id) {
+                \wp_send_json_error(['message' => 'ورودی یافت نشد'], 404);
+                return;
+            }
+
+            // Initialize Gravity Flow API
+            $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Cancel the workflow
+            $result = $gravity_flow_api->cancel_workflow($entry);
+
+            if ($result) {
+                \wp_send_json_success([
+                    'message' => 'گردش کار با موفقیت لغو شد',
+                    'entry_id' => $entry_id
+                ]);
+            } else {
+                \wp_send_json_error(['message' => 'عدم موفقیت در لغو گردش کار'], 500);
+            }
+
+        } catch (Exception $e) {
+            error_log('Cancel Workflow Error: ' . $e->getMessage());
+            \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
+        }
+    }
+
+    /**
+     * Send entry to specific step using Gravity Flow API
+     */
+    public function sendToStep()
+    {
+        try {
+            // Verify nonce
+            if (!\check_ajax_referer('gravity_flow_send_to_step', '_wpnonce', false)) {
+                \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
+                return;
+            }
+
+            // Check permissions
+            if (!\current_user_can('manage_options')) {
+                \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
+                return;
+            }
+
+            $entry_id = intval($_POST['entry_id'] ?? 0);
+            $form_id = intval($_POST['form_id'] ?? 0);
+            $step_id = intval($_POST['step_id'] ?? 0);
+
+            if (!$entry_id || !$form_id || !$step_id) {
+                \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
+                return;
+            }
+
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
+                return;
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry) || $entry['form_id'] != $form_id) {
+                \wp_send_json_error(['message' => 'ورودی یافت نشد'], 404);
+                return;
+            }
+
+            // Initialize Gravity Flow API
+            $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Get the target step to validate it exists
+            $target_step = $gravity_flow_api->get_step($step_id, $entry);
+            if (!$target_step) {
+                \wp_send_json_error(['message' => 'مرحله مقصد یافت نشد'], 404);
+                return;
+            }
+
+            // Send to step
+            $gravity_flow_api->send_to_step($entry, $step_id);
+
+            \wp_send_json_success([
+                'message' => 'ورودی با موفقیت به مرحله ' . $target_step->get_name() . ' ارسال شد',
+                'entry_id' => $entry_id,
+                'step_name' => $target_step->get_name()
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Send To Step Error: ' . $e->getMessage());
+            \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
+        }
     }
 
     /**
@@ -661,6 +895,138 @@ class GravityController
             error_log('Gravity Inbox PDF Export Error: ' . $e->getMessage());
             http_response_code(500);
             wp_die('خطای داخلی سرور: ' . $e->getMessage(), 'خطای سرور', ['response' => 500]);
+        }
+    }
+
+    /**
+     * Get workflow steps for a form using Gravity Flow API
+     */
+    public function getWorkflowSteps()
+    {
+        try {
+            // Check permissions
+            if (!\current_user_can('manage_options')) {
+                \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
+                return;
+            }
+
+            $form_id = intval($_GET['form_id'] ?? 0);
+
+            if (!$form_id) {
+                \wp_send_json_error(['message' => 'شناسه فرم مشخص نشده است'], 400);
+                return;
+            }
+
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
+                return;
+            }
+
+            // Initialize Gravity Flow API
+            $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Get all steps for this form
+            $steps = $gravity_flow_api->get_steps();
+            $formatted_steps = [];
+
+            foreach ($steps as $step) {
+                $formatted_steps[] = [
+                    'id' => $step->get_id(),
+                    'name' => $step->get_name(),
+                    'type' => $step->get_type(),
+                    'description' => $step->get_setting('description', ''),
+                    'is_active' => $step->is_active(),
+                    'step_type_display' => $this->getStepTypeDisplay($step->get_type())
+                ];
+            }
+
+            \wp_send_json_success([
+                'steps' => $formatted_steps,
+                'form_id' => $form_id
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Get Workflow Steps Error: ' . $e->getMessage());
+            \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
+        }
+    }
+
+    /**
+     * Get display name for step type
+     * @param string $step_type
+     * @return string
+     */
+    private function getStepTypeDisplay($step_type)
+    {
+        $step_types = [
+            'approval' => 'تأیید',
+            'user_input' => 'ورودی کاربر',
+            'notification' => 'اطلاع‌رسانی',
+            'webhook' => 'وب‌هوک',
+            'email' => 'ایمیل',
+            'conditional' => 'شرطی',
+            'discussion' => 'بحث',
+            'schedule' => 'زمان‌بندی'
+        ];
+
+        return $step_types[$step_type] ?? $step_type;
+    }
+
+    /**
+     * Get entry timeline using Gravity Flow API
+     */
+    public function getEntryTimeline()
+    {
+        try {
+            // Check permissions
+            if (!\current_user_can('manage_options')) {
+                \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
+                return;
+            }
+
+            $entry_id = intval($_GET['entry_id'] ?? 0);
+            $form_id = intval($_GET['form_id'] ?? 0);
+
+            if (!$entry_id || !$form_id) {
+                \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
+                return;
+            }
+
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
+                return;
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry) || $entry['form_id'] != $form_id) {
+                \wp_send_json_error(['message' => 'ورودی یافت نشد'], 404);
+                return;
+            }
+
+            // Initialize Gravity Flow API
+            $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Get timeline
+            $timeline = $gravity_flow_api->get_timeline($entry);
+            
+            // Get current status
+            $current_status = $gravity_flow_api->get_status($entry);
+            $current_step = $gravity_flow_api->get_current_step($entry);
+
+            \wp_send_json_success([
+                'timeline' => $timeline,
+                'current_status' => $current_status,
+                'current_step' => $current_step ? [
+                    'id' => $current_step->get_id(),
+                    'name' => $current_step->get_name(),
+                    'type' => $current_step->get_type()
+                ] : null,
+                'entry_id' => $entry_id
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Get Entry Timeline Error: ' . $e->getMessage());
+            \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
         }
     }
 

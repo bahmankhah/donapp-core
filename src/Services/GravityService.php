@@ -23,13 +23,13 @@ class GravityService
     public function getApprovedGravityFlowEntries($page = 1, $per_page = 20, $user = null)
     {
         // Check if Gravity Forms and Gravity Flow are active
-        if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
+        if (!class_exists('GFForms') || !class_exists('Gravity_Flow_API')) {
             // Return sample data for demonstration purposes
-            error_log('GravityService: Gravity Forms/Flow not available, returning sample data');
+            error_log('GravityService: Gravity Forms/Flow API not available, returning sample data');
             return $this->getSampleData($page, $per_page);
         }
 
-        error_log('GravityService: Gravity Forms/Flow available, attempting to get real data');
+        error_log('GravityService: Gravity Forms/Flow API available, attempting to get real data');
 
         $current_user = $user ?? wp_get_current_user();
         if (!$current_user || !$current_user->ID) {
@@ -61,23 +61,36 @@ class GravityService
                 continue;
             }
 
-            // Get entries for this form that are approved
+            // Initialize Gravity Flow API for this form
+            $gravity_flow_api = new \Gravity_Flow_API($form['id']);
+
+            // Get entries for this form that are approved using search criteria
             $search_criteria = [
-                'status' => 'active'
+                'status' => 'active',
+                'field_filters' => [
+                    [
+                        'key' => 'workflow_final_status',
+                        'value' => 'approved'
+                    ]
+                ]
             ];
 
             $entries = class_exists('GFAPI') ? \GFAPI::get_entries($form['id'], $search_criteria) : [];
 
             foreach ($entries as $entry) {
-                // Check if entry is approved and user has access
-                if ($this->isEntryApproved($entry) && $this->userHasAccessToEntry($entry, $current_user->ID)) {
+                // Use Gravity Flow API to get status and validate entry
+                $workflow_status = $gravity_flow_api->get_status($entry);
+                
+                // Check if entry is truly approved and user has access
+                if ($workflow_status === 'approved' && $this->userHasAccessToEntry($entry, $current_user->ID)) {
                     $approved_entries[] = [
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
                         'form_title' => $form['title'],
                         'date_created' => $entry['date_created'],
-                        'status' => $this->getEntryStatus($entry),
-                        'entry_data' => $this->formatEntryData($entry, $form)
+                        'status' => $workflow_status,
+                        'entry_data' => $this->formatEntryData($entry, $form),
+                        'timeline' => $gravity_flow_api->get_timeline($entry)
                     ];
                     $total_count++;
                 }
@@ -194,12 +207,20 @@ class GravityService
     }
 
     /**
-     * Check if entry is approved
+     * Check if entry is approved using Gravity Flow API
      * @param array $entry
      * @return bool
      */
     private function isEntryApproved($entry)
     {
+        // If we have Gravity Flow API available, use it
+        if (class_exists('Gravity_Flow_API') && isset($entry['form_id'])) {
+            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+            $status = $gravity_flow_api->get_status($entry);
+            return $status === 'approved' || $status === 'complete';
+        }
+
+        // Fallback to legacy checks
         // Check different possible indicators for approved status
         if (isset($entry['workflow_final_status']) && $entry['workflow_final_status'] === 'approved') {
             return true;
@@ -228,12 +249,22 @@ class GravityService
     }
 
     /**
-     * Get entry status
+     * Get entry status using Gravity Flow API
      * @param array $entry
      * @return string
      */
     private function getEntryStatus($entry)
     {
+        // If we have Gravity Flow API available, use it
+        if (class_exists('Gravity_Flow_API') && isset($entry['form_id'])) {
+            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+            $status = $gravity_flow_api->get_status($entry);
+            if ($status) {
+                return $status;
+            }
+        }
+
+        // Fallback to legacy status checks
         if (isset($entry['workflow_final_status'])) {
             return $entry['workflow_final_status'];
         }
@@ -381,8 +412,8 @@ class GravityService
 
         if (empty($entries)) {
             // Check if Gravity Forms is available or we should use sample data
-            if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
-                error_log('GravityService: Gravity Forms/Flow not available, forcing sample data');
+            if (!class_exists('GFForms') || !class_exists('Gravity_Flow_API')) {
+                error_log('GravityService: Gravity Forms/Flow API not available, forcing sample data');
                 // Force sample data for testing/demo purposes when no real data is available
                 $entries = [
                     [
@@ -419,11 +450,11 @@ class GravityService
         // Final check - if still no data, return error
         if (empty($entries)) {
             $gravity_status = class_exists('GFForms') ? 'فعال' : 'غیرفعال';
-            $gravity_flow_status = class_exists('Gravity_Flow') ? 'فعال' : 'غیرفعال';
+            $gravity_flow_status = class_exists('Gravity_Flow_API') ? 'فعال' : 'غیرفعال';
 
             return [
                 'success' => false,
-                'message' => 'هیچ ورودی تأیید شده‌ای یافت نشد. وضعیت افزونه‌ها: Gravity Forms: ' . $gravity_status . ', Gravity Flow: ' . $gravity_flow_status . '. لطفاً ابتدا برخی از ورودی‌های Gravity Flow را تأیید کنید.'
+                'message' => 'هیچ ورودی تأیید شده‌ای یافت نشد. وضعیت افزونه‌ها: Gravity Forms: ' . $gravity_status . ', Gravity Flow API: ' . $gravity_flow_status . '. لطفاً ابتدا برخی از ورودی‌های Gravity Flow را تأیید کنید.'
             ];
         }
 
@@ -544,7 +575,7 @@ class GravityService
     }
 
     /**
-     * Get enhanced Gravity Flow entries with sorting and mobile optimization
+     * Get enhanced Gravity Flow entries with sorting and mobile optimization using API
      * @param int $page
      * @param int $per_page
      * @param array $filters
@@ -553,7 +584,7 @@ class GravityService
     public function getEnhancedGravityFlowEntries($page = 1, $per_page = 20, $filters = [])
     {
         // Check if Gravity Forms and Gravity Flow are active
-        if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
+        if (!class_exists('GFForms') || !class_exists('Gravity_Flow_API')) {
             return $this->getEnhancedSampleData($page, $per_page);
         }
 
@@ -578,6 +609,9 @@ class GravityService
         $total_count = 0;
 
         foreach ($forms as $form) {
+            // Initialize Gravity Flow API for this form
+            $gravity_flow_api = new \Gravity_Flow_API($form['id']);
+            
             // Get entries for this form
             $search_criteria = [
                 'status' => 'active',
@@ -592,15 +626,16 @@ class GravityService
             $entries = class_exists('GFAPI') ? \GFAPI::get_entries($form['id'], $search_criteria) : [];
 
             foreach ($entries as $entry) {
+                // Use Gravity Flow API to get detailed status
+                $workflow_status = $gravity_flow_api->get_status($entry);
+                $current_step = $gravity_flow_api->get_current_step($entry);
+                
                 // Get submitter info
                 $submitter = \get_user_by('ID', $entry['created_by']);
                 $submitter_name = $submitter ? $submitter->display_name : 'نامشخص';
 
-                // Determine status
-                $status = $this->getEntryWorkflowStatus($entry['id'], $form['id']);
-
                 // Apply filters if provided
-                if (!empty($filters['status']) && $filters['status'] !== $status) {
+                if (!empty($filters['status']) && $filters['status'] !== $workflow_status) {
                     continue;
                 }
 
@@ -612,7 +647,8 @@ class GravityService
                     'id' => $entry['id'],
                     'form_id' => $form['id'],
                     'form_name' => $form['title'],
-                    'status' => $status,
+                    'status' => $workflow_status,
+                    'current_step' => $current_step ? $current_step->get_name() : null,
                     'submitter' => [
                         'id' => $entry['created_by'],
                         'name' => $submitter_name,
@@ -622,6 +658,7 @@ class GravityService
                     'date_created_formatted' => \date_i18n('j F Y - H:i', strtotime($entry['date_created'])),
                     'entry_data' => $entry,
                     'form_data' => $form,
+                    'timeline' => $gravity_flow_api->get_timeline($entry),
                     'actions' => $this->getEntryAvailableActions($entry['id'], $form['id'])
                 ];
                 $total_count++;
@@ -760,12 +797,24 @@ class GravityService
     }
 
     /**
-     * Get entry workflow status
+     * Get entry workflow status using Gravity Flow API
      */
     private function getEntryWorkflowStatus($entry_id, $form_id)
     {
-        // This would integrate with your workflow system or Gravity Flow
-        // For now, return sample statuses
+        // Use Gravity Flow API if available
+        if (class_exists('Gravity_Flow_API') && class_exists('GFAPI')) {
+            $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            $entry = \GFAPI::get_entry($entry_id);
+            
+            if (!is_wp_error($entry)) {
+                $status = $gravity_flow_api->get_status($entry);
+                if ($status) {
+                    return $status;
+                }
+            }
+        }
+        
+        // Fallback to sample statuses
         $statuses = ['pending', 'in_progress', 'completed', 'rejected'];
         return $statuses[array_rand($statuses)];
     }
@@ -883,7 +932,7 @@ class GravityService
     }
 
     /**
-     * Get Gravity Flow inbox entries for current user with pagination
+     * Get Gravity Flow inbox entries for current user with pagination using API
      * @param int $page
      * @param int $per_page
      * @param mixed $user
@@ -896,7 +945,7 @@ class GravityService
             if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
                 return [
                     'success' => false,
-                    'message' => 'Gravity Forms یا Gravity Flow فعال نیست',
+                    'message' => 'Gravity Forms یا Gravity Flow API فعال نیست',
                     'data' => $this->getInboxSampleData($page, $per_page),
                     'pagination' => [
                         'current_page' => $page,
@@ -925,76 +974,58 @@ class GravityService
                 ];
             }
 
-            $inbox_entries = [];
+            // Use Gravity Flow API static methods to get inbox entries
+            $args = [
+                'user_id' => $user_id,
+                'paging' => [
+                    'page_size' => $per_page,
+                    'offset' => ($page - 1) * $per_page
+                ]
+            ];
+
             $total_count = 0;
+            $inbox_entries_raw = \Gravity_Flow_API::get_inbox_entries($args, $total_count);
+            $inbox_entries = [];
 
-            // Get all forms with Gravity Flow steps
-            $forms = \GFAPI::get_forms();
-
-            foreach ($forms as $form) {
-                $form_id = $form['id'];
-
-                // Check if form has Gravity Flow enabled
-                if (!$this->hasGravityFlowEnabled($form_id)) {
+            foreach ($inbox_entries_raw as $entry) {
+                $form = \GFAPI::get_form($entry['form_id']);
+                if (is_wp_error($form)) {
                     continue;
                 }
 
-                // Get workflow entries for this form
-                $search_criteria = [
-                    'status' => 'active',
-                    'field_filters' => [
-                        [
-                            'key' => 'workflow_current_status',
-                            'operator' => 'in',
-                            'value' => ['pending', 'in_progress', 'user_input']
-                        ]
-                    ]
+                // Initialize API for this form
+                $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+                $current_step = $gravity_flow_api->get_current_step($entry);
+                
+                $submitter = get_user_by('ID', $entry['created_by']);
+                
+                $inbox_entries[] = [
+                    'id' => $entry['id'],
+                    'entry_id' => $entry['id'],
+                    'form_id' => $entry['form_id'],
+                    'form_title' => $form['title'],
+                    'step_id' => $current_step ? $current_step->get_id() : null,
+                    'step_name' => $current_step ? $current_step->get_name() : 'نامشخص',
+                    'step_type' => $current_step ? $current_step->get_type() : 'unknown',
+                    'date_created' => $entry['date_created'],
+                    'date_created_formatted' => date_i18n('j F Y - H:i', strtotime($entry['date_created'])),
+                    'status' => $this->translateStatus($gravity_flow_api->get_status($entry)),
+                    'status_class' => $this->getStatusClass($gravity_flow_api->get_status($entry)),
+                    'submitter' => [
+                        'id' => $entry['created_by'],
+                        'name' => $submitter ? $submitter->display_name : 'نامشخص',
+                        'email' => $submitter ? $submitter->user_email : ''
+                    ],
+                    'entry_url' => admin_url("admin.php?page=gravityflow-inbox&view=entry&id={$entry['form_id']}&lid={$entry['id']}"),
+                    'actions' => $this->getInboxEntryActions($entry, $current_step),
+                    'priority' => $this->getEntryPriority($entry, $current_step),
+                    'due_date' => $this->getEntryDueDate($current_step),
+                    'entry_summary' => $this->getEntrySummary($entry, $form),
+                    'timeline' => $gravity_flow_api->get_timeline($entry)
                 ];
-
-                $entries = \GFAPI::get_entries($form_id, $search_criteria);
-
-                foreach ($entries as $entry) {
-                    try {
-                        $api = new \Gravity_Flow_API($form_id);
-                        $current_step = $api->get_current_step($entry);
-
-                        // Check if current user is assignee for this step
-                        if ($current_step && $this->isUserAssignee($current_step, $user_id)) {
-                            $submitter = get_user_by('ID', $entry['created_by']);
-                            
-                            $inbox_entries[] = [
-                                'id' => $entry['id'],
-                                'entry_id' => $entry['id'],
-                                'form_id' => $form_id,
-                                'form_title' => $form['title'],
-                                'step_id' => $current_step->get_id(),
-                                'step_name' => $current_step->get_name(),
-                                'step_type' => $current_step->get_type(),
-                                'date_created' => $entry['date_created'],
-                                'date_created_formatted' => date_i18n('j F Y - H:i', strtotime($entry['date_created'])),
-                                'status' => $this->translateStatus($entry['workflow_current_status'] ?? 'pending'),
-                                'status_class' => $this->getStatusClass($entry['workflow_current_status'] ?? 'pending'),
-                                'submitter' => [
-                                    'id' => $entry['created_by'],
-                                    'name' => $submitter ? $submitter->display_name : 'نامشخص',
-                                    'email' => $submitter ? $submitter->user_email : ''
-                                ],
-                                'entry_url' => admin_url("admin.php?page=gravityflow-inbox&view=entry&id={$form_id}&lid={$entry['id']}"),
-                                'actions' => $this->getInboxEntryActions($entry, $current_step),
-                                'priority' => $this->getEntryPriority($entry, $current_step),
-                                'due_date' => $this->getEntryDueDate($current_step),
-                                'entry_summary' => $this->getEntrySummary($entry, $form)
-                            ];
-                            $total_count++;
-                        }
-                    } catch (Exception $e) {
-                        error_log('Error processing inbox entry: ' . $e->getMessage());
-                        continue;
-                    }
-                }
             }
 
-            // Sort by priority and date
+            // Sort by priority and date (API may already handle some sorting)
             usort($inbox_entries, function ($a, $b) {
                 // First sort by priority (higher priority first)
                 if ($a['priority'] !== $b['priority']) {
@@ -1004,13 +1035,9 @@ class GravityService
                 return strtotime($b['date_created']) - strtotime($a['date_created']);
             });
 
-            // Apply pagination
-            $offset = ($page - 1) * $per_page;
-            $paginated_entries = array_slice($inbox_entries, $offset, $per_page);
-
             return [
                 'success' => true,
-                'data' => $paginated_entries,
+                'data' => $inbox_entries,
                 'pagination' => [
                     'current_page' => $page,
                     'per_page' => $per_page,
