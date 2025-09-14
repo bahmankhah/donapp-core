@@ -50,6 +50,13 @@ class RouteServiceProvider
         // Enhanced Gravity Flow inbox bulk actions
         Route::post('gravity/bulk-action', [GravityController::class, 'handleBulkAction'])->make()->name('gravity-bulk-action');
 
+        // New Gravity Flow API routes
+        Route::post('gravity/workflow/restart', [GravityController::class, 'restartWorkflow'])->make()->name('gravity-restart-workflow');
+        Route::post('gravity/workflow/cancel', [GravityController::class, 'cancelWorkflow'])->make()->name('gravity-cancel-workflow');
+        Route::post('gravity/workflow/send-to-step', [GravityController::class, 'sendToStep'])->make()->name('gravity-send-to-step');
+        Route::get('gravity/workflow/steps', [GravityController::class, 'getWorkflowSteps'])->make()->name('gravity-workflow-steps');
+        Route::get('gravity/entry/timeline', [GravityController::class, 'getEntryTimeline'])->make()->name('gravity-entry-timeline');
+
         // Workflow automation API routes
         Route::get('workflow/dashboard', [WorkflowController::class, 'getDashboardData'])->make()->name('workflow-dashboard-api');
         Route::post('workflow/task-action', [WorkflowController::class, 'handleTaskAction'])->make()->name('workflow-task-action');
