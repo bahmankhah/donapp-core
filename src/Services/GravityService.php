@@ -960,7 +960,7 @@ class GravityService
             $current_user = $user ?? wp_get_current_user();
             appLogger(json_encode($current_user));
             $user_id = $current_user->ID ?? get_current_user_id();
-            wp_die($user_id);
+            wp_die(var_dump($user_id));
             if (!$user_id) {
                 return [
                     'success' => false,
