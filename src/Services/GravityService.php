@@ -958,6 +958,7 @@ class GravityService
 
             // Get current user
             $current_user = $user ?? wp_get_current_user();
+            appLogger(json_encode($current_user));
             $user_id = $current_user->ID ?? get_current_user_id();
 
             if (!$user_id) {
