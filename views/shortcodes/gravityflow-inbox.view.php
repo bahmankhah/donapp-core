@@ -487,7 +487,20 @@ $table_class = $attributes['table_class'] ?? 'donap-gravity-flow-table';
                                 <?php foreach ($entry['actions'] as $action): ?>
                                     <?php if ($action['type'] === 'view' && !empty($action['url'])): ?>
                                         <?php appLogger(json_encode($action)) ?>
-                                        <a href="<?php echo esc_url($action['url']); ?>" 
+                                        <?php
+                                            // Parse the action URL and get its query params
+                                            $parsed_url = parse_url($action['url']);
+                                            $query_params = [];
+                                            if (!empty($parsed_url['query'])) {
+                                                parse_str($parsed_url['query'], $query_params);
+                                            }
+                                            // Merge with current page's query params
+                                            $current_params = $_GET;
+                                            $merged_params = array_merge($current_params, $query_params);
+                                            // Build the new URL (keep current page, update query params)
+                                            $new_url = add_query_arg($merged_params, $_SERVER['REQUEST_URI']);
+                                        ?>
+                                        <a href="<?php echo esc_url($new_url); ?>" 
                                            class="donap-action-btn <?php echo esc_attr($action['type']); ?>"
                                            target="_blank">
                                             <i class="fas fa-eye"></i>
