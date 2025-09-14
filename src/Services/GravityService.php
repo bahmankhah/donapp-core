@@ -988,6 +988,7 @@ class GravityService
             $inbox_entries = [];
 
             foreach ($inbox_entries_raw as $entry) {
+                appLogger('Processing entry ID: ' . $entry['id']);
                 $form = \GFAPI::get_form($entry['form_id']);
                 if (is_wp_error($form)) {
                     continue;

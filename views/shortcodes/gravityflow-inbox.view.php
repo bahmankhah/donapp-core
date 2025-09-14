@@ -586,7 +586,6 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
                             <div class="donap-entry-actions">
                                 <?php foreach ($entry['actions'] as $action): ?>
                                     <?php if ($action['type'] === 'view' && !empty($action['url'])): ?>
-                                        <?php appLogger(json_encode($action)) ?>
                                         <?php
                                             // Parse the action URL and get its query params
                                             $parsed_url = parse_url($action['url']);
