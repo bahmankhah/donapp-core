@@ -751,7 +751,7 @@ class GravityController
             }
 
             // Get all inbox entries without pagination
-            $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
+            $result = $this->gravityService->getGravityFlowInboxPage(1, 15, $user);
             appLogger(json_encode($result));
             if (!$result['success']) {
                 http_response_code(500);
