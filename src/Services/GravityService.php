@@ -982,12 +982,11 @@ class GravityService
                     'offset' => ($page - 1) * $per_page
                 ]
             ];
-            appLogger('Fetching inbox entries with args: ' . json_encode($args));
 
             $total_count = 0;
             $inbox_entries_raw = \Gravity_Flow_API::get_inbox_entries($args, $total_count);
             $inbox_entries = [];
-
+            appLogger('Total inbox entries found: ' . $total_count);
             foreach ($inbox_entries_raw as $entry) {
                 appLogger('Processing entry ID: ' . $entry['id']);
                 $form = \GFAPI::get_form($entry['form_id']);
