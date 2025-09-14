@@ -278,6 +278,104 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
             margin-left: 8px;
         }
         
+        /* Export Buttons Styles */
+        .inbox-export-buttons {
+            display: flex;
+            align-items: center;
+        }
+        
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .export-btn-main {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .export-btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .export-dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-radius: 12px;
+            z-index: 1000;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        
+        .export-dropdown-content.show {
+            display: block;
+        }
+        
+        .export-option {
+            display: block;
+            padding: 14px 18px;
+            color: #374151;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .export-option:last-child {
+            border-bottom: none;
+        }
+        
+        .export-option:hover {
+            background: #f8fafc;
+            color: #1f2937;
+        }
+        
+        .export-option i {
+            margin-left: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .export-option.csv i {
+            color: #059669;
+        }
+        
+        .export-option.excel i {
+            color: #0ea5e9;
+        }
+        
+        .export-option.pdf i {
+            color: #dc2626;
+        }
+        
+        .export-option span {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        .export-option small {
+            color: #6b7280;
+            font-size: 12px;
+        }
+        
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .donap-inbox-header {
@@ -667,6 +765,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 */
             }
         });
+    });
+    
+    // Export dropdown functionality
+    window.toggleExportDropdown = function() {
+        const dropdown = document.getElementById('exportDropdown');
+        if (dropdown) {
+            dropdown.classList.toggle('show');
+        }
+    };
+    
+    // Handle export action
+    window.handleExport = function(type) {
+        console.log('Exporting ' + type + '...');
+        // Close dropdown after selection
+        const dropdown = document.getElementById('exportDropdown');
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+    };
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('exportDropdown');
+        const button = document.querySelector('.export-btn-main');
+        
+        if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
     });
 });
 </script>

@@ -116,6 +116,9 @@ class ShortcodeServiceProvider
                 return '<div class="donap-error-message"><i class="fas fa-exclamation-triangle"></i> ' . esc_html($result['message']) . '</div>';
             }
 
+            // Prepare export URLs
+            $current_user_id = \get_current_user_id();
+            
             // Prepare view data
             $view_data = [
                 'entries' => $result['data'],
@@ -124,7 +127,10 @@ class ShortcodeServiceProvider
                 'attributes' => $atts,
                 'current_page' => $current_page,
                 'nonce' => \wp_create_nonce('gravity_flow_inbox_action'),
-                'success' => $result['success']
+                'success' => $result['success'],
+                'inbox_csv_url' => \rest_url('dnp/v1/gravity/inbox/export-csv?uid=' . $current_user_id),
+                'inbox_excel_url' => \rest_url('dnp/v1/gravity/inbox/export-xlsx?uid=' . $current_user_id),
+                'inbox_pdf_url' => \rest_url('dnp/v1/gravity/inbox/export-pdf?uid=' . $current_user_id)
             ];
 
             return view('shortcodes/gravityflow-inbox', $view_data);
