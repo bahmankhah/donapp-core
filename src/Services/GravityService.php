@@ -20,7 +20,7 @@ class GravityService
      * @param int $per_page
      * @return array
      */
-    public function getApprovedGravityFlowEntries($page = 1, $per_page = 20)
+    public function getApprovedGravityFlowEntries($page = 1, $per_page = 20, $user = null)
     {
         // Check if Gravity Forms and Gravity Flow are active
         if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
@@ -31,7 +31,7 @@ class GravityService
 
         error_log('GravityService: Gravity Forms/Flow available, attempting to get real data');
 
-        $current_user = wp_get_current_user();
+        $current_user = $user ?? wp_get_current_user();
         if (!$current_user || !$current_user->ID) {
             error_log('GravityService: No current user found');
             return [

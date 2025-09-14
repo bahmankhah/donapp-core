@@ -61,7 +61,31 @@ The old `FileHelper` class has been refactored into a comprehensive export syste
 
 ## Usage Examples
 
-### CSV Export
+### Using Factory Pattern (Recommended)
+
+```php
+use App\Utils\Export\ExportFactory;
+
+// CSV Export
+$exporter = ExportFactory::createGravityApprovedEntriesExporter('csv');
+$result = $exporter->setEntriesData($entries)->generate();
+
+if ($result['success']) {
+    $exporter->serve($result['data'], $result['filename']);
+}
+
+// Single Entry PDF Export
+$exporter = ExportFactory::createGravitySingleEntryExporter('pdf', $entry_id);
+$result = $exporter->setSingleEntryData($entry_data)->generate();
+
+if ($result['success']) {
+    $exporter->serve($result['data'], $result['filename']);
+}
+```
+
+### Direct Class Usage
+
+#### CSV Export
 ```php
 use App\Utils\Export\Concrete\GravityApprovedEntriesCsv;
 
@@ -117,17 +141,41 @@ if ($result['success']) {
 4. **Type Safety**: Clear interfaces define expected behavior
 5. **Testability**: Each component can be tested independently
 
+## Factory Pattern
+
+The `ExportFactory` provides a convenient way to create exporters:
+
+```php
+use App\Utils\Export\ExportFactory;
+
+// Create exporters by format
+$csvExporter = ExportFactory::createGravityApprovedEntriesExporter('csv');
+$xlsxExporter = ExportFactory::createGravityApprovedEntriesExporter('xlsx');
+$pdfExporter = ExportFactory::createGravityApprovedEntriesExporter('pdf');
+
+// Single entry exporters
+$singlePdf = ExportFactory::createGravitySingleEntryExporter('pdf', $entry_id);
+$singleXlsx = ExportFactory::createGravitySingleEntryExporter('xlsx', $entry_id);
+
+// Generic exporters
+$genericCsv = ExportFactory::createCsvExporter();
+$genericXlsx = ExportFactory::createXlsxExporter();
+$genericPdf = ExportFactory::createPdfExporter();
+```
+
 ## Creating New Exporters
 
 ### For New Data Types:
 1. Create concrete classes extending the appropriate manager
 2. Define the schema in the constructor
 3. Implement data formatting methods
+4. Add factory methods for easy instantiation
 
 ### For New Export Formats:
 1. Create a new manager implementing `ExportableFile`
 2. Define format-specific interface if needed
 3. Implement the generation and serving logic
+4. Add to factory class
 
 ## Migration from FileHelper
 

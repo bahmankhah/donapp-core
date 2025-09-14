@@ -33,10 +33,10 @@ class RouteServiceProvider
         Route::get('wallet/credit', [WalletController::class, 'getWallet'])->middleware(ApiKeyMiddleware::class)->make()->name('wallet-get');
 
         // Gravity Flow routes
-        Route::get('gravity/export-csv', [GravityController::class, 'exportCSV'])->make()->name('gravity-export-csv');
-        Route::get('gravity/export-xlsx', [GravityController::class, 'exportXLSX'])->make()->name('gravity-export-xlsx');
-        Route::get('gravity/export-pdf', [GravityController::class, 'exportPDF'])->make()->name('gravity-export-pdf');
-        Route::get('gravity/entries', [GravityController::class, 'getApprovedEntries'])->make()->name('gravity-entries-api');
+        Route::get('gravity/export-csv', [GravityController::class, 'exportApprovedEntriesCSV'])->make()->name('gravity-export-csv');
+        Route::get('gravity/export-xlsx', [GravityController::class, 'exportApprovedEntriesXLSX'])->make()->name('gravity-export-xlsx');
+        // Route::get('gravity/export-pdf', [GravityController::class, 'exportPDF'])->make()->name('gravity-export-pdf');
+        // Route::get('gravity/entries', [GravityController::class, 'getApprovedEntries'])->make()->name('gravity-entries-api');
 
         // Single entry export routes
         Route::get('gravity/entry/export-pdf', [GravityController::class, 'exportSingleEntryPDF'])->make()->name('gravity-entry-export-pdf');

@@ -23,7 +23,7 @@ class GravityController
     /**
      * Export approved Gravity Flow entries to CSV
      */
-    public function exportCSV()
+    public function exportApprovedEntriesCSV()
     {
         try {
             $uid = $_GET['uid'];
@@ -41,7 +41,7 @@ class GravityController
             }
 
             // Get all entries without pagination
-            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000);
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000, $user);
             $entries = $all_entries_result['data'];
 
             if (empty($entries)) {
@@ -72,7 +72,7 @@ class GravityController
     /**
      * Export approved Gravity Flow entries to XLSX
      */
-    public function exportXLSX()
+    public function exportApprovedEntriesXLSX()
     {
         try {
             $uid = $_GET['uid'];
@@ -90,7 +90,7 @@ class GravityController
             }
 
             // Get all entries without pagination
-            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000);
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000, $user);
             $entries = $all_entries_result['data'];
 
             if (empty($entries)) {

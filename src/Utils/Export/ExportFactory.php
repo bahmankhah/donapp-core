@@ -17,7 +17,7 @@ class ExportFactory
     /**
      * Create a Gravity Flow approved entries exporter
      * @param string $format csv|xlsx|pdf
-     * @return CsvManager|XlsxManager|PdfManager
+     * @return GravityApprovedEntriesCsv|GravityApprovedEntriesXlsx|GravityApprovedEntriesPdf
      * @throws Exception
      */
     public static function createGravityApprovedEntriesExporter(string $format)
@@ -39,7 +39,7 @@ class ExportFactory
      * Create a Gravity Flow single entry exporter
      * @param string $format pdf|xlsx|excel
      * @param int $entry_id
-     * @return PdfManager|XlsxManager
+     * @return GravitySingleEntryPdf|GravitySingleEntryXlsx
      * @throws Exception
      */
     public static function createGravitySingleEntryExporter(string $format, int $entry_id)
