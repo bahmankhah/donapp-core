@@ -9,6 +9,8 @@ $show_filters = $attributes['show_filters'] === 'true';
 $show_pagination = $attributes['show_pagination'] === 'true';
 $mobile_responsive = $attributes['mobile_responsive'] === 'true';
 $table_class = $attributes['table_class'] ?? 'donap-gravity-flow-table';
+$show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true';
+
 ?>
 
 <div class="donap-gravityflow-inbox-wrapper" id="donap-gravityflow-inbox">
