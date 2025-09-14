@@ -369,7 +369,43 @@ $table_class = $attributes['table_class'] ?? 'donap-gravity-flow-table';
                 </div>
             </div>
         <?php endif; ?>
-        
+        <?php if ($show_export_buttons && !empty($entries)): ?>
+        <div class="inbox-export-buttons">
+            <div class="export-dropdown">
+                <button class="export-btn-main" type="button" onclick="toggleExportDropdown()">
+                    <i class="fas fa-download"></i>
+                    خروجی فایل
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="export-dropdown-content" id="exportDropdown">
+                    <a href="<?= esc_url($inbox_csv_url) ?>" 
+                       class="export-option csv" 
+                       target="_blank"
+                       onclick="handleExport('CSV')">
+                        <i class="fas fa-file-csv"></i>
+                        <span>خروجی CSV</span>
+                        <small>برای Excel و صفحات گسترده</small>
+                    </a>
+                    <a href="<?= esc_url($inbox_excel_url) ?>" 
+                       class="export-option excel" 
+                       target="_blank"
+                       onclick="handleExport('Excel')">
+                        <i class="fas fa-file-excel"></i>
+                        <span>خروجی Excel</span>
+                        <small>فایل کامل Excel با فرمت‌بندی</small>
+                    </a>
+                    <a href="<?= esc_url($inbox_pdf_url) ?>" 
+                       class="export-option pdf" 
+                       target="_blank"
+                       onclick="handleExport('PDF')">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>خروجی PDF</span>
+                        <small>فایل قابل چاپ و ارسال</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
         <?php if ($show_filters): ?>
             <div class="donap-inbox-filters">
                 <select class="donap-filter-select" id="status-filter">
@@ -450,6 +486,7 @@ $table_class = $attributes['table_class'] ?? 'donap-gravity-flow-table';
                             <div class="donap-entry-actions">
                                 <?php foreach ($entry['actions'] as $action): ?>
                                     <?php if ($action['type'] === 'view' && !empty($action['url'])): ?>
+                                        <?php appLogger(json_encode($action)) ?>
                                         <a href="<?php echo esc_url($action['url']); ?>" 
                                            class="donap-action-btn <?php echo esc_attr($action['type']); ?>"
                                            target="_blank">

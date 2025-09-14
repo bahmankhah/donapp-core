@@ -127,7 +127,7 @@ class ShortcodeServiceProvider
                 'success' => $result['success']
             ];
 
-            return view('shortcodes/gravity-flow-inbox', $view_data);
+            return view('shortcodes/gravityflow-inbox', $view_data);
         } catch (Exception $e) {
             error_log('Gravity Flow Inbox Shortcode Error: ' . $e->getMessage());
             return '<div class="donap-error-message"><i class="fas fa-exclamation-triangle"></i> خطا در بارگیری صندوق ورودی: ' . esc_html($e->getMessage()) . '</div>';
