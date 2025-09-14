@@ -960,7 +960,6 @@ class GravityService
             $current_user = $user ?? wp_get_current_user();
             appLogger(json_encode($current_user));
             $user_id = $current_user->ID ?? get_current_user_id();
-            wp_die(var_dump($user_id));
             if (!$user_id) {
                 return [
                     'success' => false,
@@ -977,7 +976,7 @@ class GravityService
 
             // Use Gravity Flow API static methods to get inbox entries
             $args = [
-                'user_id' => $user_id,
+                'user_id' =>(int) $user_id,
                 'paging' => [
                     'page_size' => $per_page,
                     'offset' => ($page - 1) * $per_page
