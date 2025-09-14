@@ -507,71 +507,8 @@ class GravityService
         return $stats;
     }
 
-    /**
-     * Get single entry data for export
-     * @param int $form_id
-     * @param int $entry_id
-     * @return array
-     */
-    public function getSingleEntryForExport($form_id, $entry_id)
-    {
-        try {
-            // Check if Gravity Forms is available
-            if (!class_exists('GFAPI')) {
-                // Return sample data for demonstration
-                return [
-                    'success' => true,
-                    'data' => [
-                        'شناسه ورودی' => $entry_id,
-                        'شناسه فرم' => $form_id,
-                        'نام' => 'علی احمدی',
-                        'ایمیل' => 'ali@example.com',
-                        'تاریخ ایجاد' => date('Y/m/d H:i'),
-                        'وضعیت' => 'تأیید شده',
-                        'توضیحات' => 'این یک ورودی نمونه است.'
-                    ]
-                ];
-            }
-
-            $entry = \GFAPI::get_entry($entry_id);
-            $form = \GFAPI::get_form($form_id);
-
-            if (is_wp_error($entry) || is_wp_error($form)) {
-                return [
-                    'success' => false,
-                    'message' => 'ورودی یا فرم یافت نشد.'
-                ];
-            }
-
-            // Format entry data
-            $formatted_data = [
-                'شناسه ورودی' => $entry['id'],
-                'شناسه فرم' => $form['id'],
-                'عنوان فرم' => $form['title'],
-                'تاریخ ایجاد' => date('Y/m/d H:i', strtotime($entry['date_created'])),
-                'وضعیت' => $this->getEntryStatus($entry)
-            ];
-
-            // Add form fields
-            foreach ($form['fields'] as $field) {
-                $field_id = $field['id'];
-                if (isset($entry[$field_id]) && !empty($entry[$field_id])) {
-                    $field_label = $field['label'] ?: 'فیلد ' . $field_id;
-                    $formatted_data[$field_label] = $this->formatFieldValue($entry[$field_id], $field['type']);
-                }
-            }
-
-            return [
-                'success' => true,
-                'data' => $formatted_data
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'خطا در بازیابی ورودی: ' . $e->getMessage()
-            ];
-        }
-    }
+    // Note: exportApprovedEntriesToCSV method has been removed.
+    // Use the new export system with ExportFactory or concrete classes instead.
 
     /**
      * Format field value based on field type
