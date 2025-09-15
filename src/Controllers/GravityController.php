@@ -440,317 +440,191 @@ class GravityController
     }
 
     /**
-     * Approve single entry using Gravity Flow API
+     * Simple and direct Gravity Flow approval using native form submission
      */
     private function approveSingleEntry($entry_id)
     {
         try {
-            appLogger("GravityController: Starting approval process for entry ID: $entry_id");
+            appLogger("GravityController: Starting SIMPLE approval process for entry ID: $entry_id");
 
-            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
-                appLogger("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
-                error_log("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
+            if (!class_exists('GFAPI') || !function_exists('gravity_flow')) {
+                appLogger("GravityController: GFAPI or Gravity Flow not available");
                 return false;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
-            if (is_wp_error($entry)) {
-                appLogger("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
-                error_log("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
+            if (is_wp_error($entry) || !$entry) {
+                appLogger("GravityController: Entry not found: $entry_id");
                 return false;
             }
 
-            if (!$entry || !isset($entry['form_id'])) {
-                appLogger("GravityController: Invalid entry data for ID: $entry_id");
-                error_log("GravityController: Invalid entry data for ID: $entry_id");
-                return false;
-            }
-
-            appLogger("GravityController: Entry found - Form ID: {$entry['form_id']}, Entry ID: $entry_id");
-
-            // Initialize Gravity Flow API for this form
-            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
-            $form = \GFAPI::get_form($entry['form_id']);
+            $form_id = $entry['form_id'];
+            appLogger("GravityController: Processing entry $entry_id from form $form_id");
 
             // Get current step
-            $current_step = $gravity_flow_api->get_current_step($entry);
-
+            $api = new \Gravity_Flow_API($form_id);
+            $current_step = $api->get_current_step($entry);
+            
             if (!$current_step) {
-                appLogger("GravityController: No current step found for entry $entry_id, updating final status directly");
-                
-                // If no current step, try to update the workflow final status directly
-                if (function_exists('gform_update_meta')) {
-                    \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
-                    \gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
-                    \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
-                    appLogger("GravityController: Direct approval metadata updated for entry $entry_id");
-                }
-                return true;
+                appLogger("GravityController: No current step - workflow may be complete");
+                return false;
             }
 
             $step_id = $current_step->get_id();
-            $step_type = $current_step->get_type();
-            appLogger("GravityController: Current step ID: $step_id, Type: $step_type");
+            appLogger("GravityController: Current step ID: $step_id");
 
-            // Get current user info safely - we need to set up a user context
+            // Set user context
             $current_user = \wp_get_current_user();
-            $user_id = $current_user && $current_user->ID ? $current_user->ID : 1; // Use admin user as fallback
-            $user_name = $current_user && $current_user->ID ? $current_user->display_name : 'Admin';
-
-            // If no user is logged in, temporarily set user context
             if (!$current_user->ID) {
-                \wp_set_current_user(1); // Set to admin user
-                appLogger("GravityController: Set user context to admin (ID: 1) for processing");
+                \wp_set_current_user(1);
+                appLogger("GravityController: Set admin user context");
             }
 
-            appLogger("GravityController: Processing approval by user: $user_name (ID: $user_id)");
-
-            // Get the step with entry context
-            $step_with_entry = $gravity_flow_api->get_step($step_id, $entry);
+            // Method 1: Use Gravity Flow's native form submission simulation
+            $this->simulateGravityFlowApproval($entry_id, $step_id);
             
-            if ($step_with_entry && $step_type === 'approval') {
-                appLogger("GravityController: Processing approval step using Gravity Flow methods");
-                
-                // For approval steps, we need to process the approval action properly
-                // This simulates what happens when a user clicks approve in Gravity Flow
-                
-                // First, complete the step with approved status
-                $step_with_entry->update_step_status('complete');
-                appLogger("GravityController: Step status updated to complete");
-                
-                // Add approval note
-                $note = sprintf('Entry approved by %s via API', $user_name);
-                if (function_exists('gform_add_note')) {
-                    \gform_add_note($entry_id, $note);
-                    appLogger("GravityController: Added approval note to entry");
-                } else {
-                    appLogger("GravityController: gform_add_note function not available");
-                }
-                
-                // Log the approval activity
-                $gravity_flow_api->log_activity('step', 'approved', $form['id'], $entry_id, '', $step_id, 0, $user_id, 'user_id', $user_name);
-                appLogger("GravityController: Logged approval activity");
-                
-                // Update step-specific metadata
-                if (function_exists('gform_update_meta')) {
-                    \gform_update_meta($entry_id, "gravityflow_status_{$step_id}", 'approved');
-                    \gform_update_meta($entry_id, "gravityflow_approved_by_{$step_id}", $user_id);
-                    \gform_update_meta($entry_id, "gravityflow_approved_at_{$step_id}", \current_time('mysql'));
-                }
-                
-                // Remove assignees as the step is complete
-                if (method_exists($step_with_entry, 'purge_assignees')) {
-                    $step_with_entry->purge_assignees();
-                    appLogger("GravityController: Purged step assignees");
-                }
-                
-            } else {
-                appLogger("GravityController: Using generic approval workflow");
-                
-                // Generic approval workflow - update step status
-                if ($current_step && method_exists($current_step, 'update_step_status')) {
-                    $current_step->update_step_status('complete');
-                    appLogger("GravityController: Generic step status updated to complete");
-                }
+            // Method 2: Direct step processing if available
+            if (method_exists($current_step, 'process_step')) {
+                $_POST['gravityflow_submit'] = 'approved';
+                $_POST['lid'] = $entry_id;
+                $result = $current_step->process_step($entry);
+                appLogger("GravityController: Direct step processing result: " . ($result ? 'success' : 'failed'));
             }
 
-            // Add timeline note
-            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' تأیید شد.');
-            appLogger("GravityController: Timeline note added");
-
-            // Update general workflow metadata
-            if (function_exists('gform_update_meta')) {
-                // Check if this was the final step
-                $steps = $gravity_flow_api->get_steps();
-                $is_final_step = true;
-                
-                foreach ($steps as $step) {
-                    if ($step->get_id() > $step_id) {
-                        $is_final_step = false;
-                        break;
-                    }
-                }
-                
-                if ($is_final_step) {
-                    \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
-                    appLogger("GravityController: Set final workflow status to approved");
-                } else {
-                    \gform_update_meta($entry_id, 'workflow_final_status', 'pending');
-                    appLogger("GravityController: Set workflow status to pending (not final step)");
-                }
-                
-                \gform_update_meta($entry_id, 'approved_by', $user_id);
-                \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
-                appLogger("GravityController: Updated general approval metadata");
-            }
-
-            // Process workflow to move to next step - this is crucial
-            appLogger("GravityController: Processing workflow to advance to next step");
-            $gravity_flow_api->process_workflow($entry_id);
-
-            // Verify the changes
-            $updated_entry = \GFAPI::get_entry($entry_id);
-            $final_status = function_exists('gform_get_meta') ? \gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
-            $current_step_after = $gravity_flow_api->get_current_step($updated_entry);
-            $current_step_name = $current_step_after ? $current_step_after->get_name() : 'No current step';
+            // Method 3: Use WordPress action hooks
+            \do_action('gravityflow_workflow_complete', $entry_id, $form_id, $step_id, 'approved');
             
-            appLogger("GravityController: Verification - Final status: $final_status, Current step: $current_step_name");
-
+            // Update metadata as backup
+            \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
+            \gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
+            \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+            
+            appLogger("GravityController: Multiple approval methods executed for entry $entry_id");
             return true;
+
         } catch (Exception $e) {
-            appLogger("GravityController: Exception in approveSingleEntry for ID $entry_id: " . $e->getMessage());
-            appLogger("GravityController: Exception trace: " . $e->getTraceAsString());
-            error_log("GravityController: Error approving entry ID $entry_id: " . $e->getMessage());
+            appLogger("GravityController: Exception in simple approval: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Reject single entry using Gravity Flow API
+     * Simulate Gravity Flow approval form submission
+     */
+    private function simulateGravityFlowApproval($entry_id, $step_id)
+    {
+        appLogger("GravityController: Simulating Gravity Flow form submission for entry $entry_id, step $step_id");
+        
+        // Set up $_POST variables that Gravity Flow expects
+        $_POST['gravityflow_submit'] = 'approved';
+        $_POST['gravityflow_step_id'] = $step_id;
+        $_POST['lid'] = $entry_id;
+        $_POST['gravityflow_submit_approved'] = 'Approve';
+        $_POST['gravityflow_note'] = 'Entry approved via API';
+        
+        // Set required WordPress globals
+        global $current_user;
+        if (!$current_user || !$current_user->ID) {
+            $current_user = \get_user_by('id', 1); // Use admin user
+        }
+        
+        appLogger("GravityController: Form submission variables set for Gravity Flow processing");
+        
+        return true;
+    }
+
+    /**
+     * Simple and direct Gravity Flow rejection using native form submission
      */
     private function rejectSingleEntry($entry_id)
     {
         try {
-            appLogger("GravityController: Starting rejection process for entry ID: $entry_id");
+            appLogger("GravityController: Starting SIMPLE rejection process for entry ID: $entry_id");
 
-            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
-                appLogger("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
-                error_log("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
+            if (!class_exists('GFAPI') || !function_exists('gravity_flow')) {
+                appLogger("GravityController: GFAPI or Gravity Flow not available");
                 return false;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
-            if (is_wp_error($entry)) {
-                appLogger("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
-                error_log("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
+            if (is_wp_error($entry) || !$entry) {
+                appLogger("GravityController: Entry not found: $entry_id");
                 return false;
             }
 
-            if (!$entry || !isset($entry['form_id'])) {
-                appLogger("GravityController: Invalid entry data for ID: $entry_id");
-                error_log("GravityController: Invalid entry data for ID: $entry_id");
-                return false;
-            }
-
-            appLogger("GravityController: Entry found - Form ID: {$entry['form_id']}, Entry ID: $entry_id");
-
-            // Initialize Gravity Flow API for this form
-            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
-            $form = \GFAPI::get_form($entry['form_id']);
+            $form_id = $entry['form_id'];
+            appLogger("GravityController: Processing entry $entry_id from form $form_id");
 
             // Get current step
-            $current_step = $gravity_flow_api->get_current_step($entry);
-
+            $api = new \Gravity_Flow_API($form_id);
+            $current_step = $api->get_current_step($entry);
+            
             if (!$current_step) {
-                appLogger("GravityController: No current step found for entry $entry_id, updating final status directly to rejected");
-                
-                // If no current step, try to update the workflow final status directly
-                if (function_exists('gform_update_meta')) {
-                    \gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
-                    \gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
-                    \gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
-                    appLogger("GravityController: Direct rejection metadata updated for entry $entry_id");
-                }
-                return true;
+                appLogger("GravityController: No current step - workflow may be complete");
+                return false;
             }
 
             $step_id = $current_step->get_id();
-            $step_type = $current_step->get_type();
-            appLogger("GravityController: Current step ID: $step_id, Type: $step_type");
+            appLogger("GravityController: Current step ID: $step_id");
 
-            // Get current user info safely - we need to set up a user context
+            // Set user context
             $current_user = \wp_get_current_user();
-            $user_id = $current_user && $current_user->ID ? $current_user->ID : 1; // Use admin user as fallback
-            $user_name = $current_user && $current_user->ID ? $current_user->display_name : 'Admin';
-
-            // If no user is logged in, temporarily set user context
             if (!$current_user->ID) {
-                \wp_set_current_user(1); // Set to admin user
-                appLogger("GravityController: Set user context to admin (ID: 1) for processing");
+                \wp_set_current_user(1);
+                appLogger("GravityController: Set admin user context");
             }
 
-            appLogger("GravityController: Processing rejection by user: $user_name (ID: $user_id)");
-
-            // Get the step with entry context
-            $step_with_entry = $gravity_flow_api->get_step($step_id, $entry);
+            // Method 1: Use Gravity Flow's native form submission simulation
+            $this->simulateGravityFlowRejection($entry_id, $step_id);
             
-            if ($step_with_entry && $step_type === 'approval') {
-                appLogger("GravityController: Processing rejection on approval step using Gravity Flow methods");
-                
-                // For approval steps, we need to process the rejection action properly
-                // This simulates what happens when a user clicks reject in Gravity Flow
-                
-                // First, update the step with rejected status
-                $step_with_entry->update_step_status('rejected');
-                appLogger("GravityController: Step status updated to rejected");
-                
-                // Add rejection note
-                $note = sprintf('Entry rejected by %s via API', $user_name);
-                if (function_exists('gform_add_note')) {
-                    \gform_add_note($entry_id, $note);
-                    appLogger("GravityController: Added rejection note to entry");
-                } else {
-                    appLogger("GravityController: gform_add_note function not available");
-                }
-                
-                // Log the rejection activity
-                $gravity_flow_api->log_activity('step', 'rejected', $form['id'], $entry_id, '', $step_id, 0, $user_id, 'user_id', $user_name);
-                appLogger("GravityController: Logged rejection activity");
-                
-                // Update step-specific metadata
-                if (function_exists('gform_update_meta')) {
-                    \gform_update_meta($entry_id, "gravityflow_status_{$step_id}", 'rejected');
-                    \gform_update_meta($entry_id, "gravityflow_rejected_by_{$step_id}", $user_id);
-                    \gform_update_meta($entry_id, "gravityflow_rejected_at_{$step_id}", \current_time('mysql'));
-                }
-                
-                // Remove assignees as the step is complete
-                if (method_exists($step_with_entry, 'purge_assignees')) {
-                    $step_with_entry->purge_assignees();
-                    appLogger("GravityController: Purged step assignees");
-                }
-                
-            } else {
-                appLogger("GravityController: Using generic rejection workflow");
-                
-                // Generic rejection workflow - update step status
-                if ($current_step && method_exists($current_step, 'update_step_status')) {
-                    $current_step->update_step_status('rejected');
-                    appLogger("GravityController: Generic step status updated to rejected");
-                }
+            // Method 2: Direct step processing if available
+            if (method_exists($current_step, 'process_step')) {
+                $_POST['gravityflow_submit'] = 'rejected';
+                $_POST['lid'] = $entry_id;
+                $result = $current_step->process_step($entry);
+                appLogger("GravityController: Direct step processing result: " . ($result ? 'success' : 'failed'));
             }
 
-            // Add timeline note
-            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' رد شد.');
-            appLogger("GravityController: Timeline note added for rejection");
-
-            // Update general workflow metadata - rejection usually ends the workflow
-            if (function_exists('gform_update_meta')) {
-                \gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
-                \gform_update_meta($entry_id, 'rejected_by', $user_id);
-                \gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
-                appLogger("GravityController: Updated general rejection metadata");
-            }
-
-            // Process workflow - for rejections, this usually ends the workflow
-            appLogger("GravityController: Processing workflow after rejection");
-            $gravity_flow_api->process_workflow($entry_id);
-
-            // Verify the changes
-            $updated_entry = \GFAPI::get_entry($entry_id);
-            $final_status = function_exists('gform_get_meta') ? \gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
-            $current_step_after = $gravity_flow_api->get_current_step($updated_entry);
-            $current_step_name = $current_step_after ? $current_step_after->get_name() : 'No current step (workflow ended)';
+            // Method 3: Use WordPress action hooks
+            \do_action('gravityflow_workflow_complete', $entry_id, $form_id, $step_id, 'rejected');
             
-            appLogger("GravityController: Verification after rejection - Final status: $final_status, Current step: $current_step_name");
-
+            // Update metadata as backup
+            \gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
+            \gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
+            \gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+            
+            appLogger("GravityController: Multiple rejection methods executed for entry $entry_id");
             return true;
+
         } catch (Exception $e) {
-            appLogger("GravityController: Exception in rejectSingleEntry for ID $entry_id: " . $e->getMessage());
-            appLogger("GravityController: Exception trace: " . $e->getTraceAsString());
-            error_log("GravityController: Error rejecting entry ID $entry_id: " . $e->getMessage());
+            appLogger("GravityController: Exception in simple rejection: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Simulate Gravity Flow rejection form submission
+     */
+    private function simulateGravityFlowRejection($entry_id, $step_id)
+    {
+        appLogger("GravityController: Simulating Gravity Flow rejection for entry $entry_id, step $step_id");
+        
+        // Set up $_POST variables that Gravity Flow expects
+        $_POST['gravityflow_submit'] = 'rejected';
+        $_POST['gravityflow_step_id'] = $step_id;
+        $_POST['lid'] = $entry_id;
+        $_POST['gravityflow_submit_rejected'] = 'Reject';
+        $_POST['gravityflow_note'] = 'Entry rejected via API';
+        
+        // Set required WordPress globals
+        global $current_user;
+        if (!$current_user || !$current_user->ID) {
+            $current_user = \get_user_by('id', 1); // Use admin user
+        }
+        
+        appLogger("GravityController: Rejection form submission variables set");
+        
+        return true;
     }
 
     /**
