@@ -317,18 +317,6 @@ class GravityController
     public function handleBulkAction()
     {
         try {
-            // Verify nonce
-            if (!\check_ajax_referer('gravity_flow_bulk_action', '_wpnonce', false)) {
-                \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
-                return;
-            }
-
-            // Check permissions
-            if (!\current_user_can('manage_options')) {
-                \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
-                return;
-            }
-
             $bulk_action = \sanitize_text_field($_POST['bulk_action'] ?? '');
             $entry_ids = array_map('intval', $_POST['entry_ids'] ?? []);
 
@@ -435,10 +423,10 @@ class GravityController
 
         // Initialize Gravity Flow API for this form
         $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
-        
+
         // Get current step
         $current_step = $gravity_flow_api->get_current_step($entry);
-        
+
         if (!$current_step) {
             // If no current step, try to update the workflow final status directly
             if (function_exists('gform_update_meta')) {
@@ -482,10 +470,10 @@ class GravityController
 
         // Initialize Gravity Flow API for this form
         $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
-        
+
         // Get current step
         $current_step = $gravity_flow_api->get_current_step($entry);
-        
+
         if (!$current_step) {
             // If no current step, try to update the workflow final status directly
             if (function_exists('gform_update_meta')) {
@@ -541,7 +529,7 @@ class GravityController
 
         // Initialize Gravity Flow API for this form
         $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
-        
+
         // Add timeline note about export
         $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . wp_get_current_user()->display_name . ' صادر شد.');
         $gravity_flow_api->log_activity('entry', 'exported', $entry['form_id'], $entry_id);
@@ -594,7 +582,7 @@ class GravityController
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
-            
+
             // Restart the workflow
             $gravity_flow_api->restart_workflow($entry);
 
@@ -648,7 +636,7 @@ class GravityController
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
-            
+
             // Cancel the workflow
             $result = $gravity_flow_api->cancel_workflow($entry);
 
@@ -707,7 +695,7 @@ class GravityController
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
-            
+
             // Get the target step to validate it exists
             $target_step = $gravity_flow_api->get_step($step_id, $entry);
             if (!$target_step) {
@@ -806,7 +794,7 @@ class GravityController
 
             // Get all inbox entries without pagination
             $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
-            
+
             if (!$result['success']) {
                 http_response_code(500);
                 wp_die('خطا در دریافت داده‌ها: ' . $result['message'], 'خطای سرور', ['response' => 500]);
@@ -862,7 +850,7 @@ class GravityController
 
             // Get all inbox entries without pagination
             $result = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
-            
+
             if (!$result['success']) {
                 http_response_code(500);
                 wp_die('خطا در دریافت داده‌ها: ' . $result['message'], 'خطای سرور', ['response' => 500]);
@@ -922,7 +910,7 @@ class GravityController
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
-            
+
             // Get all steps for this form
             $steps = $gravity_flow_api->get_steps();
             $formatted_steps = [];
@@ -1003,10 +991,10 @@ class GravityController
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
-            
+
             // Get timeline
             $timeline = $gravity_flow_api->get_timeline($entry);
-            
+
             // Get current status
             $current_status = $gravity_flow_api->get_status($entry);
             $current_step = $gravity_flow_api->get_current_step($entry);

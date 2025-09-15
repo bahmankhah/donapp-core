@@ -774,7 +774,6 @@ document.addEventListener('DOMContentLoaded', function() {
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال انجام ' + actionLabel + '...';
 
         const formData = new URLSearchParams();
-        formData.append('_wpnonce', bulkActionNonce);
         formData.append('bulk_action', action);
         formData.append('entry_ids[]', entryId);
 
