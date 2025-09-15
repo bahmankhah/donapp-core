@@ -220,6 +220,31 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
             box-shadow: none;
         }
 
+        /* Bulk Actions Styles */
+        .donap-bulk-actions-form {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .donap-bulk-actions-form select {
+            min-width: 200px;
+        }
+
+        #select-all {
+            cursor: pointer;
+        }
+
+        .entry-checkbox {
+            cursor: pointer;
+            transform: scale(1.2);
+        }
+
+        #selected-count {
+            font-weight: 500;
+        }
+
         .donap-pagination {
             display: flex;
             justify-content: center;
@@ -398,6 +423,17 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
                 min-width: 80px;
             }
             
+            .donap-bulk-actions-form > div {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+            }
+            
+            .donap-bulk-actions-form select,
+            .donap-bulk-actions-form button {
+                width: 100%;
+            }
+            
             .donap-gravity-flow-table {
                 font-size: 12px;
             }
@@ -440,6 +476,7 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
                 border-radius: 8px;
                 padding: 15px;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                position: relative;
             }
             
             .donap-gravity-flow-table td {
@@ -449,10 +486,23 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
                 text-align: right;
             }
             
-            .donap-gravity-flow-table td:before {
+            .donap-gravity-flow-table td:first-child {
+                position: absolute;
+                top: 15px;
+                left: 15px;
+            }
+            
+            .donap-gravity-flow-table td:not(:first-child):before {
                 content: attr(data-label) ": ";
                 font-weight: bold;
                 color: #667eea;
+            }
+            
+            .donap-bulk-actions-form {
+                position: sticky;
+                top: 10px;
+                z-index: 100;
+                margin-bottom: 20px;
             }
         }
     </style>
@@ -533,9 +583,30 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
     
     <!-- Main Table -->
     <?php if (!empty($entries)): ?>
+        <!-- Bulk Actions Form -->
+        <form id="bulk-action-form" class="donap-bulk-actions-form" style="margin-bottom: 15px;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <select id="bulk-action-select" name="bulk_action" style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px;">
+                    <option value="">انتخاب عملیات گروهی</option>
+                    <option value="approve">تأیید</option>
+                    <option value="reject">رد</option>
+                    <option value="delete">حذف</option>
+                    <option value="export">صادرات</option>
+                </select>
+                <button type="button" id="bulk-action-apply" class="donap-action-btn" style="background: #667eea; padding: 8px 16px; font-size: 14px;" disabled>
+                    <i class="fas fa-check"></i>
+                    اعمال
+                </button>
+                <span id="selected-count" style="color: #64748b; font-size: 14px;">0 مورد انتخاب شده</span>
+            </div>
+        </form>
+        
         <table class="<?php echo esc_attr($table_class); ?>">
             <thead>
                 <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="select-all" title="انتخاب همه">
+                    </th>
                     <th>فرم</th>
                     <th>مرحله</th>
                     <th>ارسال‌کننده</th>
@@ -550,6 +621,9 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
             <tbody>
                 <?php foreach ($entries as $entry): ?>
                     <tr>
+                        <td data-label="انتخاب">
+                            <input type="checkbox" class="entry-checkbox" name="entry_ids[]" value="<?php echo intval($entry['id']); ?>">
+                        </td>
                         <td data-label="فرم">
                             <strong><?php echo esc_html($entry['form_title']); ?></strong>
                         </td>
@@ -698,7 +772,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const priorityFilter = document.getElementById('priority-filter');
 
     const bulkActionUrl = <?php echo wp_json_encode(esc_url_raw($bulk_action_url ?? '')); ?>;
-    const bulkActionNonce = <?php echo wp_json_encode($nonce ?? ''); ?>;
 
     if (statusFilter) {
         statusFilter.addEventListener('change', function() {
@@ -732,6 +805,138 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.search = params.toString();
     }
 
+    // Bulk Actions Functionality
+    const selectAllCheckbox = document.getElementById('select-all');
+    const entryCheckboxes = document.querySelectorAll('.entry-checkbox');
+    const bulkActionSelect = document.getElementById('bulk-action-select');
+    const bulkActionApply = document.getElementById('bulk-action-apply');
+    const selectedCount = document.getElementById('selected-count');
+
+    // Select all functionality
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            entryCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActionState();
+        });
+    }
+
+    // Individual checkbox functionality
+    entryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkActionState();
+            
+            // Update select-all state
+            if (selectAllCheckbox) {
+                const checkedCount = document.querySelectorAll('.entry-checkbox:checked').length;
+                selectAllCheckbox.checked = checkedCount === entryCheckboxes.length;
+                selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < entryCheckboxes.length;
+            }
+        });
+    });
+
+    // Bulk action apply button
+    if (bulkActionApply) {
+        bulkActionApply.addEventListener('click', function() {
+            const selectedEntries = Array.from(document.querySelectorAll('.entry-checkbox:checked')).map(cb => cb.value);
+            const action = bulkActionSelect?.value;
+
+            if (!action || selectedEntries.length === 0) {
+                alert('لطفاً ابتدا عملیات و موارد مورد نظر را انتخاب کنید.');
+                return;
+            }
+
+            processBulkAction(action, selectedEntries);
+        });
+    }
+
+    function updateBulkActionState() {
+        const checkedCount = document.querySelectorAll('.entry-checkbox:checked').length;
+        
+        if (selectedCount) {
+            selectedCount.textContent = checkedCount + ' مورد انتخاب شده';
+        }
+        
+        if (bulkActionApply) {
+            bulkActionApply.disabled = checkedCount === 0 || !bulkActionSelect?.value;
+        }
+    }
+
+    // Update bulk action button state when action is selected
+    if (bulkActionSelect) {
+        bulkActionSelect.addEventListener('change', updateBulkActionState);
+    }
+
+    function processBulkAction(action, entryIds) {
+        if (!bulkActionUrl) {
+            alert('آدرس سرویس عملیات در دسترس نیست.');
+            return;
+        }
+
+        const actionNames = {
+            'approve': 'تأیید',
+            'reject': 'رد', 
+            'delete': 'حذف',
+            'export': 'صادرات'
+        };
+
+        const actionName = actionNames[action] || 'پردازش';
+        
+        if (!confirm(`آیا مطمئن هستید که می‌خواهید "${actionName}" را برای ${entryIds.length} مورد انجام دهید؟`)) {
+            return;
+        }
+
+        if (bulkActionApply.disabled) {
+            return;
+        }
+
+        bulkActionApply.disabled = true;
+        bulkActionApply.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال انجام...';
+
+        const formData = new URLSearchParams();
+        formData.append('bulk_action', action);
+        entryIds.forEach(entryId => {
+            formData.append('entry_ids[]', entryId);
+        });
+
+        fetch(bulkActionUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: formData.toString(),
+            credentials: 'same-origin'
+        })
+        .then(async response => {
+            let data = null;
+
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.warn('Failed to parse JSON response:', jsonError);
+            }
+
+            if (response.ok && data && data.success !== false) {
+                const message = (data.data && data.data.message) ? data.data.message : `عملیات ${actionName} با موفقیت انجام شد.`;
+                alert(message);
+                window.location.reload();
+                return;
+            }
+
+            const errorMessage = (data && data.data && data.data.message) || (data && data.message) || `خطا در انجام عملیات ${actionName}.`;
+            throw new Error(errorMessage);
+        })
+        .catch(error => {
+            console.error('Bulk action failed:', error);
+            alert(error.message || 'خطا در برقراری ارتباط با سرور.');
+            
+            // Restore button state
+            bulkActionApply.disabled = false;
+            bulkActionApply.innerHTML = '<i class="fas fa-check"></i> اعمال';
+        });
+    }
+
     function restoreActionButton(button) {
         if (!button) {
             return;
@@ -751,11 +956,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!bulkActionNonce) {
-            alert('نشانه امنیتی عملیات یافت نشد. لطفاً صفحه را دوباره بارگذاری کنید.');
-            return;
-        }
-
         if (!entryId || !action) {
             alert('اطلاعات عملیات معتبر نیست.');
             return;
@@ -771,7 +971,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         button.dataset.originalHtml = button.innerHTML;
         button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال انجام ' + actionLabel + '...';
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال انجام...';
 
         const formData = new URLSearchParams();
         formData.append('bulk_action', action);
@@ -785,30 +985,30 @@ document.addEventListener('DOMContentLoaded', function() {
             body: formData.toString(),
             credentials: 'same-origin'
         })
-            .then(async response => {
-                let data = null;
+        .then(async response => {
+            let data = null;
 
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    // Ignore JSON parsing errors and handle below
-                }
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.warn('Failed to parse JSON response:', jsonError);
+            }
 
-                if (response.ok && data && data.success !== false) {
-                    const message = (data.data && data.data.message) ? data.data.message : 'عملیات با موفقیت انجام شد.';
-                    alert(message);
-                    window.location.reload();
-                    return;
-                }
+            if (response.ok && data && data.success !== false) {
+                const message = (data.data && data.data.message) ? data.data.message : 'عملیات با موفقیت انجام شد.';
+                alert(message);
+                window.location.reload();
+                return;
+            }
 
-                const errorMessage = (data && data.data && data.data.message) || (data && data.message) || 'خطا در انجام عملیات.';
-                throw new Error(errorMessage);
-            })
-            .catch(error => {
-                console.error('Gravity Flow inbox action failed', error);
-                alert(error.message || 'خطا در برقراری ارتباط با سرور.');
-                restoreActionButton(button);
-            });
+            const errorMessage = (data && data.data && data.data.message) || (data && data.message) || 'خطا در انجام عملیات.';
+            throw new Error(errorMessage);
+        })
+        .catch(error => {
+            console.error('Individual action failed:', error);
+            alert(error.message || 'خطا در برقراری ارتباط با سرور.');
+            restoreActionButton(button);
+        });
     }
 
     // Action buttons

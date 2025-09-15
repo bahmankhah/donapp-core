@@ -317,10 +317,27 @@ class GravityController
     public function handleBulkAction()
     {
         try {
-            $bulk_action = \sanitize_text_field($_POST['bulk_action'] ?? '');
-            $entry_ids = array_map('intval', $_POST['entry_ids'] ?? []);
+            // Handle both POST and GET requests for flexibility
+            $request_method = $_SERVER['REQUEST_METHOD'] ?? 'POST';
+            $request_data = $request_method === 'GET' ? $_GET : $_POST;
+            
+            error_log("GravityController: Bulk action request received via $request_method");
+            error_log("GravityController: Request data: " . print_r($request_data, true));
+            
+            $bulk_action = \sanitize_text_field($request_data['bulk_action'] ?? '');
+            $entry_ids = [];
+            
+            // Handle different input formats
+            if (isset($request_data['entry_ids']) && is_array($request_data['entry_ids'])) {
+                $entry_ids = array_map('intval', $request_data['entry_ids']);
+            } elseif (isset($request_data['entry_id'])) {
+                $entry_ids = [intval($request_data['entry_id'])];
+            }
+
+            error_log("GravityController: Parsed bulk_action: '$bulk_action', entry_ids: " . implode(', ', $entry_ids));
 
             if (empty($bulk_action) || empty($entry_ids)) {
+                error_log("GravityController: Invalid parameters - bulk_action: '$bulk_action', entry_ids count: " . count($entry_ids));
                 \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
                 return;
             }
@@ -379,8 +396,11 @@ class GravityController
 
             $action_name = $action_names[$bulk_action] ?? 'پردازش';
 
+            error_log("GravityController: Bulk action completed - success: $success_count, errors: $error_count");
+
             if ($error_count === 0) {
                 $message = sprintf('%s ورودی با موفقیت %s شدند', $success_count, $action_name);
+                error_log("GravityController: Sending success response: $message");
                 \wp_send_json_success([
                     'message' => $message,
                     'results' => $results,
@@ -394,6 +414,7 @@ class GravityController
                     $action_name,
                     $error_count
                 );
+                error_log("GravityController: Sending partial success response: $message");
                 \wp_send_json_error([
                     'message' => $message,
                     'results' => $results,
@@ -412,46 +433,62 @@ class GravityController
      */
     private function approveSingleEntry($entry_id)
     {
-        if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
-            return false;
-        }
+        try {
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                error_log("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
+                return false;
+            }
 
-        $entry = \GFAPI::get_entry($entry_id);
-        if (is_wp_error($entry)) {
-            return false;
-        }
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry)) {
+                error_log("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
+                return false;
+            }
 
-        // Initialize Gravity Flow API for this form
-        $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+            if (!$entry || !isset($entry['form_id'])) {
+                error_log("GravityController: Invalid entry data for ID: $entry_id");
+                return false;
+            }
 
-        // Get current step
-        $current_step = $gravity_flow_api->get_current_step($entry);
+            // Initialize Gravity Flow API for this form
+            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
 
-        if (!$current_step) {
-            // If no current step, try to update the workflow final status directly
+            // Get current step
+            $current_step = $gravity_flow_api->get_current_step($entry);
+
+            if (!$current_step) {
+                // If no current step, try to update the workflow final status directly
+                if (function_exists('gform_update_meta')) {
+                    gform_update_meta($entry_id, 'workflow_final_status', 'approved');
+                    gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
+                    gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+                }
+                return true;
+            }
+
+            // Get current user info safely
+            $current_user = \wp_get_current_user();
+            $user_name = $current_user && $current_user->ID ? $current_user->display_name : 'سیستم';
+
+            // If current step supports approval, we would typically call step-specific approval method
+            // For now, we'll use the API to add a timeline note and update meta
+            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' تأیید شد.');
+            $gravity_flow_api->log_activity('step', 'approved', $entry['form_id'], $entry_id, '', $current_step->get_id());
+
             if (function_exists('gform_update_meta')) {
                 gform_update_meta($entry_id, 'workflow_final_status', 'approved');
                 gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
                 gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
             }
+
+            // Process workflow to move to next step
+            $gravity_flow_api->process_workflow($entry_id);
+
             return true;
+        } catch (Exception $e) {
+            error_log("GravityController: Error approving entry ID $entry_id: " . $e->getMessage());
+            return false;
         }
-
-        // If current step supports approval, we would typically call step-specific approval method
-        // For now, we'll use the API to add a timeline note and update meta
-        $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . wp_get_current_user()->display_name . ' تأیید شد.');
-        $gravity_flow_api->log_activity('step', 'approved', $entry['form_id'], $entry_id, '', $current_step->get_id());
-
-        if (function_exists('gform_update_meta')) {
-            gform_update_meta($entry_id, 'workflow_final_status', 'approved');
-            gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
-            gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
-        }
-
-        // Process workflow to move to next step
-        $gravity_flow_api->process_workflow($entry_id);
-
-        return true;
     }
 
     /**
@@ -459,45 +496,61 @@ class GravityController
      */
     private function rejectSingleEntry($entry_id)
     {
-        if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
-            return false;
-        }
+        try {
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                error_log("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
+                return false;
+            }
 
-        $entry = \GFAPI::get_entry($entry_id);
-        if (is_wp_error($entry)) {
-            return false;
-        }
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry)) {
+                error_log("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
+                return false;
+            }
 
-        // Initialize Gravity Flow API for this form
-        $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+            if (!$entry || !isset($entry['form_id'])) {
+                error_log("GravityController: Invalid entry data for ID: $entry_id");
+                return false;
+            }
 
-        // Get current step
-        $current_step = $gravity_flow_api->get_current_step($entry);
+            // Initialize Gravity Flow API for this form
+            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
 
-        if (!$current_step) {
-            // If no current step, try to update the workflow final status directly
+            // Get current step
+            $current_step = $gravity_flow_api->get_current_step($entry);
+
+            if (!$current_step) {
+                // If no current step, try to update the workflow final status directly
+                if (function_exists('gform_update_meta')) {
+                    gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
+                    gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
+                    gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+                }
+                return true;
+            }
+
+            // Get current user info safely
+            $current_user = \wp_get_current_user();
+            $user_name = $current_user && $current_user->ID ? $current_user->display_name : 'سیستم';
+
+            // Use API to add timeline note and log activity
+            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' رد شد.');
+            $gravity_flow_api->log_activity('step', 'rejected', $entry['form_id'], $entry_id, '', $current_step->get_id());
+
             if (function_exists('gform_update_meta')) {
                 gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
                 gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
                 gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
             }
+
+            // Process workflow to handle rejection
+            $gravity_flow_api->process_workflow($entry_id);
+
             return true;
+        } catch (Exception $e) {
+            error_log("GravityController: Error rejecting entry ID $entry_id: " . $e->getMessage());
+            return false;
         }
-
-        // Use API to add timeline note and log activity
-        $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . wp_get_current_user()->display_name . ' رد شد.');
-        $gravity_flow_api->log_activity('step', 'rejected', $entry['form_id'], $entry_id, '', $current_step->get_id());
-
-        if (function_exists('gform_update_meta')) {
-            gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
-            gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
-            gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
-        }
-
-        // Process workflow to handle rejection
-        $gravity_flow_api->process_workflow($entry_id);
-
-        return true;
     }
 
     /**
@@ -505,12 +558,23 @@ class GravityController
      */
     private function deleteSingleEntry($entry_id)
     {
-        if (!class_exists('GFAPI')) {
+        try {
+            if (!class_exists('GFAPI')) {
+                error_log("GravityController: GFAPI not available for deleting entry ID: $entry_id");
+                return false;
+            }
+
+            $result = \GFAPI::delete_entry($entry_id);
+            if (is_wp_error($result)) {
+                error_log("GravityController: Failed to delete entry ID: $entry_id - " . $result->get_error_message());
+                return false;
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log("GravityController: Error deleting entry ID $entry_id: " . $e->getMessage());
             return false;
         }
-
-        $result = \GFAPI::delete_entry($entry_id);
-        return !is_wp_error($result);
     }
 
     /**
@@ -518,29 +582,45 @@ class GravityController
      */
     private function exportSingleEntry($entry_id)
     {
-        if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+        try {
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                error_log("GravityController: GFAPI or Gravity_Flow_API not available for exporting entry ID: $entry_id");
+                return false;
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry)) {
+                error_log("GravityController: Failed to get entry ID for export: $entry_id - " . $entry->get_error_message());
+                return false;
+            }
+
+            if (!$entry || !isset($entry['form_id'])) {
+                error_log("GravityController: Invalid entry data for export ID: $entry_id");
+                return false;
+            }
+
+            // Initialize Gravity Flow API for this form
+            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+
+            // Get current user info safely
+            $current_user = \wp_get_current_user();
+            $user_name = $current_user && $current_user->ID ? $current_user->display_name : 'سیستم';
+
+            // Add timeline note about export
+            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' صادر شد.');
+            $gravity_flow_api->log_activity('entry', 'exported', $entry['form_id'], $entry_id);
+
+            // Mark as exported
+            if (function_exists('gform_update_meta')) {
+                gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
+                gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log("GravityController: Error exporting entry ID $entry_id: " . $e->getMessage());
             return false;
         }
-
-        $entry = \GFAPI::get_entry($entry_id);
-        if (is_wp_error($entry)) {
-            return false;
-        }
-
-        // Initialize Gravity Flow API for this form
-        $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
-
-        // Add timeline note about export
-        $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . wp_get_current_user()->display_name . ' صادر شد.');
-        $gravity_flow_api->log_activity('entry', 'exported', $entry['form_id'], $entry_id);
-
-        // Mark as exported
-        if (function_exists('gform_update_meta')) {
-            gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
-            gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
-        }
-
-        return true;
     }
 
     /**

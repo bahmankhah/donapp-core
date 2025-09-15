@@ -197,7 +197,6 @@ class ShortcodeServiceProvider
                 'stats' => $result['stats'] ?? [],
                 'attributes' => $atts,
                 'current_page' => $current_page,
-                'nonce' => \wp_create_nonce('gravity_flow_bulk_action'),
                 'success' => $result['success'],
                 'bulk_action_url' => \rest_url('dnp/v1/gravity/bulk-action'),
                 'inbox_csv_url' => \rest_url('dnp/v1/gravity/inbox/export-csv?uid=' . $current_user_id),
