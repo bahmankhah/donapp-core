@@ -49,6 +49,9 @@ class RouteServiceProvider
 
         // Enhanced Gravity Flow inbox bulk actions
         Route::post('gravity/bulk-action', [GravityController::class, 'handleBulkAction'])->make()->name('gravity-bulk-action');
+
+        // Debug route for workflow status
+        Route::get('gravity/debug-workflow', [GravityController::class, 'debugWorkflowStatus'])->make()->name('gravity-debug-workflow');
         Route::get('gravity/bulk-action', [GravityController::class, 'handleBulkAction'])->make()->name('gravity-bulk-action-get');
 
         // New Gravity Flow API routes

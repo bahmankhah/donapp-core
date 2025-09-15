@@ -16,6 +16,15 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
 <div class="donap-gravityflow-inbox-wrapper" id="donap-gravityflow-inbox">
     <!-- Styles -->
     <style>
+
+        <?php if(isset($_GET['page']) && isset($_GET['view']) && isset($_GET['id']) && isset($_GET['lid'])): ?>
+            #donap-gravityflow-inbox{
+                display: none;
+            }
+        <?php endif; ?>
+        .gravityflow_wrap{
+            display:none;
+        }
         .donap-gravityflow-inbox-wrapper {
             font-family: 'Vazir', sans-serif;
             direction: rtl;

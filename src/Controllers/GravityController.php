@@ -347,41 +347,52 @@ class GravityController
             $error_count = 0;
 
             foreach ($entry_ids as $entry_id) {
+                appLogger("GravityController: Processing bulk action '$bulk_action' for entry ID: $entry_id");
+                
                 try {
                     switch ($bulk_action) {
                         case 'approve':
                             $result = $this->approveSingleEntry($entry_id);
+                            appLogger("GravityController: Approve result for entry $entry_id: " . ($result ? 'success' : 'failed'));
                             break;
 
                         case 'reject':
                             $result = $this->rejectSingleEntry($entry_id);
+                            appLogger("GravityController: Reject result for entry $entry_id: " . ($result ? 'success' : 'failed'));
                             break;
 
                         case 'delete':
                             $result = $this->deleteSingleEntry($entry_id);
+                            appLogger("GravityController: Delete result for entry $entry_id: " . ($result ? 'success' : 'failed'));
                             break;
 
                         case 'export':
                             $result = $this->exportSingleEntry($entry_id);
+                            appLogger("GravityController: Export result for entry $entry_id: " . ($result ? 'success' : 'failed'));
                             break;
 
                         default:
+                            appLogger("GravityController: Unknown bulk action: $bulk_action");
                             throw new Exception('عملیات نامشخص');
                     }
 
                     if ($result) {
                         $success_count++;
                         $results[] = ['entry_id' => $entry_id, 'status' => 'success'];
+                        appLogger("GravityController: Successfully processed entry $entry_id");
                     } else {
                         $error_count++;
                         $results[] = ['entry_id' => $entry_id, 'status' => 'error', 'message' => 'خطا در انجام عملیات'];
+                        appLogger("GravityController: Failed to process entry $entry_id");
                     }
                 } catch (Exception $e) {
                     $error_count++;
+                    $error_message = $e->getMessage();
+                    appLogger("GravityController: Exception for entry $entry_id: $error_message");
                     $results[] = [
                         'entry_id' => $entry_id,
                         'status' => 'error',
-                        'message' => $e->getMessage()
+                        'message' => $error_message
                     ];
                 }
             }
@@ -434,21 +445,28 @@ class GravityController
     private function approveSingleEntry($entry_id)
     {
         try {
+            appLogger("GravityController: Starting approval process for entry ID: $entry_id");
+
             if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                appLogger("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
                 error_log("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
                 return false;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
             if (is_wp_error($entry)) {
+                appLogger("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
                 error_log("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
                 return false;
             }
 
             if (!$entry || !isset($entry['form_id'])) {
+                appLogger("GravityController: Invalid entry data for ID: $entry_id");
                 error_log("GravityController: Invalid entry data for ID: $entry_id");
                 return false;
             }
+
+            appLogger("GravityController: Entry found - Form ID: {$entry['form_id']}, Entry ID: $entry_id");
 
             // Initialize Gravity Flow API for this form
             $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
@@ -457,35 +475,93 @@ class GravityController
             $current_step = $gravity_flow_api->get_current_step($entry);
 
             if (!$current_step) {
+                appLogger("GravityController: No current step found for entry $entry_id, updating final status directly");
+                
                 // If no current step, try to update the workflow final status directly
                 if (function_exists('gform_update_meta')) {
                     gform_update_meta($entry_id, 'workflow_final_status', 'approved');
                     gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
                     gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+                    appLogger("GravityController: Direct approval metadata updated for entry $entry_id");
                 }
                 return true;
             }
 
+            $step_id = $current_step->get_id();
+            $step_type = $current_step->get_type();
+            appLogger("GravityController: Current step ID: $step_id, Type: $step_type");
+
             // Get current user info safely
             $current_user = \wp_get_current_user();
+            $user_id = $current_user && $current_user->ID ? $current_user->ID : 0;
             $user_name = $current_user && $current_user->ID ? $current_user->display_name : 'سیستم';
 
-            // If current step supports approval, we would typically call step-specific approval method
-            // For now, we'll use the API to add a timeline note and update meta
-            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' تأیید شد.');
-            $gravity_flow_api->log_activity('step', 'approved', $entry['form_id'], $entry_id, '', $current_step->get_id());
+            appLogger("GravityController: Processing approval by user: $user_name (ID: $user_id)");
 
+            // Check if this is an approval step and we can approve it
+            if (method_exists($current_step, 'can_approve') && !$current_step->can_approve()) {
+                appLogger("GravityController: Current step cannot be approved by current user");
+                return false;
+            }
+
+            // Use step-specific approval if available
+            if (method_exists($current_step, 'process_action') || method_exists($current_step, 'approve')) {
+                appLogger("GravityController: Using step-specific approval method");
+                
+                // Try to approve using step's approve method if it exists
+                if (method_exists($current_step, 'approve')) {
+                    $result = $current_step->approve();
+                    appLogger("GravityController: Step approve method result: " . ($result ? 'success' : 'failed'));
+                } elseif (method_exists($current_step, 'process_action')) {
+                    // For approval steps, process the approval action
+                    $action = 'approved';
+                    $result = $current_step->process_action($action);
+                    appLogger("GravityController: Step process_action result: " . ($result ? 'success' : 'failed'));
+                }
+
+                // Update step status to complete/approved
+                if (method_exists($current_step, 'update_step_status')) {
+                    $current_step->update_step_status('complete');
+                    appLogger("GravityController: Step status updated to complete");
+                }
+            } else {
+                appLogger("GravityController: Using generic approval workflow");
+                
+                // Generic approval workflow - update step status
+                if (method_exists($current_step, 'update_step_status')) {
+                    $current_step->update_step_status('complete');
+                    appLogger("GravityController: Generic step status updated to complete");
+                }
+            }
+
+            // Add timeline note and log activity
+            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' تأیید شد.');
+            $gravity_flow_api->log_activity('step', 'approved', $entry['form_id'], $entry_id, '', $step_id);
+            appLogger("GravityController: Timeline note and activity logged");
+
+            // Update metadata
             if (function_exists('gform_update_meta')) {
                 gform_update_meta($entry_id, 'workflow_final_status', 'approved');
-                gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
+                gform_update_meta($entry_id, 'approved_by', $user_id);
                 gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+                
+                // Also update step-specific meta
+                gform_update_meta($entry_id, 'workflow_step_status_' . $step_id, 'complete');
+                appLogger("GravityController: All metadata updated for entry $entry_id");
             }
 
             // Process workflow to move to next step
             $gravity_flow_api->process_workflow($entry_id);
+            appLogger("GravityController: Workflow processed for entry $entry_id");
+
+            // Verify the changes
+            $updated_entry = \GFAPI::get_entry($entry_id);
+            $final_status = function_exists('gform_get_meta') ? gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
+            appLogger("GravityController: Final workflow status after approval: $final_status");
 
             return true;
         } catch (Exception $e) {
+            appLogger("GravityController: Exception in approveSingleEntry for ID $entry_id: " . $e->getMessage());
             error_log("GravityController: Error approving entry ID $entry_id: " . $e->getMessage());
             return false;
         }
@@ -497,21 +573,28 @@ class GravityController
     private function rejectSingleEntry($entry_id)
     {
         try {
+            appLogger("GravityController: Starting rejection process for entry ID: $entry_id");
+
             if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                appLogger("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
                 error_log("GravityController: GFAPI or Gravity_Flow_API not available for entry ID: $entry_id");
                 return false;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
             if (is_wp_error($entry)) {
+                appLogger("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
                 error_log("GravityController: Failed to get entry ID: $entry_id - " . $entry->get_error_message());
                 return false;
             }
 
             if (!$entry || !isset($entry['form_id'])) {
+                appLogger("GravityController: Invalid entry data for ID: $entry_id");
                 error_log("GravityController: Invalid entry data for ID: $entry_id");
                 return false;
             }
+
+            appLogger("GravityController: Entry found - Form ID: {$entry['form_id']}, Entry ID: $entry_id");
 
             // Initialize Gravity Flow API for this form
             $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
@@ -520,34 +603,93 @@ class GravityController
             $current_step = $gravity_flow_api->get_current_step($entry);
 
             if (!$current_step) {
+                appLogger("GravityController: No current step found for entry $entry_id, updating final status directly to rejected");
+                
                 // If no current step, try to update the workflow final status directly
                 if (function_exists('gform_update_meta')) {
                     gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
                     gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
                     gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+                    appLogger("GravityController: Direct rejection metadata updated for entry $entry_id");
                 }
                 return true;
             }
 
+            $step_id = $current_step->get_id();
+            $step_type = $current_step->get_type();
+            appLogger("GravityController: Current step ID: $step_id, Type: $step_type");
+
             // Get current user info safely
             $current_user = \wp_get_current_user();
+            $user_id = $current_user && $current_user->ID ? $current_user->ID : 0;
             $user_name = $current_user && $current_user->ID ? $current_user->display_name : 'سیستم';
 
-            // Use API to add timeline note and log activity
-            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' رد شد.');
-            $gravity_flow_api->log_activity('step', 'rejected', $entry['form_id'], $entry_id, '', $current_step->get_id());
+            appLogger("GravityController: Processing rejection by user: $user_name (ID: $user_id)");
 
+            // Check if this is an approval step and we can reject it
+            if (method_exists($current_step, 'can_reject') && !$current_step->can_reject()) {
+                appLogger("GravityController: Current step cannot be rejected by current user");
+                return false;
+            }
+
+            // Use step-specific rejection if available
+            if (method_exists($current_step, 'process_action') || method_exists($current_step, 'reject')) {
+                appLogger("GravityController: Using step-specific rejection method");
+                
+                // Try to reject using step's reject method if it exists
+                if (method_exists($current_step, 'reject')) {
+                    $result = $current_step->reject();
+                    appLogger("GravityController: Step reject method result: " . ($result ? 'success' : 'failed'));
+                } elseif (method_exists($current_step, 'process_action')) {
+                    // For approval steps, process the rejection action
+                    $action = 'rejected';
+                    $result = $current_step->process_action($action);
+                    appLogger("GravityController: Step process_action result: " . ($result ? 'success' : 'failed'));
+                }
+
+                // Update step status to rejected
+                if (method_exists($current_step, 'update_step_status')) {
+                    $current_step->update_step_status('rejected');
+                    appLogger("GravityController: Step status updated to rejected");
+                }
+            } else {
+                appLogger("GravityController: Using generic rejection workflow");
+                
+                // Generic rejection workflow - update step status
+                if (method_exists($current_step, 'update_step_status')) {
+                    $current_step->update_step_status('rejected');
+                    appLogger("GravityController: Generic step status updated to rejected");
+                }
+            }
+
+            // Add timeline note and log activity
+            $gravity_flow_api->add_timeline_note($entry_id, 'ورودی توسط ' . $user_name . ' رد شد.');
+            $gravity_flow_api->log_activity('step', 'rejected', $entry['form_id'], $entry_id, '', $step_id);
+            appLogger("GravityController: Timeline note and activity logged for rejection");
+
+            // Update metadata
             if (function_exists('gform_update_meta')) {
                 gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
-                gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
+                gform_update_meta($entry_id, 'rejected_by', $user_id);
                 gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+                
+                // Also update step-specific meta
+                gform_update_meta($entry_id, 'workflow_step_status_' . $step_id, 'rejected');
+                appLogger("GravityController: All rejection metadata updated for entry $entry_id");
             }
 
             // Process workflow to handle rejection
             $gravity_flow_api->process_workflow($entry_id);
+            appLogger("GravityController: Workflow processed for entry $entry_id after rejection");
+
+            // Verify the changes
+            $updated_entry = \GFAPI::get_entry($entry_id);
+            $final_status = function_exists('gform_get_meta') ? gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
+            appLogger("GravityController: Final workflow status after rejection: $final_status");
 
             return true;
         } catch (Exception $e) {
+            appLogger("GravityController: Exception in rejectSingleEntry for ID $entry_id: " . $e->getMessage());
             error_log("GravityController: Error rejecting entry ID $entry_id: " . $e->getMessage());
             return false;
         }
@@ -1093,6 +1235,69 @@ class GravityController
         } catch (Exception $e) {
             error_log('Get Entry Timeline Error: ' . $e->getMessage());
             \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
+        }
+    }
+
+    /**
+     * Debug workflow status for entry (can be called via API for troubleshooting)
+     */
+    public function debugWorkflowStatus()
+    {
+        try {
+            $entry_id = intval($_GET['entry_id'] ?? $_POST['entry_id'] ?? 0);
+            
+            if (!$entry_id) {
+                wp_send_json_error(['message' => 'Entry ID is required']);
+                return;
+            }
+
+            appLogger("GravityController: Debug workflow status for entry ID: $entry_id");
+
+            if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                wp_send_json_error(['message' => 'Gravity Forms/Flow not available']);
+                return;
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry)) {
+                wp_send_json_error(['message' => 'Entry not found: ' . $entry->get_error_message()]);
+                return;
+            }
+
+            $gravity_flow_api = new \Gravity_Flow_API($entry['form_id']);
+            $current_step = $gravity_flow_api->get_current_step($entry);
+            
+            $debug_info = [
+                'entry_id' => $entry_id,
+                'form_id' => $entry['form_id'],
+                'current_step' => $current_step ? [
+                    'id' => $current_step->get_id(),
+                    'name' => $current_step->get_name(),
+                    'type' => $current_step->get_type(),
+                    'status' => method_exists($current_step, 'get_status') ? $current_step->get_status() : 'unknown'
+                ] : null,
+                'workflow_final_status' => function_exists('gform_get_meta') ? gform_get_meta($entry_id, 'workflow_final_status') : 'unknown',
+                'entry_status' => $entry['status'] ?? 'unknown',
+                'available_actions' => []
+            ];
+
+            if ($current_step) {
+                // Check available actions
+                if (method_exists($current_step, 'can_approve')) {
+                    $debug_info['available_actions']['can_approve'] = $current_step->can_approve();
+                }
+                if (method_exists($current_step, 'can_reject')) {
+                    $debug_info['available_actions']['can_reject'] = $current_step->can_reject();
+                }
+            }
+
+            appLogger("GravityController: Debug info for entry $entry_id: " . json_encode($debug_info));
+            
+            wp_send_json_success(['debug_info' => $debug_info]);
+            
+        } catch (Exception $e) {
+            appLogger("GravityController: Exception in debugWorkflowStatus: " . $e->getMessage());
+            wp_send_json_error(['message' => 'Debug error: ' . $e->getMessage()]);
         }
     }
 
