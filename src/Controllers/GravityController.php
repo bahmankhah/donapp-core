@@ -480,9 +480,9 @@ class GravityController
                 
                 // If no current step, try to update the workflow final status directly
                 if (function_exists('gform_update_meta')) {
-                    gform_update_meta($entry_id, 'workflow_final_status', 'approved');
-                    gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
-                    gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+                    \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
+                    \gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
+                    \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
                     appLogger("GravityController: Direct approval metadata updated for entry $entry_id");
                 }
                 return true;
@@ -520,8 +520,12 @@ class GravityController
                 
                 // Add approval note
                 $note = sprintf('Entry approved by %s via API', $user_name);
-                gform_add_note($entry_id, $note);
-                appLogger("GravityController: Added approval note to entry");
+                if (function_exists('gform_add_note')) {
+                    \gform_add_note($entry_id, $note);
+                    appLogger("GravityController: Added approval note to entry");
+                } else {
+                    appLogger("GravityController: gform_add_note function not available");
+                }
                 
                 // Log the approval activity
                 $gravity_flow_api->log_activity('step', 'approved', $form['id'], $entry_id, '', $step_id, 0, $user_id, 'user_id', $user_name);
@@ -529,9 +533,9 @@ class GravityController
                 
                 // Update step-specific metadata
                 if (function_exists('gform_update_meta')) {
-                    gform_update_meta($entry_id, "gravityflow_status_{$step_id}", 'approved');
-                    gform_update_meta($entry_id, "gravityflow_approved_by_{$step_id}", $user_id);
-                    gform_update_meta($entry_id, "gravityflow_approved_at_{$step_id}", current_time('mysql'));
+                    \gform_update_meta($entry_id, "gravityflow_status_{$step_id}", 'approved');
+                    \gform_update_meta($entry_id, "gravityflow_approved_by_{$step_id}", $user_id);
+                    \gform_update_meta($entry_id, "gravityflow_approved_at_{$step_id}", \current_time('mysql'));
                 }
                 
                 // Remove assignees as the step is complete
@@ -568,15 +572,15 @@ class GravityController
                 }
                 
                 if ($is_final_step) {
-                    gform_update_meta($entry_id, 'workflow_final_status', 'approved');
+                    \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
                     appLogger("GravityController: Set final workflow status to approved");
                 } else {
-                    gform_update_meta($entry_id, 'workflow_final_status', 'pending');
+                    \gform_update_meta($entry_id, 'workflow_final_status', 'pending');
                     appLogger("GravityController: Set workflow status to pending (not final step)");
                 }
                 
-                gform_update_meta($entry_id, 'approved_by', $user_id);
-                gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
+                \gform_update_meta($entry_id, 'approved_by', $user_id);
+                \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
                 appLogger("GravityController: Updated general approval metadata");
             }
 
@@ -586,7 +590,7 @@ class GravityController
 
             // Verify the changes
             $updated_entry = \GFAPI::get_entry($entry_id);
-            $final_status = function_exists('gform_get_meta') ? gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
+            $final_status = function_exists('gform_get_meta') ? \gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
             $current_step_after = $gravity_flow_api->get_current_step($updated_entry);
             $current_step_name = $current_step_after ? $current_step_after->get_name() : 'No current step';
             
@@ -642,9 +646,9 @@ class GravityController
                 
                 // If no current step, try to update the workflow final status directly
                 if (function_exists('gform_update_meta')) {
-                    gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
-                    gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
-                    gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+                    \gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
+                    \gform_update_meta($entry_id, 'rejected_by', \get_current_user_id());
+                    \gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
                     appLogger("GravityController: Direct rejection metadata updated for entry $entry_id");
                 }
                 return true;
@@ -682,8 +686,12 @@ class GravityController
                 
                 // Add rejection note
                 $note = sprintf('Entry rejected by %s via API', $user_name);
-                gform_add_note($entry_id, $note);
-                appLogger("GravityController: Added rejection note to entry");
+                if (function_exists('gform_add_note')) {
+                    \gform_add_note($entry_id, $note);
+                    appLogger("GravityController: Added rejection note to entry");
+                } else {
+                    appLogger("GravityController: gform_add_note function not available");
+                }
                 
                 // Log the rejection activity
                 $gravity_flow_api->log_activity('step', 'rejected', $form['id'], $entry_id, '', $step_id, 0, $user_id, 'user_id', $user_name);
@@ -691,9 +699,9 @@ class GravityController
                 
                 // Update step-specific metadata
                 if (function_exists('gform_update_meta')) {
-                    gform_update_meta($entry_id, "gravityflow_status_{$step_id}", 'rejected');
-                    gform_update_meta($entry_id, "gravityflow_rejected_by_{$step_id}", $user_id);
-                    gform_update_meta($entry_id, "gravityflow_rejected_at_{$step_id}", current_time('mysql'));
+                    \gform_update_meta($entry_id, "gravityflow_status_{$step_id}", 'rejected');
+                    \gform_update_meta($entry_id, "gravityflow_rejected_by_{$step_id}", $user_id);
+                    \gform_update_meta($entry_id, "gravityflow_rejected_at_{$step_id}", \current_time('mysql'));
                 }
                 
                 // Remove assignees as the step is complete
@@ -718,9 +726,9 @@ class GravityController
 
             // Update general workflow metadata - rejection usually ends the workflow
             if (function_exists('gform_update_meta')) {
-                gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
-                gform_update_meta($entry_id, 'rejected_by', $user_id);
-                gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
+                \gform_update_meta($entry_id, 'workflow_final_status', 'rejected');
+                \gform_update_meta($entry_id, 'rejected_by', $user_id);
+                \gform_update_meta($entry_id, 'rejected_at', \current_time('mysql'));
                 appLogger("GravityController: Updated general rejection metadata");
             }
 
@@ -730,7 +738,7 @@ class GravityController
 
             // Verify the changes
             $updated_entry = \GFAPI::get_entry($entry_id);
-            $final_status = function_exists('gform_get_meta') ? gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
+            $final_status = function_exists('gform_get_meta') ? \gform_get_meta($entry_id, 'workflow_final_status') : 'unknown';
             $current_step_after = $gravity_flow_api->get_current_step($updated_entry);
             $current_step_name = $current_step_after ? $current_step_after->get_name() : 'No current step (workflow ended)';
             
@@ -804,8 +812,8 @@ class GravityController
 
             // Mark as exported
             if (function_exists('gform_update_meta')) {
-                gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
-                gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
+                \gform_update_meta($entry_id, 'exported_at', \current_time('mysql'));
+                \gform_update_meta($entry_id, 'exported_by', \get_current_user_id());
             }
 
             return true;
@@ -1326,7 +1334,7 @@ class GravityController
                     'type' => $current_step->get_type(),
                     'status' => method_exists($current_step, 'get_status') ? $current_step->get_status() : 'unknown'
                 ] : null,
-                'workflow_final_status' => function_exists('gform_get_meta') ? gform_get_meta($entry_id, 'workflow_final_status') : 'unknown',
+                'workflow_final_status' => function_exists('gform_get_meta') ? \gform_get_meta($entry_id, 'workflow_final_status') : 'unknown',
                 'entry_status' => $entry['status'] ?? 'unknown',
                 'available_actions' => []
             ];
