@@ -177,7 +177,7 @@ class ShortcodeServiceProvider
             $gravityService = \Kernel\Container::resolve('GravityService');
 
             // Get current page from query params
-            $current_page = max(1, intval($_GET['gf_page'] ?? 1));
+            $current_page = max(1, intval($_GET['page'] ?? 1));
             $per_page = intval($atts['per_page']);
 
             // Get inbox entries data using the new method

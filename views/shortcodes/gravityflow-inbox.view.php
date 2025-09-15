@@ -737,10 +737,10 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
             </div>
             
             <?php if ($pagination['current_page'] > 1): ?>
-                <a href="<?php echo add_query_arg('gf_page', 1); ?>" class="donap-pagination-btn">
+                <a href="<?php echo add_query_arg('page', 1); ?>" class="donap-pagination-btn">
                     <i class="fas fa-angle-double-right"></i>
                 </a>
-                <a href="<?php echo add_query_arg('gf_page', $pagination['current_page'] - 1); ?>" class="donap-pagination-btn">
+                <a href="<?php echo add_query_arg('page', $pagination['current_page'] - 1); ?>" class="donap-pagination-btn">
                     <i class="fas fa-angle-right"></i>
                 </a>
             <?php endif; ?>
@@ -755,17 +755,17 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
                 <?php if ($i == $pagination['current_page']): ?>
                     <span class="donap-pagination-btn current"><?php echo intval($i); ?></span>
                 <?php else: ?>
-                    <a href="<?php echo add_query_arg('gf_page', $i); ?>" class="donap-pagination-btn">
+                    <a href="<?php echo add_query_arg('page', $i); ?>" class="donap-pagination-btn">
                         <?php echo intval($i); ?>
                     </a>
                 <?php endif; ?>
             <?php endfor; ?>
             
             <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                <a href="<?php echo add_query_arg('gf_page', $pagination['current_page'] + 1); ?>" class="donap-pagination-btn">
+                <a href="<?php echo add_query_arg('page', $pagination['current_page'] + 1); ?>" class="donap-pagination-btn">
                     <i class="fas fa-angle-left"></i>
                 </a>
-                <a href="<?php echo add_query_arg('gf_page', $pagination['total_pages']); ?>" class="donap-pagination-btn">
+                <a href="<?php echo add_query_arg('page', $pagination['total_pages']); ?>" class="donap-pagination-btn">
                     <i class="fas fa-angle-double-left"></i>
                 </a>
             <?php endif; ?>
@@ -809,7 +809,7 @@ document.addEventListener('DOMContentLoaded', function() {
             params.delete('priority_filter');
         }
         
-        params.set('gf_page', 1); // Reset to first page when filtering
+        params.set('page', 1); // Reset to first page when filtering
         
         window.location.search = params.toString();
     }
