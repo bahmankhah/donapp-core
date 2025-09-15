@@ -213,7 +213,13 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        
+
+        .donap-action-btn[disabled] {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
         .donap-pagination {
             display: flex;
             justify-content: center;
@@ -606,10 +612,11 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
                                             <?php echo esc_html($action['label']); ?>
                                         </a>
                                     <?php else: ?>
-                                        <button type="button" 
+                                        <button type="button"
                                                 class="donap-action-btn <?php echo esc_attr($action['type']); ?>"
                                                 data-entry-id="<?php echo intval($entry['id']); ?>"
-                                                data-action="<?php echo esc_attr($action['type']); ?>">
+                                                data-action="<?php echo esc_attr($action['type']); ?>"
+                                                data-action-label="<?php echo esc_attr($action['label']); ?>">
                                             <?php
                                             $icons = [
                                                 'approve' => 'fa-check',
@@ -689,7 +696,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Filter functionality
     const statusFilter = document.getElementById('status-filter');
     const priorityFilter = document.getElementById('priority-filter');
-    
+
+    const bulkActionUrl = <?php echo wp_json_encode(esc_url_raw($bulk_action_url ?? '')); ?>;
+    const bulkActionNonce = <?php echo wp_json_encode($nonce ?? ''); ?>;
+
     if (statusFilter) {
         statusFilter.addEventListener('change', function() {
             applyFilters();
@@ -721,51 +731,100 @@ document.addEventListener('DOMContentLoaded', function() {
         
         window.location.search = params.toString();
     }
-    
+
+    function restoreActionButton(button) {
+        if (!button) {
+            return;
+        }
+
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+
+        button.disabled = false;
+    }
+
+    function processInboxAction(button, entryId, action, actionLabel) {
+        if (!bulkActionUrl) {
+            alert('آدرس سرویس عملیات در دسترس نیست.');
+            return;
+        }
+
+        if (!bulkActionNonce) {
+            alert('نشانه امنیتی عملیات یافت نشد. لطفاً صفحه را دوباره بارگذاری کنید.');
+            return;
+        }
+
+        if (!entryId || !action) {
+            alert('اطلاعات عملیات معتبر نیست.');
+            return;
+        }
+
+        if (!confirm(`آیا مطمئن هستید که می‌خواهید "${actionLabel}" را انجام دهید؟`)) {
+            return;
+        }
+
+        if (button.disabled) {
+            return;
+        }
+
+        button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال انجام ' + actionLabel + '...';
+
+        const formData = new URLSearchParams();
+        formData.append('_wpnonce', bulkActionNonce);
+        formData.append('bulk_action', action);
+        formData.append('entry_ids[]', entryId);
+
+        fetch(bulkActionUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: formData.toString(),
+            credentials: 'same-origin'
+        })
+            .then(async response => {
+                let data = null;
+
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    // Ignore JSON parsing errors and handle below
+                }
+
+                if (response.ok && data && data.success !== false) {
+                    const message = (data.data && data.data.message) ? data.data.message : 'عملیات با موفقیت انجام شد.';
+                    alert(message);
+                    window.location.reload();
+                    return;
+                }
+
+                const errorMessage = (data && data.data && data.data.message) || (data && data.message) || 'خطا در انجام عملیات.';
+                throw new Error(errorMessage);
+            })
+            .catch(error => {
+                console.error('Gravity Flow inbox action failed', error);
+                alert(error.message || 'خطا در برقراری ارتباط با سرور.');
+                restoreActionButton(button);
+            });
+    }
+
     // Action buttons
     document.querySelectorAll('.donap-action-btn[data-entry-id]').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
-            
+
             const entryId = this.dataset.entryId;
             const action = this.dataset.action;
-            const actionLabel = this.textContent.trim();
-            
-            if (confirm(`آیا مطمئن هستید که می‌خواهید "${actionLabel}" را انجام دهید؟`)) {
-                // Here you would typically send an AJAX request to process the action
-                // For now, we'll just show an alert
-                alert(`عملیات "${actionLabel}" برای ورودی ${entryId} در حال پردازش است...`);
-                
-                // You can implement the actual AJAX call here:
-                /*
-                fetch(ajaxurl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        action: 'process_gravity_flow_action',
-                        entry_id: entryId,
-                        flow_action: action,
-                        nonce: '<?php echo esc_js($nonce); ?>'
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('خطا: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('خطا در اتصال به سرور');
-                });
-                */
-            }
+            const actionLabel = this.dataset.actionLabel || this.textContent.trim();
+
+            processInboxAction(this, entryId, action, actionLabel);
         });
     });
-    
+
     // Export dropdown functionality
     window.toggleExportDropdown = function() {
         const dropdown = document.getElementById('exportDropdown');
