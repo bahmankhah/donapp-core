@@ -720,19 +720,23 @@ class GravityController
     }
 
     /**
-     * Restart workflow for entry using Gravity Flow API
+     * Restart workflow for entry using only Gravity Flow API methods
      */
     public function restartWorkflow()
     {
         try {
+            appLogger("GravityController: Starting workflow restart process");
+
             // Verify nonce
             if (!\check_ajax_referer('gravity_flow_restart_workflow', '_wpnonce', false)) {
+                appLogger("GravityController: Nonce verification failed");
                 \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
                 return;
             }
 
             // Check permissions
             if (!\current_user_can('manage_options')) {
+                appLogger("GravityController: User lacks permissions");
                 \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
                 return;
             }
@@ -741,52 +745,85 @@ class GravityController
             $form_id = intval($_POST['form_id'] ?? 0);
 
             if (!$entry_id || !$form_id) {
+                appLogger("GravityController: Invalid parameters - entry_id: $entry_id, form_id: $form_id");
                 \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
                 return;
             }
 
             if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                appLogger("GravityController: Required classes not available");
                 \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
                 return;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
             if (is_wp_error($entry) || $entry['form_id'] != $form_id) {
+                appLogger("GravityController: Entry not found or form mismatch - entry_id: $entry_id, form_id: $form_id");
                 \wp_send_json_error(['message' => 'ورودی یافت نشد'], 404);
                 return;
             }
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Get current step before restart for logging
+            $current_step = $gravity_flow_api->get_current_step($entry);
+            $current_step_name = $current_step ? $current_step->get_name() : 'نامشخص';
+            $current_status = $gravity_flow_api->get_status($entry);
+            $current_user = \wp_get_current_user();
+            
+            appLogger("GravityController: Restarting workflow for entry $entry_id, current step: $current_step_name, current status: $current_status");
 
-            // Restart the workflow
+            // Use Gravity Flow API to restart workflow
             $gravity_flow_api->restart_workflow($entry);
+            
+            // Get first step after restart
+            $steps = $gravity_flow_api->get_steps();
+            $first_step_name = !empty($steps) ? $steps[0]->get_name() : 'مرحله اول';
+            
+            appLogger("GravityController: Workflow restarted successfully for entry $entry_id");
+            
+            // Add additional timeline note for better tracking
+            $gravity_flow_api->add_timeline_note($entry_id, "Workflow restarted via API by " . $current_user->display_name);
+            
+            // Log activity for reporting purposes
+            $gravity_flow_api->log_activity('workflow', 'restarted', $form_id, $entry_id, 'restarted', 0, 0, $current_user->ID, 'user_id', $current_user->display_name);
 
             \wp_send_json_success([
                 'message' => 'گردش کار با موفقیت مجدداً راه‌اندازی شد',
-                'entry_id' => $entry_id
+                'entry_id' => $entry_id,
+                'previous_step' => $current_step_name,
+                'previous_status' => $current_status,
+                'new_step' => $first_step_name,
+                'restarted_by' => $current_user->display_name,
+                'restarted_at' => current_time('mysql')
             ]);
 
         } catch (Exception $e) {
+            appLogger("GravityController: Exception in workflow restart: " . $e->getMessage());
             error_log('Restart Workflow Error: ' . $e->getMessage());
             \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
         }
     }
 
     /**
-     * Cancel workflow for entry using Gravity Flow API
+     * Cancel workflow for entry using only Gravity Flow API methods
      */
     public function cancelWorkflow()
     {
         try {
+            appLogger("GravityController: Starting workflow cancellation process");
+
             // Verify nonce
             if (!\check_ajax_referer('gravity_flow_cancel_workflow', '_wpnonce', false)) {
+                appLogger("GravityController: Nonce verification failed");
                 \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
                 return;
             }
 
             // Check permissions
             if (!\current_user_can('manage_options')) {
+                appLogger("GravityController: User lacks permissions");
                 \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
                 return;
             }
@@ -795,56 +832,83 @@ class GravityController
             $form_id = intval($_POST['form_id'] ?? 0);
 
             if (!$entry_id || !$form_id) {
+                appLogger("GravityController: Invalid parameters - entry_id: $entry_id, form_id: $form_id");
                 \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
                 return;
             }
 
             if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                appLogger("GravityController: Required classes not available");
                 \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
                 return;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
             if (is_wp_error($entry) || $entry['form_id'] != $form_id) {
+                appLogger("GravityController: Entry not found or form mismatch - entry_id: $entry_id, form_id: $form_id");
                 \wp_send_json_error(['message' => 'ورودی یافت نشد'], 404);
                 return;
             }
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Get current step before cancellation for logging
+            $current_step = $gravity_flow_api->get_current_step($entry);
+            $current_step_name = $current_step ? $current_step->get_name() : 'نامشخص';
+            $current_user = \wp_get_current_user();
+            
+            appLogger("GravityController: Cancelling workflow for entry $entry_id, current step: $current_step_name");
 
-            // Cancel the workflow
+            // Use Gravity Flow API to cancel workflow
             $result = $gravity_flow_api->cancel_workflow($entry);
 
             if ($result) {
+                appLogger("GravityController: Workflow cancelled successfully for entry $entry_id");
+                
+                // Add additional timeline note for better tracking
+                $gravity_flow_api->add_timeline_note($entry_id, "Workflow cancelled via API by " . $current_user->display_name);
+                
+                // Log activity for reporting purposes
+                $gravity_flow_api->log_activity('workflow', 'cancelled', $form_id, $entry_id, 'cancelled', 0, 0, $current_user->ID, 'user_id', $current_user->display_name);
+                
                 \wp_send_json_success([
                     'message' => 'گردش کار با موفقیت لغو شد',
-                    'entry_id' => $entry_id
+                    'entry_id' => $entry_id,
+                    'previous_step' => $current_step_name,
+                    'cancelled_by' => $current_user->display_name,
+                    'cancelled_at' => current_time('mysql')
                 ]);
             } else {
-                \wp_send_json_error(['message' => 'عدم موفقیت در لغو گردش کار'], 500);
+                appLogger("GravityController: Workflow cancellation failed for entry $entry_id");
+                \wp_send_json_error(['message' => 'عدم موفقیت در لغو گردش کار. ممکن است این ورودی در حال حاضر گردش کار فعالی نداشته باشد.'], 500);
             }
 
         } catch (Exception $e) {
+            appLogger("GravityController: Exception in workflow cancellation: " . $e->getMessage());
             error_log('Cancel Workflow Error: ' . $e->getMessage());
             \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
         }
     }
 
     /**
-     * Send entry to specific step using Gravity Flow API
+     * Send entry to specific step using only Gravity Flow API methods
      */
     public function sendToStep()
     {
         try {
+            appLogger("GravityController: Starting send to step process");
+
             // Verify nonce
             if (!\check_ajax_referer('gravity_flow_send_to_step', '_wpnonce', false)) {
+                appLogger("GravityController: Nonce verification failed");
                 \wp_send_json_error(['message' => 'خطای امنیتی'], 403);
                 return;
             }
 
             // Check permissions
             if (!\current_user_can('manage_options')) {
+                appLogger("GravityController: User lacks permissions");
                 \wp_send_json_error(['message' => 'دسترسی مجاز نیست'], 403);
                 return;
             }
@@ -854,41 +918,67 @@ class GravityController
             $step_id = intval($_POST['step_id'] ?? 0);
 
             if (!$entry_id || !$form_id || !$step_id) {
+                appLogger("GravityController: Invalid parameters - entry_id: $entry_id, form_id: $form_id, step_id: $step_id");
                 \wp_send_json_error(['message' => 'پارامترهای نامعتبر'], 400);
                 return;
             }
 
             if (!class_exists('GFAPI') || !class_exists('Gravity_Flow_API')) {
+                appLogger("GravityController: Required classes not available");
                 \wp_send_json_error(['message' => 'Gravity Flow API در دسترس نیست'], 500);
                 return;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
             if (is_wp_error($entry) || $entry['form_id'] != $form_id) {
+                appLogger("GravityController: Entry not found or form mismatch - entry_id: $entry_id, form_id: $form_id");
                 \wp_send_json_error(['message' => 'ورودی یافت نشد'], 404);
                 return;
             }
 
             // Initialize Gravity Flow API
             $gravity_flow_api = new \Gravity_Flow_API($form_id);
+            
+            // Get current step before sending for logging
+            $current_step = $gravity_flow_api->get_current_step($entry);
+            $current_step_name = $current_step ? $current_step->get_name() : 'نامشخص';
 
             // Get the target step to validate it exists
             $target_step = $gravity_flow_api->get_step($step_id, $entry);
             if (!$target_step) {
+                appLogger("GravityController: Target step not found - step_id: $step_id");
                 \wp_send_json_error(['message' => 'مرحله مقصد یافت نشد'], 404);
                 return;
             }
 
-            // Send to step
+            $target_step_name = $target_step->get_name();
+            $current_user = \wp_get_current_user();
+            
+            appLogger("GravityController: Sending entry $entry_id from step '$current_step_name' to step '$target_step_name'");
+
+            // Use Gravity Flow API to send to step
             $gravity_flow_api->send_to_step($entry, $step_id);
+            
+            appLogger("GravityController: Entry sent to step successfully");
+            
+            // Add additional timeline note for better tracking
+            $gravity_flow_api->add_timeline_note($entry_id, "Entry sent to step '$target_step_name' via API by " . $current_user->display_name);
+            
+            // Log activity for reporting purposes
+            $gravity_flow_api->log_activity('workflow', 'sent_to_step', $form_id, $entry_id, $step_id, $step_id, 0, $current_user->ID, 'user_id', $current_user->display_name);
 
             \wp_send_json_success([
-                'message' => 'ورودی با موفقیت به مرحله ' . $target_step->get_name() . ' ارسال شد',
+                'message' => 'ورودی با موفقیت به مرحله ' . $target_step_name . ' ارسال شد',
                 'entry_id' => $entry_id,
-                'step_name' => $target_step->get_name()
+                'previous_step' => $current_step_name,
+                'target_step' => $target_step_name,
+                'step_id' => $step_id,
+                'sent_by' => $current_user->display_name,
+                'sent_at' => current_time('mysql')
             ]);
 
         } catch (Exception $e) {
+            appLogger("GravityController: Exception in send to step: " . $e->getMessage());
             error_log('Send To Step Error: ' . $e->getMessage());
             \wp_send_json_error(['message' => 'خطای داخلی سرور'], 500);
         }
