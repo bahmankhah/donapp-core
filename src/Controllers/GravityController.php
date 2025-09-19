@@ -446,104 +446,120 @@ class GravityController
     private function approveSingleEntry($entry_id)
     {
         try {
-            appLogger("GravityController: Starting SIMPLE approval process for entry ID: $entry_id");
+            appLogger("GravityController: [approveSingleEntry] Entry ID: $entry_id - Start");
 
             if (!class_exists('GFAPI') || !function_exists('gravity_flow')) {
-                appLogger("GravityController: GFAPI or Gravity Flow not available");
+                appLogger("GravityController: [approveSingleEntry] GFAPI or Gravity Flow not available");
                 return false;
             }
 
             $entry = \GFAPI::get_entry($entry_id);
             if (is_wp_error($entry) || !$entry) {
-                appLogger("GravityController: Entry not found: $entry_id");
+                appLogger("GravityController: [approveSingleEntry] Entry not found: $entry_id");
                 return false;
             }
 
             $form_id = $entry['form_id'];
-            appLogger("GravityController: Processing entry $entry_id from form $form_id");
+            appLogger("GravityController: [approveSingleEntry] Processing entry $entry_id from form $form_id");
 
             // Get current step
             $api = new \Gravity_Flow_API($form_id);
             $current_step = $api->get_current_step($entry);
+            appLogger("GravityController: [approveSingleEntry] Got current step: " . ($current_step ? $current_step->get_id() : 'none'));
 
             if (!$current_step) {
-                appLogger("GravityController: No current step - workflow may be complete");
+                appLogger("GravityController: [approveSingleEntry] No current step - workflow may be complete");
                 return false;
             }
 
             $step_id = $current_step->get_id();
-            appLogger("GravityController: Current step ID: $step_id");
+            appLogger("GravityController: [approveSingleEntry] Current step ID: $step_id");
 
             // Set user context
             $current_user = \wp_get_current_user();
             if (!$current_user->ID) {
                 \wp_set_current_user(1);
-                appLogger("GravityController: Set admin user context");
+                appLogger("GravityController: [approveSingleEntry] Set admin user context");
             }
             $form = \GFAPI::get_form($form_id);
+            appLogger("GravityController: [approveSingleEntry] Loaded form for ID: $form_id");
 
             $steps = gravity_flow()->get_steps($form_id, $entry);
+            appLogger("GravityController: [approveSingleEntry] Steps count: " . (is_array($steps) ? count($steps) : 'none'));
 
             $check_step = false;
             $next_step = false;
 
             foreach ($steps as $potential_step) {
+                appLogger("GravityController: [approveSingleEntry] Checking step: " . $potential_step->get_id());
                 if ($check_step && $potential_step->is_condition_met($form) && $potential_step->is_active()) {
                     $next_step = $potential_step;
+                    appLogger("GravityController: [approveSingleEntry] Next step found: " . $next_step->get_id());
                     break;
                 }
-
             }
 
             $next_step = apply_filters('gravityflow_send_to_step_condition_not_met', $next_step, null, $current_step, $entry, $form);
-
+            appLogger("GravityController: [approveSingleEntry] Next step after filter: " . ($next_step ? $next_step->get_id() : 'none'));
 
             if (!$next_step || !$next_step instanceof Gravity_Flow_Step) {
+                appLogger("GravityController: [approveSingleEntry] No valid next step instance");
                 return;
             }
 
             if ($next_step->is_condition_met($form) && $next_step->is_active()) {
                 $step_id = $next_step->get_id();
+                appLogger("GravityController: [approveSingleEntry] Next step is active and condition met. Step ID: $step_id");
             } else {
+                appLogger("GravityController: [approveSingleEntry] Next step not active or condition not met");
                 return;
             }
 
             if ($current_step) {
+                appLogger("GravityController: [approveSingleEntry] Purging assignees and updating step status to cancelled");
                 $current_step->purge_assignees();
                 $current_step->update_step_status('cancelled');
             }
             $new_step = $api->get_step($step_id, $entry);
             $feedback = sprintf(esc_html__('Sent to step: %s', 'gravityflow'), $new_step->get_name());
+            appLogger("GravityController: [approveSingleEntry] Adding timeline note: $feedback");
             $api->add_timeline_note($entry_id, $feedback);
             $api->log_activity('workflow', 'sent_to_step', $api->form_id, $entry_id, $step_id);
+            appLogger("GravityController: [approveSingleEntry] Logging activity and updating meta to pending");
             gform_update_meta($entry_id, 'workflow_final_status', 'pending');
             $new_step->start();
+            appLogger("GravityController: [approveSingleEntry] Started new step");
             $api->process_workflow($entry_id);
+            appLogger("GravityController: [approveSingleEntry] Processed workflow");
 
             // Method 1: Use Gravity Flow's native form submission simulation
+            appLogger("GravityController: [approveSingleEntry] Simulating Gravity Flow approval form submission");
             $this->simulateGravityFlowApproval($entry_id, $step_id);
 
             // Method 2: Direct step processing if available
             if (method_exists($current_step, 'process_step')) {
+                appLogger("GravityController: [approveSingleEntry] Direct step processing");
                 $_POST['gravityflow_submit'] = 'approved';
                 $_POST['lid'] = $entry_id;
                 $result = $current_step->process_step($entry);
-                appLogger("GravityController: Direct step processing result: " . ($result ? 'success' : 'failed'));
+                appLogger("GravityController: [approveSingleEntry] Direct step processing result: " . ($result ? 'success' : 'failed'));
             }
 
             // Method 3: Use WordPress action hooks
+            appLogger("GravityController: [approveSingleEntry] Triggering gravityflow_workflow_complete action");
             \do_action('gravityflow_workflow_complete', $entry_id, $form_id, $step_id, 'approved');
 
             // Update metadata as backup
+            appLogger("GravityController: [approveSingleEntry] Updating workflow_final_status to approved");
             \gform_update_meta($entry_id, 'workflow_final_status', 'approved');
             \gform_update_meta($entry_id, 'approved_by', \get_current_user_id());
             \gform_update_meta($entry_id, 'approved_at', \current_time('mysql'));
 
-            appLogger("GravityController: Multiple approval methods executed for entry $entry_id");
+            appLogger("GravityController: [approveSingleEntry] All approval methods executed for entry $entry_id");
             return true;
 
         } catch (Exception $e) {
-            appLogger("GravityController: Exception in simple approval: " . $e->getMessage());
+            appLogger("GravityController: [approveSingleEntry] Exception: " . $e->getMessage());
             return false;
         }
     }
