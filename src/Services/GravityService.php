@@ -111,7 +111,8 @@ class GravityService
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
                         'form_title' => $form['title'],
-                        'date_created' => date_i18n('j F Y - H:i', strtotime($entry['date_created'])),
+                        'date_created' => $entry['date_created'],
+                        
                         'status' => $this->getEntryStatus($entry),
                         'entry_data' => $this->formatEntryData($entry, $form)
                     ];
