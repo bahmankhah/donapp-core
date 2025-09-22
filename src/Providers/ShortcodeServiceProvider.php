@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Kernel\Container;
 use Kernel\Facades\Wordpress;
 use Exception;
 
