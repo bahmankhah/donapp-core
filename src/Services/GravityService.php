@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Exception;
+use Kernel\DB;
 
 class GravityService
 {
@@ -20,20 +21,26 @@ class GravityService
      * @param int $per_page
      * @return array
      */
-    public function getApprovedGravityFlowEntries($page = 1, $per_page = 20, $user = null)
+    public function getApprovedGravityFlowEntries($page = 1, $per_page = 20, $currentUser = null)
     {
+        // appLogger('GravityService: Starting getApprovedGravityFlowEntries - Page: ' . $page . ', Per Page: ' . $per_page);
+        
         // Check if Gravity Forms and Gravity Flow are active
-        if (!class_exists('GFForms') || !class_exists('Gravity_Flow_API')) {
+        if (!class_exists('GFForms') || !class_exists('Gravity_Flow')) {
+            // appLogger('GravityService: Gravity Forms or Gravity Flow not available, returning sample data');
             // Return sample data for demonstration purposes
-            error_log('GravityService: Gravity Forms/Flow API not available, returning sample data');
             return $this->getSampleData($page, $per_page);
         }
-
-        error_log('GravityService: Gravity Forms/Flow API available, attempting to get real data');
-
-        $current_user = $user ?? wp_get_current_user();
+        
+        // appLogger('GravityService: Gravity Forms and Gravity Flow are available');
+        if($currentUser){
+            $current_user = $currentUser;
+        } else {
+            $current_user = wp_get_current_user();
+        }
+        appLogger('GravityService: Current user ID: ' . $current_user->ID . ', Login: ' . $current_user->user_login);
         if (!$current_user || !$current_user->ID) {
-            error_log('GravityService: No current user found');
+            // appLogger('GravityService: No current user found or user ID is 0');
             return [
                 'data' => [],
                 'pagination' => [
@@ -44,58 +51,77 @@ class GravityService
                 ]
             ];
         }
-
-        error_log('GravityService: Current user ID: ' . $current_user->ID);
+        
+        // appLogger('GravityService: Current user ID: ' . $current_user->ID . ', Login: ' . $current_user->user_login);
 
         $offset = ($page - 1) * $per_page;
 
         // Get all forms
         $forms = class_exists('GFAPI') ? \GFAPI::get_forms() : [];
+        // appLogger('GravityService: Found ' . count($forms) . ' Gravity Forms');
+        
         $approved_entries = [];
         $total_count = 0;
 
         foreach ($forms as $form) {
+            // appLogger('GravityService: Processing form ID: ' . $form['id'] . ', Title: ' . $form['title']);
+            
             // Check if this form has Gravity Flow enabled
-            $flow_settings = get_option('gravityflow_settings_' . $form['id'], array());
-            if (empty($flow_settings)) {
-                continue;
+            $form_id = $form['id'];
+            
+            // Check if Gravity_Flow_Form class exists before using it
+            if (class_exists('Gravity_Flow_Form')) {
+                $settings = \Gravity_Flow_Form::get_setting($form_id);
+                // appLogger('GravityService: Form ID ' . $form_id . ' Gravity Flow settings: ' . json_encode($settings));
+                
+                // Check if Flow is enabled for this form using Gravity Flow settings
+                if (!isset($settings['workflow']) || empty($settings['workflow'])) {
+                    // appLogger('GravityService: Form ID ' . $form_id . ' does not have workflow enabled, skipping');
+                    continue; // Skip forms without a workflow
+                }
+            } else {
+                // appLogger('GravityService: Gravity_Flow_Form class not available, processing all forms');
             }
 
-            // Initialize Gravity Flow API for this form
-            $gravity_flow_api = new \Gravity_Flow_API($form['id']);
-
-            // Get entries for this form that are approved using search criteria
+            // Get entries for this form (consider changing 'active' to a wider criteria)
             $search_criteria = [
-                'status' => 'active',
-                'field_filters' => [
-                    [
-                        'key' => 'workflow_final_status',
-                        'value' => 'approved'
-                    ]
-                ]
+                'status' => 'active' // Modify if needed
             ];
-
             $entries = class_exists('GFAPI') ? \GFAPI::get_entries($form['id'], $search_criteria) : [];
 
+            // appLogger('GravityService: Form ID: ' . $form['id'] . ' - Found ' . count($entries) . ' entries with search criteria: ' . json_encode($search_criteria));
+
             foreach ($entries as $entry) {
-                // Use Gravity Flow API to get status and validate entry
-                $workflow_status = $gravity_flow_api->get_status($entry);
+                // appLogger(json_encode($entry));
+                // appLogger('GravityService: Processing entry ID: ' . $entry['id'] . ', Status: ' . (isset($entry['status']) ? $entry['status'] : 'unknown'));
                 
-                // Check if entry is truly approved and user has access
-                if ($workflow_status === 'approved' && $this->userHasAccessToEntry($entry, $current_user->ID)) {
+                // Check if entry is approved and user has access
+                // $is_approved = $this->isEntryApproved($entry);
+                // $has_access = $this->userHasAccessToEntry($entry, $current_user->ID);
+                // $is_approved_by_user = $this->isFormApprovedByUser($form, $entry,$current_user->ID);
+                
+                // Additionally check if user has approved this form in activity log
+                $has_approved_in_log = $this->userHasApprovedForm($form['id'], $entry['id'], $current_user->ID);
+
+                // appLogger('GravityService: Entry ID ' . $entry['id'] . ' - Is Approved: ' . ($is_approved ? 'Yes' : 'No') . ', Has Access: ' . ($has_access ? 'Yes' : 'No') . ', Approved by User: ' . ($is_approved_by_user ? 'Yes' : 'No') . ', Approved in Log: ' . ($has_approved_in_log ? 'Yes' : 'No'));
+
+                // Entry must be approved AND user must have either approved it via form field OR via activity log
+                if ($has_approved_in_log) {
                     $approved_entries[] = [
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
                         'form_title' => $form['title'],
                         'date_created' => $entry['date_created'],
-                        'status' => $workflow_status,
-                        'entry_data' => $this->formatEntryData($entry, $form),
-                        'timeline' => $gravity_flow_api->get_timeline($entry)
+                        'status' => $this->getEntryStatus($entry),
+                        'entry_data' => $this->formatEntryData($entry, $form)
                     ];
                     $total_count++;
+                    // appLogger('GravityService: Entry ID ' . $entry['id'] . ' added to approved entries');
                 }
             }
         }
+
+        // appLogger('GravityService: Total approved entries found: ' . $total_count);
 
         // Sort by date created (newest first)
         usort($approved_entries, function ($a, $b) {
@@ -104,6 +130,8 @@ class GravityService
 
         // Apply pagination
         $paginated_entries = array_slice($approved_entries, $offset, $per_page);
+        
+        // appLogger('GravityService: After pagination - Showing ' . count($paginated_entries) . ' entries (offset: ' . $offset . ', per_page: ' . $per_page . ')');
 
         return [
             'data' => $paginated_entries,
@@ -115,6 +143,54 @@ class GravityService
             ]
         ];
     }
+
+    /**
+     * Check if user has approved a specific form by checking Gravity Flow activity log
+     * @param int $formId
+     * @param int $userId
+     * @return bool
+     */
+    private function userHasApprovedForm($formId, $entryId, $userId)
+    {
+        try {
+            // Use the DB class following the pattern from getCategoryId method
+            $db = new DB();
+            
+            // Build the query to check if user has approved this form
+            $result = $db->wpdbMain()->get_var(
+                $db->wpdbMain()->prepare("
+                    SELECT COUNT(*) 
+                    FROM {$db->wpdbMain()->prefix}gravityflow_activity_log 
+                    WHERE form_id = %d 
+                    AND assignee_id = %s
+                    AND lead_id = %s 
+                    AND log_event = %s 
+                    AND log_object = %s 
+                    AND log_value = %s 
+                    AND assignee_type = %s
+                ", 
+                $formId,
+                $userId,
+                $entryId,
+                'status',
+                'assignee', 
+                'approved',
+                'user_id'
+                )
+            );
+            
+            // Log the query for debugging (can be removed later)
+            // appLogger("GravityService: Checking approval for Form ID: {$formId}, User ID: {$userId}, Result: " . (int)$result);
+            
+            // Return true if any matching records found
+            return (int)$result > 0;
+            
+        } catch (Exception $e) {
+            appLogger('GravityService userHasApprovedForm Error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
 
     /**
      * Get sample data for demonstration when Gravity Forms is not available
