@@ -111,7 +111,7 @@ class GravityService
                         'id' => $entry['id'],
                         'form_id' => $form['id'],
                         'form_title' => $form['title'],
-                        'date_created' => $entry['date_created'],
+                        'date_created' => date_i18n('j F Y - H:i', strtotime($entry['date_created'])),
                         'status' => $this->getEntryStatus($entry),
                         'entry_data' => $this->formatEntryData($entry, $form)
                     ];
@@ -560,7 +560,7 @@ class GravityService
             $csv_data[] = [
                 $entry['id'],
                 $entry['form_title'],
-                date('Y/m/d H:i', strtotime($entry['date_created'])),
+                date_i18n('Y/m/d H:i', strtotime($entry['date_created'])),
                 'تأیید شده',
                 $form_data
             ];

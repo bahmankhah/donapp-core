@@ -178,6 +178,9 @@ class ShortcodeServiceProvider
     private function renderGravityFlowInbox($atts)
     {
         try {
+            /**
+             * @var \App\Services\GravityService
+             */
             $gravityService = \Kernel\Container::resolve('GravityService');
 
             // Get current page from query params
