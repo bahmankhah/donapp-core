@@ -129,6 +129,9 @@ class ShortcodeServiceProvider
             return; // Will exit after export
         }
 
+        /**
+         * @var \App\Services\GravityService
+         */
         $gravityService = Container::resolve('GravityService');
 
         // Get pagination parameters
