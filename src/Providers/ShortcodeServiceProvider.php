@@ -166,7 +166,7 @@ class ShortcodeServiceProvider
             'base_url' => get_permalink() // For pagination links
         ];
 
-        return view('shortcodes/gravity-flow', $data);
+        return view('shortcodes/gravityflow-approved', $data);
     }
 
     /**
