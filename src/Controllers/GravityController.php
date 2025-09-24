@@ -371,6 +371,11 @@ class GravityController
                             appLogger("GravityController: Export result for entry $entry_id: " . ($result ? 'success' : 'failed'));
                             break;
 
+                        case 'complete':
+                            $result = $this->completeSingleEntry($entry_id);
+                            appLogger("GravityController: Complete result for entry $entry_id: " . ($result ? 'success' : 'failed'));
+                            break;
+
                         default:
                             appLogger("GravityController: Unknown bulk action: $bulk_action");
                             throw new Exception('عملیات نامشخص');
@@ -402,7 +407,8 @@ class GravityController
                 'approve' => 'تأیید',
                 'reject' => 'رد',
                 'delete' => 'حذف',
-                'export' => 'صادرات'
+                'export' => 'صادرات',
+                'complete' => 'تکمیل'
             ];
 
             $action_name = $action_names[$bulk_action] ?? 'پردازش';
@@ -645,6 +651,160 @@ class GravityController
 
         } catch (Exception $e) {
             appLogger("GravityController: Exception in Gravity Flow API rejection: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Complete entry using only Gravity Flow API methods
+     */
+    private function completeSingleEntry($entry_id)
+    {
+        try {
+            appLogger("GravityController: Starting Gravity Flow API completion process for entry ID: $entry_id");
+
+            if (!class_exists('GFAPI') || !function_exists('gravity_flow')) {
+                appLogger("GravityController: GFAPI or gravity_flow not available");
+                return false;
+            }
+
+            $entry = \GFAPI::get_entry($entry_id);
+            if (is_wp_error($entry) || !$entry) {
+                appLogger("GravityController: Entry $entry_id not found or invalid");
+                return false;
+            }
+
+            $form_id = $entry['form_id'];
+            $form = \GFAPI::get_form($form_id);
+            if (!$form) {
+                appLogger("GravityController: Form $form_id not found");
+                return false;
+            }
+
+            appLogger("GravityController: Processing entry $entry_id from form $form_id");
+
+            // Initialize Gravity Flow API
+            $api = new \Gravity_Flow_API($form_id);
+            $current_step = $api->get_current_step($entry);
+            
+            if (!$current_step) {
+                appLogger("GravityController: No current step found for entry $entry_id - workflow may already be complete");
+                // If no current step, it might already be complete or not in workflow
+                // Let's check the workflow status
+                $status = $api->get_status($entry);
+                if ($status === 'complete') {
+                    appLogger("GravityController: Entry $entry_id is already complete");
+                    return true;
+                }
+                return false;
+            }
+
+            $step_id = $current_step->get_id();
+            $step_type = $current_step->get_type();
+            appLogger("GravityController: Current step ID: $step_id, type: $step_type");
+
+            // Set user context for completion
+            $current_user = \wp_get_current_user();
+            if (!$current_user->ID) {
+                appLogger("GravityController: Setting admin user context");
+                \wp_set_current_user(1); // Set admin user
+                $current_user = \wp_get_current_user();
+            }
+
+            // Handle different step types for completion
+            $feedback = false;
+            
+            if ($step_type === 'approval') {
+                // For approval steps, we need to approve them
+                $assignees = $current_step->get_assignees();
+                if (empty($assignees)) {
+                    appLogger("GravityController: No assignees found for approval step $step_id");
+                    return false;
+                }
+
+                // Find the first assignee that can be approved
+                $target_assignee = null;
+                foreach ($assignees as $assignee) {
+                    $assignee_status = $assignee->get_status();
+                    if ($assignee_status === 'pending' || empty($assignee_status)) {
+                        $target_assignee = $assignee;
+                        break;
+                    }
+                }
+
+                if (!$target_assignee) {
+                    $target_assignee = $assignees[0];
+                }
+
+                appLogger("GravityController: Processing approval completion for assignee: " . $target_assignee->get_display_name());
+                $feedback = $current_step->process_assignee_status($target_assignee, 'approved', $form);
+
+            } elseif ($step_type === 'user_input') {
+                // For user input steps, we need to mark them as complete
+                $assignees = $current_step->get_assignees();
+                if (empty($assignees)) {
+                    appLogger("GravityController: No assignees found for user input step $step_id");
+                    return false;
+                }
+
+                // Find the first assignee that can be completed
+                $target_assignee = null;
+                foreach ($assignees as $assignee) {
+                    $assignee_status = $assignee->get_status();
+                    if ($assignee_status === 'pending' || empty($assignee_status)) {
+                        $target_assignee = $assignee;
+                        break;
+                    }
+                }
+
+                if (!$target_assignee) {
+                    $target_assignee = $assignees[0];
+                }
+
+                appLogger("GravityController: Processing user input completion for assignee: " . $target_assignee->get_display_name());
+                $feedback = $current_step->process_assignee_status($target_assignee, 'complete', $form);
+
+            } else {
+                // For other step types, try to process them as complete
+                appLogger("GravityController: Processing step type '$step_type' as complete");
+                
+                // Try to get assignees and complete the step
+                $assignees = $current_step->get_assignees();
+                if (!empty($assignees)) {
+                    $target_assignee = $assignees[0];
+                    appLogger("GravityController: Processing completion for assignee: " . $target_assignee->get_display_name());
+                    $feedback = $current_step->process_assignee_status($target_assignee, 'complete', $form);
+                } else {
+                    // If no assignees, try to mark the step as complete directly
+                    appLogger("GravityController: No assignees found, attempting to complete step directly");
+                    if (method_exists($current_step, 'update_step_status')) {
+                        $current_step->update_step_status('complete');
+                        $current_step->refresh_entry();
+                        $feedback = 'Step completed';
+                    }
+                }
+            }
+            
+            if ($feedback) {
+                appLogger("GravityController: Completion processed successfully with feedback: $feedback");
+                
+                // Add timeline note using Gravity Flow API
+                $api->add_timeline_note($entry_id, "Entry completed via API by " . $current_user->display_name);
+                
+                // Log activity using Gravity Flow API
+                $api->log_activity('assignee', 'status', $form_id, $entry_id, 'complete', $step_id, 0, $current_user->ID, 'user_id', $current_user->display_name);
+                
+                // Process workflow to move to next step if needed
+                $api->process_workflow($entry_id);
+                
+                return true;
+            } else {
+                appLogger("GravityController: Completion processing failed or returned no feedback");
+                return false;
+            }
+
+        } catch (Exception $e) {
+            appLogger("GravityController: Exception in Gravity Flow API completion: " . $e->getMessage());
             return false;
         }
     }
