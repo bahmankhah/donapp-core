@@ -742,7 +742,7 @@ class GravityController
             } elseif ($step_type === 'user_input') {
                 // For user input steps, we need to mark them as complete
                 $assignees = $current_step->get_assignees();
-                if (empty($assignees)) {
+                if (empty($assignees))  {
                     appLogger("GravityController: No assignees found for user input step $step_id");
                     return false;
                 }

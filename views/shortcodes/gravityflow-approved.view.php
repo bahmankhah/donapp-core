@@ -90,7 +90,7 @@
 
     <!-- Entries Table -->
     <div class="donap-table-wrapper">
-        <table class="donap-table">
+        <table class="donap-gravity-flow-table">
             <thead>
                 <tr>
                     <th>شناسه</th>
@@ -105,23 +105,23 @@
                 <?php if (!empty($entries)): ?>
                     <?php foreach ($entries as $entry): ?>
                         <tr>
-                            <td>
+                            <td data-label="شناسه">
                                 <strong><?php echo esc_html($entry['id']); ?></strong>
                             </td>
-                            <td>
+                            <td data-label="عنوان فرم">
                                 <strong><?php echo esc_html($entry['form_title']); ?></strong>
                                 <br>
-                                <small>فرم شماره: <?php echo esc_html($entry['form_id']); ?></small>
+                                <small style="color: #64748b;">فرم شماره: <?php echo esc_html($entry['form_id']); ?></small>
                             </td>
-                            <td>
+                            <td data-label="تاریخ ایجاد">
                                 <?php echo esc_html(date('Y/m/d H:i', strtotime($entry['date_created']))); ?>
                             </td>
-                            <td>
-                                <span class="donap-status-badge donap-status-approved">
+                            <td data-label="وضعیت">
+                                <span class="donap-status-badge status-approved">
                                     تأیید شده
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="اطلاعات فرم">
                                 <?php if (!empty($entry['entry_data'])): ?>
                                     <div class="donap-entry-data">
                                         <?php foreach (array_slice($entry['entry_data'], 0, 2) as $field_data): ?>
@@ -131,7 +131,7 @@
                                             </div>
                                         <?php endforeach; ?>
                                         <?php if (count($entry['entry_data']) > 2): ?>
-                                            <small>
+                                            <small style="color: #64748b;">
                                                 و <?php echo count($entry['entry_data']) - 2; ?> فیلد دیگر...
                                             </small>
                                         <?php endif; ?>
@@ -146,21 +146,26 @@
                                         <?php endforeach; ?>
                                     </div>
                                 <?php else: ?>
-                                    <em>بدون اطلاعات</em>
+                                    <em style="color: #64748b;">بدون اطلاعات</em>
                                 <?php endif; ?>
                             </td>
-                            <td>
-                                <button type="button" class="donap-btn donap-btn-small donap-view-details" 
-                                        data-entry-id="<?php echo esc_attr($entry['id']); ?>">
-                                    مشاهده
-                                </button>
+                            <td data-label="عملیات">
+                                <div class="donap-entry-actions">
+                                    <button type="button" class="donap-action-btn view donap-view-details" 
+                                            data-entry-id="<?php echo esc_attr($entry['id']); ?>">
+                                        <i class="fas fa-eye"></i>
+                                        مشاهده
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" class="donap-no-data">
-                            هیچ فرم تأیید شده‌ای یافت نشد.
+                        <td colspan="6" class="donap-empty-state">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>هیچ فرم تأیید شده‌ای یافت نشد</h3>
+                            <p>در حال حاضر هیچ فرم تأیید شده‌ای برای نمایش وجود ندارد.</p>
                         </td>
                     </tr>
                 <?php endif; ?>
@@ -218,9 +223,9 @@
 
 <style>
 .donap-gravity-flow-shortcode {
+    font-family: 'Vazir', sans-serif;
     direction: rtl;
-    text-align: right;
-    font-family: Tahoma, Arial, sans-serif;
+    margin: 20px 0;
 }
 
 .donap-notice {
@@ -236,44 +241,99 @@
     color: #856404;
 }
 
-.donap-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin: 20px 0;
+.donap-inbox-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.donap-inbox-stats {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 .donap-stat-card {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    min-width: 100px;
+}
+
+.donap-stat-card.pending {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+.donap-stat-card.in-progress {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    color: #333;
+}
+
+.donap-stat-card.total {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .donap-stat-card h3 {
     margin: 0 0 10px 0;
     font-size: 14px;
-    color: #666;
+    color: inherit;
+    opacity: 0.9;
 }
 
 .donap-stat-value {
     font-size: 24px;
     font-weight: bold;
-    color: #2271b1;
+    display: block;
+}
+
+.donap-stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    display: block;
+}
+
+.donap-stat-label {
+    font-size: 12px;
+    opacity: 0.9;
 }
 
 .donap-controls-section {
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 20px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
     margin: 20px 0;
 }
 
 .donap-export-section {
     margin-bottom: 15px;
+}
+
+.donap-inbox-filters {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.donap-filter-select {
+    padding: 8px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    transition: border-color 0.3s ease;
+}
+
+.donap-filter-select:focus {
+    outline: none;
+    border-color: #667eea;
 }
 
 .donap-filter-row {
@@ -361,41 +421,138 @@
     margin: 20px 0;
 }
 
-.donap-table {
+.donap-gravity-flow-table {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
 }
 
-.donap-table th,
-.donap-table td {
-    padding: 12px;
+.donap-gravity-flow-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 12px;
     text-align: right;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.donap-table th {
-    background: #f8f9fa;
     font-weight: 600;
-    border-bottom: 2px solid #dee2e6;
+    font-size: 14px;
 }
 
-.donap-table tr:hover {
-    background: #f8f9fa;
+.donap-gravity-flow-table td {
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.donap-gravity-flow-table tr:hover td {
+    background-color: #f8fafc;
 }
 
 .donap-status-badge {
-    padding: 4px 8px;
-    border-radius: 3px;
+    padding: 4px 12px;
+    border-radius: 20px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
+    text-align: center;
+    display: inline-block;
+    min-width: 80px;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.status-in-progress {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #60a5fa;
+}
+
+.status-user-input {
+    background: #f3e8ff;
+    color: #7c3aed;
+    border: 1px solid #c4b5fd;
+}
+
+.status-approved {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.status-complete {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
 }
 
 .donap-status-approved {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.donap-priority-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.priority-1 { background: #10b981; }
+.priority-2 { background: #f59e0b; }
+.priority-3 { background: #ef4444; }
+
+.donap-entry-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.donap-action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.donap-action-btn.view {
+    background: #6366f1;
+}
+
+.donap-action-btn.approve {
+    background: #10b981;
+}
+
+.donap-action-btn.reject {
+    background: #ef4444;
+}
+
+.donap-action-btn.complete {
+    background: #8b5cf6;
+}
+
+.donap-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.donap-action-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .donap-entry-data {
@@ -426,31 +583,91 @@
     color: #666;
 }
 
+.donap-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #64748b;
+}
+
+.donap-empty-state i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.donap-error-message {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.donap-error-message i {
+    margin-left: 8px;
+}
+
 .donap-pagination {
     display: flex;
     justify-content: center;
-    gap: 5px;
+    align-items: center;
+    gap: 10px;
     margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.donap-pagination-btn {
+    padding: 8px 12px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.donap-pagination-btn:hover {
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
+}
+
+.donap-pagination-btn.current {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.donap-pagination-info {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0 15px;
 }
 
 .donap-pagination-link,
 .donap-pagination-current {
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 2px solid #e2e8f0;
     text-decoration: none;
-    color: #2271b1;
-    border-radius: 3px;
+    color: #64748b;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    background: white;
 }
 
 .donap-pagination-link:hover {
-    background: #f0f0f1;
-    color: #2271b1;
+    border-color: #667eea;
+    background: #667eea;
+    color: white;
 }
 
 .donap-pagination-current {
-    background: #2271b1;
+    background: #667eea;
     color: white;
-    border-color: #2271b1;
+    border-color: #667eea;
 }
 
 .donap-modal {
@@ -467,16 +684,18 @@
     background-color: #fefefe;
     margin: 5% auto;
     padding: 0;
-    border-radius: 5px;
+    border-radius: 12px;
     width: 80%;
     max-width: 600px;
     max-height: 80vh;
     overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .donap-modal-header {
     padding: 15px 20px;
-    background: #f1f1f1;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
     border-bottom: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
@@ -485,17 +704,19 @@
 
 .donap-modal-header h3 {
     margin: 0;
+    color: white;
 }
 
 .donap-modal-close {
-    color: #aaa;
+    color: white;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    opacity: 0.7;
 }
 
 .donap-modal-close:hover {
-    color: #000;
+    opacity: 1;
 }
 
 .donap-modal-body {
@@ -511,10 +732,10 @@
 
 .donap-modal-field-item {
     margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #e1e1e1;
-    border-radius: 4px;
-    background: #f9f9f9;
+    padding: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
 }
 
 .donap-modal-field-item:last-child {
@@ -523,18 +744,131 @@
 
 .donap-modal-field-label {
     font-weight: 600;
-    color: #333;
-    margin-bottom: 5px;
+    color: #374151;
+    margin-bottom: 8px;
     display: block;
 }
 
 .donap-modal-field-value {
-    color: #666;
+    color: #6b7280;
     word-wrap: break-word;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
+/* Export Buttons Styles */
+.inbox-export-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-btn-main {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.export-btn-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    background: white;
+    min-width: 280px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    z-index: 1000;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.export-dropdown-content.show {
+    display: block;
+}
+
+.export-option {
+    display: block;
+    padding: 14px 18px;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.export-option:last-child {
+    border-bottom: none;
+}
+
+.export-option:hover {
+    background: #f8fafc;
+    color: #1f2937;
+}
+
+.export-option i {
+    margin-left: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.export-option.csv i {
+    color: #059669;
+}
+
+.export-option.excel i {
+    color: #0ea5e9;
+}
+
+.export-option.pdf i {
+    color: #dc2626;
+}
+
+.export-option span {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.export-option small {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
+    .donap-inbox-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .donap-inbox-stats {
+        justify-content: center;
+    }
+    
+    .donap-stat-card {
+        flex: 1;
+        min-width: 80px;
+    }
+    
     .donap-stats-grid {
         grid-template-columns: 1fr;
     }
@@ -552,13 +886,69 @@
         font-size: 14px;
     }
     
-    .donap-table th,
-    .donap-table td {
-        padding: 8px 4px;
+    .donap-gravity-flow-table {
+        font-size: 12px;
+    }
+    
+    .donap-gravity-flow-table th,
+    .donap-gravity-flow-table td {
+        padding: 8px 6px;
+    }
+    
+    .donap-entry-actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .donap-action-btn {
+        font-size: 10px;
+        padding: 4px 8px;
     }
     
     .donap-pagination {
+        justify-content: center;
         flex-wrap: wrap;
+    }
+    
+    .donap-pagination-info {
+        order: -1;
+        margin: 0 0 10px 0;
+    }
+}
+
+/* Smaller mobile screens */
+@media (max-width: 480px) {
+    .donap-gravity-flow-table thead {
+        display: none;
+    }
+    
+    .donap-gravity-flow-table tr {
+        display: block;
+        margin-bottom: 15px;
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+    
+    .donap-gravity-flow-table td {
+        display: block;
+        border: none;
+        padding: 5px 0;
+        text-align: right;
+    }
+    
+    .donap-gravity-flow-table td:first-child {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+    }
+    
+    .donap-gravity-flow-table td:not(:first-child):before {
+        content: attr(data-label) ": ";
+        font-weight: bold;
+        color: #667eea;
     }
 }
 </style>
