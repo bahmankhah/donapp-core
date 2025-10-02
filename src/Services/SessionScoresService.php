@@ -468,6 +468,22 @@ class SessionScoresService
      */
     private function getSampleData($per_page, $page)
     {
+        // Define sample visible fields structure
+        $visible_fields = [
+            ['field_id' => '1', 'field_label' => 'نام پر کننده', 'field_config' => [], 'is_summable' => false],
+            ['field_id' => '2', 'field_label' => 'نقش', 'field_config' => [], 'is_summable' => false],
+            ['field_id' => '3', 'field_label' => 'نام مدرسه', 'field_config' => [], 'is_summable' => false],
+            ['field_id' => '4', 'field_label' => 'کد مدرسه', 'field_config' => [], 'is_summable' => false],
+            ['field_id' => '5', 'field_label' => 'نام مدیر', 'field_config' => [], 'is_summable' => false],
+            ['field_id' => '6', 'field_label' => 'بهسازی سالن', 'field_config' => ['show_math' => '1'], 'is_summable' => true],
+            ['field_id' => '7', 'field_label' => 'جلسه والدین', 'field_config' => ['show_math' => '1'], 'is_summable' => true],
+            ['field_id' => '8', 'field_label' => 'غنی سازی زنگ تفریح', 'field_config' => ['show_math' => '1'], 'is_summable' => true]
+        ];
+
+        $summable_fields = array_filter($visible_fields, function($field) {
+            return $field['is_summable'];
+        });
+
         $sample_entries = [
             [
                 'id' => 1,
@@ -484,7 +500,9 @@ class SessionScoresService
                     'غنی سازی زنگ تفریح' => '75',
                     'جمع امتیازها' => 250
                 ],
-                'sum_score' => 250
+                'sum_score' => 250,
+                'visible_fields' => $visible_fields,
+                'summable_fields' => $summable_fields
             ],
             [
                 'id' => 2,
@@ -501,7 +519,9 @@ class SessionScoresService
                     'غنی سازی زنگ تفریح' => '85',
                     'جمع امتیازها' => 235
                 ],
-                'sum_score' => 235
+                'sum_score' => 235,
+                'visible_fields' => $visible_fields,
+                'summable_fields' => $summable_fields
             ]
         ];
 
