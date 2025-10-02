@@ -23,6 +23,7 @@ class SessionScoresController
             // Prepare parameters from shortcode attributes
             $params = [
                 'form_id' => intval($atts['form_id']),
+                'view_id' => isset($atts['view_id']) ? intval($atts['view_id']) : null,
                 'per_page' => intval($atts['per_page']),
                 'page' => isset($_GET['paged']) ? intval($_GET['paged']) : 1,
                 'sort_by_sum' => $atts['sort_by_sum'] === 'true',
@@ -74,6 +75,7 @@ class SessionScoresController
         try {
             // Get selected entry IDs from POST data
             $selected_ids = isset($_POST['selected_ids']) ? $_POST['selected_ids'] : [];
+            $view_id = isset($_POST['view_id']) ? intval($_POST['view_id']) : null;
             
             // Validate and sanitize IDs
             $entry_ids = [];
@@ -84,7 +86,7 @@ class SessionScoresController
             }
 
             // Export the data
-            $export_result = $this->sessionScoresService->exportSelectedEntriesToCSV($entry_ids);
+            $export_result = $this->sessionScoresService->exportSelectedEntriesToCSV($entry_ids, ['view_id' => $view_id]);
 
             if (!$export_result['success']) {
                 wp_send_json_error(['message' => $export_result['message']]);

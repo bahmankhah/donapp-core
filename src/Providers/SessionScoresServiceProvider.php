@@ -35,6 +35,7 @@ class SessionScoresServiceProvider
     {
         $atts = shortcode_atts([
             'form_id' => '17',  // Default form ID from the request
+            'view_id' => '',    // GravityView ID for detecting summable fields
             'secret' => '9dbeed940e74',  // Default secret key
             'per_page' => 20,
             'show_pagination' => 'true',
