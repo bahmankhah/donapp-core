@@ -108,8 +108,7 @@ class SessionScoresController
             $export_result = $this->sessionScoresService->exportSelectedEntriesToCSV($entry_ids, ['view_id' => $view_id]);
 
             if (!$export_result['success']) {
-                // For form submissions, show error and redirect back
-                $this->showErrorAndExit('خطا در اکسپورت: ' . $export_result['message']);
+                wp_send_json_error(['message' => $export_result['message']]);
                 return;
             }
 
@@ -124,7 +123,7 @@ class SessionScoresController
             $csvResult = $csvExporter->generate();
             
             if (!$csvResult['success']) {
-                $this->showErrorAndExit('خطا در تولید فایل CSV: ' . $csvResult['message']);
+                wp_send_json_error(['message' => 'Failed to generate CSV: ' . $csvResult['message']]);
                 return;
             }
 
@@ -133,37 +132,8 @@ class SessionScoresController
 
         } catch (Exception $e) {
             error_log('SessionScoresController handleExport Error: ' . $e->getMessage());
-            $this->showErrorAndExit('خطا در اکسپورت: خطای داخلی سرور');
+            wp_send_json_error(['message' => 'Export failed: ' . $e->getMessage()]);
         }
-    }
-
-    /**
-     * Show error message and exit for form submissions
-     */
-    private function showErrorAndExit($message)
-    {
-        // Simple error page for form submissions
-        ?>
-        <!DOCTYPE html>
-        <html dir="rtl">
-        <head>
-            <meta charset="UTF-8">
-            <title>خطا در اکسپورت</title>
-            <style>
-                body { font-family: Tahoma, Arial, sans-serif; margin: 50px; text-align: center; }
-                .error { color: #dc3545; background: #f8d7da; border: 1px solid #f5c6cb; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-                .back-btn { background: #007cba; color: white; padding: 10px 20px; text-decoration: none; border-radius: 3px; }
-                .back-btn:hover { background: #005a87; }
-            </style>
-        </head>
-        <body>
-            <div class="error"><?php echo esc_html($message); ?></div>
-            <a href="javascript:history.back()" class="back-btn">بازگشت</a>
-            <script>setTimeout(function(){ history.back(); }, 3000);</script>
-        </body>
-        </html>
-        <?php
-        exit;
     }
 
     /**
