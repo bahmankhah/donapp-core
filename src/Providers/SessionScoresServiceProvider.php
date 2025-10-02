@@ -34,7 +34,7 @@ class SessionScoresServiceProvider
     public function render_session_scores_table($atts)
     {
         $atts = shortcode_atts([
-            'form_id' => '19809',  // Default form ID from the request
+            'form_id' => '17',  // Default form ID from the request
             'secret' => '9dbeed940e74',  // Default secret key
             'per_page' => 20,
             'show_pagination' => 'true',
