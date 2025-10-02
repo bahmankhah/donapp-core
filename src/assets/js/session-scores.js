@@ -105,18 +105,11 @@
             
             $btn.prop('disabled', true).text('در حال اکسپورت...');
 
-            // Get view_id from the inline script
-            let viewId = '';
-            if (typeof window.donapViewId !== 'undefined') {
-                viewId = window.donapViewId;
-            }
-
             // Create form for CSV export
             const $form = $('<form>', {
                 method: 'POST',
                 action: donapSessionScores.ajaxUrl,
-                style: 'display: none;',
-                target: '_blank' // Open in new tab to avoid page reload
+                style: 'display: none;'
             });
 
             // Add form fields
@@ -133,11 +126,11 @@
             }));
 
             // Add view_id if available
-            if (viewId) {
+            if (donapSessionScores.viewId) {
                 $form.append($('<input>', {
                     type: 'hidden',
                     name: 'view_id',
-                    value: viewId
+                    value: donapSessionScores.viewId
                 }));
             }
 
@@ -156,12 +149,11 @@
             $('body').append($form);
             $form.submit();
 
-            // Reset button state and remove form after a delay
+            // Reset button state after a delay
             setTimeout(function() {
                 $btn.prop('disabled', false).text(originalText);
                 $form.remove();
-                SessionScoresTable.showNotification('درخواست اکسپورت ارسال شد', 'success');
-            }, 1000);
+            }, 2000);
         },
 
         showNotification: function(message, type) {
