@@ -24,6 +24,7 @@ class SessionScoresService
     public function getSessionScoresEntries($params = [])
     {
         $form_id = isset($params['form_id']) ? intval($params['form_id']) : 19809;
+        $view_id = isset($params['view_id']) ? intval($params['view_id']) : null;
         $per_page = isset($params['per_page']) ? intval($params['per_page']) : 20;
         $page = isset($params['page']) ? intval($params['page']) : 1;
         $sort_by_sum = isset($params['sort_by_sum']) ? $params['sort_by_sum'] === 'true' : true;
@@ -63,7 +64,7 @@ class SessionScoresService
             }
 
             // Process entries and calculate scores
-            $processed_entries = $this->processEntriesWithScores($entries, $form);
+            $processed_entries = $this->processEntriesWithScores($entries, $form, $view_id);
 
             // Sort by sum if required
             if ($sort_by_sum) {
@@ -101,14 +102,17 @@ class SessionScoresService
     }
 
     /**
-     * Process entries and calculate scores based on the specified columns
+     * Process entries and calculate scores based on the GravityView configuration
      */
-    private function processEntriesWithScores($entries, $form)
+    private function processEntriesWithScores($entries, $form, $view_id = null)
     {
         $processed = [];
         
-        // Map field labels to field IDs (we'll need to identify these from the form structure)
+        // Map field labels to field IDs
         $field_mapping = $this->getFieldMapping($form);
+        
+        // Get summable fields from GravityView configuration
+        $summable_fields = $this->getSummableFieldsFromView($view_id, $form);
 
         foreach ($entries as $entry) {
             // Extract the required data
@@ -125,19 +129,19 @@ class SessionScoresService
                 $processed_entry['entry_data'][$label] = $value;
             }
 
-            // Calculate sum of scores for the last three columns
-            $score_fields = ['بهسازی سالن', 'جلسه والدین', 'غنی سازی زنگ تفریح'];
+            // Calculate sum of scores for summable fields
             $sum_score = 0;
             
-            foreach ($score_fields as $field_label) {
-                if (isset($processed_entry['entry_data'][$field_label])) {
-                    $score = floatval($processed_entry['entry_data'][$field_label]);
-                    $sum_score += $score;
+            foreach ($summable_fields as $field_info) {
+                $field_value = isset($entry[$field_info['field_id']]) ? $entry[$field_info['field_id']] : '';
+                if (is_numeric($field_value)) {
+                    $sum_score += floatval($field_value);
                 }
             }
             
             $processed_entry['sum_score'] = $sum_score;
             $processed_entry['entry_data']['جمع امتیازها'] = $sum_score;
+            $processed_entry['summable_fields'] = $summable_fields;
 
             $processed[] = $processed_entry;
         }
@@ -147,44 +151,169 @@ class SessionScoresService
 
     /**
      * Map field labels to field IDs based on form structure
-     * This is a simplified version - in reality you'd inspect the form to find the exact field IDs
      */
     private function getFieldMapping($form)
     {
-        $mapping = [
-            'نام پر کننده' => '1',      // Adjust these field IDs based on actual form structure
-            'نقش' => '2',
-            'نام مدرسه' => '3',
-            'کد مدرسه' => '4',
-            'نام مدیر' => '5',
-            'بهسازی سالن' => '6',
-            'جلسه والدین' => '7',
-            'غنی سازی زنگ تفریح' => '8'
-        ];
+        $mapping = [];
 
-        // In a real implementation, you'd loop through $form['fields'] 
-        // and match labels to find the correct field IDs
-        // This is a placeholder mapping
+        // Loop through form fields to create accurate mapping
+        if (isset($form['fields']) && is_array($form['fields'])) {
+            foreach ($form['fields'] as $field) {
+                if (isset($field->label) && isset($field->id)) {
+                    $mapping[$field->label] = (string)$field->id;
+                }
+            }
+        }
+
+        // Fallback mapping if form inspection fails
+        if (empty($mapping)) {
+            $mapping = [
+                'نام پر کننده' => '1',
+                'نقش' => '2',
+                'نام مدرسه' => '3',
+                'کد مدرسه' => '4',
+                'نام مدیر' => '5',
+                'بهسازی سالن' => '6',
+                'جلسه والدین' => '7',
+                'غنی سازی زنگ تفریح' => '8'
+            ];
+        }
         
         return $mapping;
     }
 
     /**
+     * Get summable fields from GravityView configuration
+     * Looks for fields that have footer calculations enabled
+     */
+    private function getSummableFieldsFromView($view_id, $form)
+    {
+        $summable_fields = [];
+
+        if ($view_id && function_exists('get_post_meta')) {
+            // Get GravityView directory fields configuration
+            $directory_fields = get_post_meta($view_id, '_gravityview_directory_fields', true);
+            
+            if (is_array($directory_fields)) {
+                // Loop through all zones (directory_table, single_table, etc.)
+                foreach ($directory_fields as $zone => $zone_fields) {
+                    if (is_array($zone_fields)) {
+                        foreach ($zone_fields as $field_key => $field_config) {
+                            // Check if this field has math/calculation settings enabled
+                            if ($this->isFieldSummable($field_config)) {
+                                $field_id = $field_config['id'] ?? '';
+                                $field_label = $this->getFieldLabel($field_id, $form);
+                                
+                                if ($field_id && $field_label) {
+                                    $summable_fields[] = [
+                                        'field_id' => $field_id,
+                                        'field_label' => $field_label,
+                                        'field_config' => $field_config
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: if no GravityView config found, use numeric fields from form
+        if (empty($summable_fields) && isset($form['fields'])) {
+            foreach ($form['fields'] as $field) {
+                if ($this->isNumericField($field)) {
+                    $summable_fields[] = [
+                        'field_id' => (string)$field->id,
+                        'field_label' => $field->label,
+                        'field_config' => []
+                    ];
+                }
+            }
+        }
+
+        return $summable_fields;
+    }
+
+    /**
+     * Check if a field configuration indicates it should be included in footer calculations
+     */
+    private function isFieldSummable($field_config)
+    {
+        // Check various possible settings that indicate footer calculations
+        if (isset($field_config['show_math'])) {
+            return $field_config['show_math'] === '1' || $field_config['show_math'] === true;
+        }
+
+        if (isset($field_config['math'])) {
+            return $field_config['math'] === '1' || $field_config['math'] === true;
+        }
+
+        if (isset($field_config['footer_calculation'])) {
+            return $field_config['footer_calculation'] === '1' || $field_config['footer_calculation'] === true;
+        }
+
+        if (isset($field_config['add_to_footer'])) {
+            return $field_config['add_to_footer'] === '1' || $field_config['add_to_footer'] === true;
+        }
+
+        // Check for any setting that might indicate calculations
+        if (is_array($field_config)) {
+            foreach ($field_config as $key => $value) {
+                if (strpos(strtolower($key), 'math') !== false || 
+                    strpos(strtolower($key), 'calc') !== false || 
+                    strpos(strtolower($key), 'sum') !== false ||
+                    strpos(strtolower($key), 'total') !== false) {
+                    return $value === '1' || $value === true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get field label by field ID from form
+     */
+    private function getFieldLabel($field_id, $form)
+    {
+        if (isset($form['fields'])) {
+            foreach ($form['fields'] as $field) {
+                if ((string)$field->id === (string)$field_id) {
+                    return $field->label;
+                }
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Check if a field is numeric and suitable for calculations
+     */
+    private function isNumericField($field)
+    {
+        $numeric_types = ['number', 'calculation', 'product', 'quantity', 'price', 'total', 'select', 'radio'];
+        return in_array($field->type, $numeric_types);
+    }
+
+    /**
      * Export selected entries to CSV
      */
-    public function exportSelectedEntriesToCSV($entry_ids = [])
+    public function exportSelectedEntriesToCSV($entry_ids = [], $params = [])
     {
         try {
+            $view_id = $params['view_id'] ?? null;
+            
             // If no specific entries selected, export all
             if (empty($entry_ids)) {
                 $entries_result = $this->getSessionScoresEntries([
                     'per_page' => 1000,  // Large number to get all
-                    'page' => 1
+                    'page' => 1,
+                    'view_id' => $view_id
                 ]);
                 $entries = $entries_result['data'];
             } else {
                 // Get specific entries
-                $entries = $this->getEntriesByIds($entry_ids);
+                $entries = $this->getEntriesByIds($entry_ids, $view_id);
             }
 
             if (empty($entries)) {
@@ -211,7 +340,7 @@ class SessionScoresService
     /**
      * Get specific entries by IDs
      */
-    private function getEntriesByIds($entry_ids)
+    private function getEntriesByIds($entry_ids, $view_id = null)
     {
         $entries = [];
         
@@ -221,7 +350,7 @@ class SessionScoresService
                 // Get the form for processing
                 $form = \GFAPI::get_form($entry['form_id']);
                 if ($form) {
-                    $processed = $this->processEntriesWithScores([$entry], $form);
+                    $processed = $this->processEntriesWithScores([$entry], $form, $view_id);
                     if (!empty($processed)) {
                         $entries[] = $processed[0];
                     }
@@ -239,39 +368,42 @@ class SessionScoresService
     {
         $csv_data = [];
         
-        // CSV headers
-        $headers = [
-            'شناسه',
-            'تاریخ ایجاد',
-            'نام پر کننده',
-            'نقش',
-            'نام مدرسه',
-            'کد مدرسه',
-            'نام مدیر',
-            'بهسازی سالن',
-            'جلسه والدین',
-            'غنی سازی زنگ تفریح',
-            'جمع امتیازها'
-        ];
+        if (empty($entries)) {
+            return $csv_data;
+        }
+
+        // Get all field keys from the first entry to build dynamic headers
+        $first_entry = $entries[0];
+        $headers = ['شناسه', 'تاریخ ایجاد'];
         
+        // Add headers for all entry data fields
+        if (isset($first_entry['entry_data']) && is_array($first_entry['entry_data'])) {
+            foreach ($first_entry['entry_data'] as $field_label => $value) {
+                if ($field_label !== 'جمع امتیازها') { // We'll add this at the end
+                    $headers[] = $field_label;
+                }
+            }
+        }
+        
+        // Add sum column at the end
+        $headers[] = 'جمع امتیازها';
         $csv_data[] = $headers;
 
         // Add data rows
         foreach ($entries as $entry) {
-            $row = [
-                $entry['id'],
-                $entry['date_created'],
-                $entry['entry_data']['نام پر کننده'] ?? '',
-                $entry['entry_data']['نقش'] ?? '',
-                $entry['entry_data']['نام مدرسه'] ?? '',
-                $entry['entry_data']['کد مدرسه'] ?? '',
-                $entry['entry_data']['نام مدیر'] ?? '',
-                $entry['entry_data']['بهسازی سالن'] ?? '',
-                $entry['entry_data']['جلسه والدین'] ?? '',
-                $entry['entry_data']['غنی سازی زنگ تفریح'] ?? '',
-                $entry['sum_score']
-            ];
+            $row = [$entry['id'], $entry['date_created']];
             
+            // Add all field values in the same order as headers
+            if (isset($entry['entry_data']) && is_array($entry['entry_data'])) {
+                foreach ($first_entry['entry_data'] as $field_label => $value) {
+                    if ($field_label !== 'جمع امتیازها') {
+                        $row[] = $entry['entry_data'][$field_label] ?? '';
+                    }
+                }
+            }
+            
+            // Add sum score at the end
+            $row[] = $entry['sum_score'] ?? 0;
             $csv_data[] = $row;
         }
 
