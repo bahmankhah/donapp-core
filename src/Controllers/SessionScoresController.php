@@ -52,18 +52,28 @@ class SessionScoresController
                 }
             }
 
+            // Build columns array that the view expects
+            $columns = ['checkbox' => ($atts['show_checkboxes'] === 'true')];
+            foreach ($visible_fields as $field_label => $field_id) {
+                $columns[$field_label] = true;
+            }
+            
+            // Add sum column if enabled and there are summable fields
+            if ($atts['show_sum_column'] === 'true' && !empty($summable_fields)) {
+                $columns['جمع امتیازها'] = true;
+            }
+
             // Prepare data for view
             $view_data = [
                 'entries' => $result['data'],
+                'columns' => $columns,
                 'pagination' => $result['pagination'],
                 'form_title' => $result['form_title'] ?? 'جدول امتیازات جلسات',
                 'atts' => $atts,
                 'nonce' => wp_create_nonce('donap_export_scores'),
                 'view_id' => $atts['view_id'] ?? '',
                 'visible_fields' => $visible_fields,
-                'summable_fields' => $summable_fields,
-                'show_checkboxes' => $atts['show_checkboxes'] === 'true',
-                'show_sum_column' => $atts['show_sum_column'] === 'true'
+                'summable_fields' => $summable_fields
             ];
 
             // Return the rendered view
