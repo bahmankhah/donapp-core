@@ -54,7 +54,8 @@ class SessionScoresController
 
             // Build columns array that the view expects
             $columns = ['checkbox' => ($atts['show_checkboxes'] === 'true')];
-            foreach ($visible_fields as $field_label => $field_id) {
+            foreach ($visible_fields as $field_info) {
+                $field_label = $field_info['field_label'];
                 $columns[$field_label] = true;
             }
             

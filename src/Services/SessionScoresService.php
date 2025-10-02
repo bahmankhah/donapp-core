@@ -23,8 +23,26 @@ class SessionScoresService
      */
     public function getSessionScoresEntries($params = [])
     {
-        $form_id = isset($params['form_id']) ? intval($params['form_id']) : 19809;
+        $form_id = isset($params['form_id']) ? intval($params['form_id']) : null;
         $view_id = isset($params['view_id']) ? intval($params['view_id']) : null;
+        
+        // If form_id is not provided, try to get it from view_id
+        if (!$form_id && $view_id) {
+            $form_id = get_post_meta($view_id, '_gravityview_form_id', true);
+            if (!$form_id) {
+                error_log("SessionScoresService: Could not find form_id for view_id {$view_id}");
+                $per_page = isset($params['per_page']) ? intval($params['per_page']) : 20;
+                $page = isset($params['page']) ? intval($params['page']) : 1;
+                return $this->getSampleData($per_page, $page);
+            }
+        }
+        
+        if (!$form_id) {
+            error_log("SessionScoresService: No form_id or view_id provided");
+            $per_page = isset($params['per_page']) ? intval($params['per_page']) : 20;
+            $page = isset($params['page']) ? intval($params['page']) : 1;
+            return $this->getSampleData($per_page, $page);
+        }
         $per_page = isset($params['per_page']) ? intval($params['per_page']) : 20;
         $page = isset($params['page']) ? intval($params['page']) : 1;
         $sort_by_sum = isset($params['sort_by_sum']) ? $params['sort_by_sum'] === 'true' : true;
