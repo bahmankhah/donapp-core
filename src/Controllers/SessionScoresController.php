@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use Kernel\Container;
 use Exception;
+use App\Utils\Export\ExportFactory;
 
 class SessionScoresController
 {
@@ -37,6 +38,20 @@ class SessionScoresController
                 return '<div class="donap-error">خطا در دریافت اطلاعات: ' . esc_html($result['message']) . '</div>';
             }
 
+            // Get visible fields from the first entry to build dynamic columns
+            $visible_fields = [];
+            $summable_fields = [];
+            
+            if (!empty($result['data'])) {
+                $first_entry = $result['data'][0];
+                if (isset($first_entry['visible_fields'])) {
+                    $visible_fields = $first_entry['visible_fields'];
+                }
+                if (isset($first_entry['summable_fields'])) {
+                    $summable_fields = $first_entry['summable_fields'];
+                }
+            }
+
             // Prepare data for view
             $view_data = [
                 'entries' => $result['data'],
@@ -44,18 +59,11 @@ class SessionScoresController
                 'form_title' => $result['form_title'] ?? 'جدول امتیازات جلسات',
                 'atts' => $atts,
                 'nonce' => wp_create_nonce('donap_export_scores'),
-                'columns' => [
-                    'checkbox' => $atts['show_checkboxes'] === 'true',
-                    'نام پر کننده' => true,
-                    'نقش' => true,
-                    'نام مدرسه' => true,
-                    'کد مدرسه' => true,
-                    'نام مدیر' => true,
-                    'بهسازی سالن' => true,
-                    'جلسه والدین' => true,
-                    'غنی سازی زنگ تفریح' => true,
-                    'جمع امتیازها' => $atts['show_sum_column'] === 'true'
-                ]
+                'view_id' => $atts['view_id'] ?? '',
+                'visible_fields' => $visible_fields,
+                'summable_fields' => $summable_fields,
+                'show_checkboxes' => $atts['show_checkboxes'] === 'true',
+                'show_sum_column' => $atts['show_sum_column'] === 'true'
             ];
 
             // Return the rendered view
@@ -85,7 +93,7 @@ class SessionScoresController
                 }
             }
 
-            // Export the data
+            // Get the export data from service
             $export_result = $this->sessionScoresService->exportSelectedEntriesToCSV($entry_ids, ['view_id' => $view_id]);
 
             if (!$export_result['success']) {
@@ -93,24 +101,23 @@ class SessionScoresController
                 return;
             }
 
-            // Set headers for CSV download
-            $filename = $export_result['filename'];
-            header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename=' . $filename);
-            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-            header('Pragma: public');
-
-            // Add BOM for proper UTF-8 handling in Excel
-            echo "\xEF\xBB\xBF";
-
-            // Output CSV data
-            $output = fopen('php://output', 'w');
-            foreach ($export_result['data'] as $row) {
-                fputcsv($output, $row);
+            // Use the CSV helper from ExportFactory
+            $csvExporter = ExportFactory::createCsvExporter();
+            
+            // Set data for the CSV exporter
+            $csvExporter->setData($export_result['data']);
+            $csvExporter->setTitle('Session Scores Export');
+            
+            // Generate the CSV
+            $csvResult = $csvExporter->generate();
+            
+            if (!$csvResult['success']) {
+                wp_send_json_error(['message' => 'Failed to generate CSV: ' . $csvResult['message']]);
+                return;
             }
-            fclose($output);
 
-            exit;
+            // Serve the CSV file for download
+            $csvExporter->serve($csvResult['data'], $csvResult['filename']);
 
         } catch (Exception $e) {
             error_log('SessionScoresController handleExport Error: ' . $e->getMessage());

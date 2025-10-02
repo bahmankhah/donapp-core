@@ -10,28 +10,31 @@
         init: function() {
             this.bindEvents();
             this.updateSelectionCount();
+            this.updateSelectAllButtonText();
         },
 
         bindEvents: function() {
-            // Select All functionality
-            $(document).on('change', '#donap-select-all-checkbox', this.handleSelectAll);
-            $(document).on('click', '#donap-select-all', this.toggleSelectAll);
+            // Select All functionality - bind to both checkbox and button
+            $(document).on('change', '#donap-select-all-checkbox', this.handleSelectAll.bind(this));
+            $(document).on('click', '#donap-select-all', this.toggleSelectAll.bind(this));
             
             // Individual checkbox selection
-            $(document).on('change', '.donap-entry-checkbox', this.handleIndividualSelect);
+            $(document).on('change', '.donap-entry-checkbox', this.handleIndividualSelect.bind(this));
             
             // Export buttons
-            $(document).on('click', '#donap-export-selected', this.exportSelected);
-            $(document).on('click', '#donap-export-all', this.exportAll);
+            $(document).on('click', '#donap-export-selected', this.exportSelected.bind(this));
+            $(document).on('click', '#donap-export-all', this.exportAll.bind(this));
         },
 
         handleSelectAll: function() {
-            const isChecked = $(this).is(':checked');
+            const isChecked = $('#donap-select-all-checkbox').is(':checked');
             $('.donap-entry-checkbox').prop('checked', isChecked);
-            SessionScoresTable.updateSelectionCount();
+            this.updateSelectionCount();
+            this.updateSelectAllButtonText();
         },
 
-        toggleSelectAll: function() {
+        toggleSelectAll: function(e) {
+            e.preventDefault();
             const selectAllCheckbox = $('#donap-select-all-checkbox');
             const currentState = selectAllCheckbox.is(':checked');
             selectAllCheckbox.prop('checked', !currentState).trigger('change');
@@ -45,6 +48,7 @@
             const checkedCheckboxes = $('.donap-entry-checkbox:checked').length;
             
             $('#donap-select-all-checkbox').prop('checked', totalCheckboxes === checkedCheckboxes);
+            SessionScoresTable.updateSelectAllButtonText();
         },
 
         updateSelectionCount: function() {
@@ -53,6 +57,18 @@
             
             // Enable/disable export selected button
             $('#donap-export-selected').prop('disabled', selectedCount === 0);
+        },
+
+        updateSelectAllButtonText: function() {
+            const totalCheckboxes = $('.donap-entry-checkbox').length;
+            const checkedCheckboxes = $('.donap-entry-checkbox:checked').length;
+            const selectAllButton = $('#donap-select-all');
+            
+            if (checkedCheckboxes === totalCheckboxes && totalCheckboxes > 0) {
+                selectAllButton.text('لغو انتخاب همه');
+            } else {
+                selectAllButton.text('انتخاب همه');
+            }
         },
 
         getSelectedIds: function() {
@@ -108,6 +124,15 @@
                 name: 'nonce',
                 value: donapSessionScores.nonce
             }));
+
+            // Add view_id if available
+            if (donapSessionScores.viewId) {
+                $form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'view_id',
+                    value: donapSessionScores.viewId
+                }));
+            }
 
             // Add selected IDs
             if (selectedIds.length > 0) {

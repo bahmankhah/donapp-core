@@ -482,3 +482,10 @@ if (!isset($entries) || !isset($columns)) {
     }
 }
 </style>
+
+<script type="text/javascript">
+// Extend the donapSessionScores object with view-specific data
+if (typeof donapSessionScores !== 'undefined') {
+    donapSessionScores.viewId = '<?php echo esc_js($view_id); ?>';
+}
+</script>
