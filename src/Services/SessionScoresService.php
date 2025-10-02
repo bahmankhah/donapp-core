@@ -120,51 +120,47 @@ class SessionScoresService
     }
 
     /**
-     * Process entries and calculate scores based on the GravityView configuration
+     * Process entries to add calculated scores and format data
      */
-    private function processEntriesWithScores($entries, $form, $view_id = null)
+    public function processEntriesWithScores($entries, $visible_fields, $summable_fields)
     {
         $processed = [];
-        
-        // Get visible fields from GravityView configuration
-        $visible_fields = $this->getVisibleFieldsFromView($view_id, $form);
-        
-        // Filter summable fields
-        $summable_fields = array_filter($visible_fields, function($field) {
-            return $field['is_summable'];
-        });
 
         foreach ($entries as $entry) {
-            // Extract the required data
             $processed_entry = [
                 'id' => $entry['id'],
-                'date_created' => date_i18n('Y/m/d H:i', strtotime($entry['date_created'])),
-                'form_id' => $entry['form_id'],
+                'date_created' => $entry['date_created'],
                 'entry_data' => [],
-                'visible_fields' => $visible_fields
+                'sum_score' => 0,
+                'visible_fields' => $visible_fields,
+                'summable_fields' => $summable_fields
             ];
 
-            // Extract field values for all visible fields
+            // Process visible fields only
             foreach ($visible_fields as $field_info) {
                 $field_id = $field_info['field_id'];
                 $field_label = $field_info['field_label'];
-                $value = isset($entry[$field_id]) ? $entry[$field_id] : '';
-                $processed_entry['entry_data'][$field_label] = $value;
+                $field_value = isset($entry[$field_id]) ? $entry[$field_id] : '';
+                
+                $processed_entry['entry_data'][$field_label] = $field_value;
             }
 
-            // Calculate sum of scores for summable fields only
+            // Calculate sum only for summable fields
             $sum_score = 0;
-            
             foreach ($summable_fields as $field_info) {
-                $field_value = isset($entry[$field_info['field_id']]) ? $entry[$field_info['field_id']] : '';
+                $field_id = $field_info['field_id'];
+                $field_value = isset($entry[$field_id]) ? $entry[$field_id] : 0;
+                
                 if (is_numeric($field_value)) {
                     $sum_score += floatval($field_value);
                 }
             }
             
             $processed_entry['sum_score'] = $sum_score;
-            $processed_entry['entry_data']['جمع امتیازها'] = $sum_score;
-            $processed_entry['summable_fields'] = $summable_fields;
+            // Only add sum column if there are summable fields
+            if (!empty($summable_fields)) {
+                $processed_entry['entry_data']['جمع امتیازها'] = $sum_score;
+            }
 
             $processed[] = $processed_entry;
         }
@@ -268,6 +264,9 @@ class SessionScoresService
             // Get GravityView directory fields configuration
             $directory_fields = get_post_meta($view_id, '_gravityview_directory_fields', true);
             
+            // Debug: Log the directory fields structure
+            error_log('GravityView Directory Fields for view ' . $view_id . ': ' . print_r($directory_fields, true));
+            
             if (is_array($directory_fields)) {
                 // Focus on directory_table zone for table view
                 $table_fields = $directory_fields['directory_table'] ?? [];
@@ -275,12 +274,22 @@ class SessionScoresService
                 if (is_array($table_fields)) {
                     foreach ($table_fields as $field_key => $field_config) {
                         $field_id = $field_config['id'] ?? '';
+                        
+                        // Debug: Log field processing
+                        error_log('Processing field ID: ' . $field_id . ' with config: ' . print_r($field_config, true));
+                        
                         $field_label = $this->getFieldLabel($field_id, $form);
                         
-                        if ($field_id && $field_label) {
+                        // Debug: Log field label result
+                        error_log('Field label for ID ' . $field_id . ': ' . $field_label);
+                        
+                        if ($field_id) {
+                            // Use field_id as label if no proper label found
+                            $label_to_use = !empty($field_label) ? $field_label : 'Field ' . $field_id;
+                            
                             $visible_fields[] = [
                                 'field_id' => $field_id,
-                                'field_label' => $field_label,
+                                'field_label' => $label_to_use,
                                 'field_config' => $field_config,
                                 'is_summable' => $this->isFieldSummable($field_config)
                             ];
@@ -292,6 +301,7 @@ class SessionScoresService
 
         // Fallback: if no GravityView config found, use all form fields
         if (empty($visible_fields) && isset($form['fields'])) {
+            error_log('Using fallback form fields for form: ' . print_r($form, true));
             foreach ($form['fields'] as $field) {
                 $visible_fields[] = [
                     'field_id' => (string)$field->id,
@@ -301,6 +311,9 @@ class SessionScoresService
                 ];
             }
         }
+
+        // Debug: Log final visible fields
+        error_log('Final visible fields: ' . print_r($visible_fields, true));
 
         return $visible_fields;
     }

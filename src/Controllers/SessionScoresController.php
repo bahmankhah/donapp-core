@@ -127,8 +127,22 @@ class SessionScoresController
                 return;
             }
 
-            // Serve the CSV file for download
-            $csvExporter->serve($csvResult['data'], $csvResult['filename']);
+            // Set headers for CSV download
+            $filename = 'session-scores-' . date('Y-m-d-H-i-s') . '.csv';
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+            header('Pragma: public');
+            header('Expires: 0');
+            
+            // Add BOM for proper UTF-8 encoding in Excel
+            echo "\xEF\xBB\xBF";
+            
+            // Output the CSV content
+            echo $csvResult['data'];
+            
+            // Ensure no additional output
+            wp_die();
 
         } catch (Exception $e) {
             error_log('SessionScoresController handleExport Error: ' . $e->getMessage());
