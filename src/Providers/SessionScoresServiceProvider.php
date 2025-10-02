@@ -34,9 +34,9 @@ class SessionScoresServiceProvider
     public function render_session_scores_table($atts)
     {
         $atts = shortcode_atts([
-            'form_id' => '17',  // Default form ID from the request
-            'view_id' => '',    // GravityView ID for detecting summable fields
-            'secret' => '9dbeed940e74',  // Default secret key
+            'form_id' => '',    // Form ID - required parameter
+            'view_id' => '',    // GravityView ID for detecting fields and form
+            'secret' => '',     // Secret key for validation
             'per_page' => 20,
             'show_pagination' => 'true',
             'show_checkboxes' => 'true',
@@ -44,6 +44,26 @@ class SessionScoresServiceProvider
             'sort_by_sum' => 'true',
             'sort_order' => 'DESC'  // DESC for highest scores first
         ], $atts);
+
+        // If view_id is provided but form_id is not, try to get form_id from GravityView
+        if (!empty($atts['view_id']) && empty($atts['form_id'])) {
+            $view_post = get_post($atts['view_id']);
+            if ($view_post && $view_post->post_type === 'gravityview') {
+                $form_id = get_post_meta($atts['view_id'], '_gravityview_form_id', true);
+                if ($form_id) {
+                    $atts['form_id'] = $form_id;
+                }
+            }
+        }
+
+        // Validate required parameters
+        if (empty($atts['form_id'])) {
+            return '<div class="error">خطا: شناسه فرم (form_id) یا شناسه نما (view_id) الزامی است</div>';
+        }
+
+        if (empty($atts['view_id'])) {
+            return '<div class="error">خطا: شناسه نما (view_id) الزامی است برای تشخیص ستون‌ها</div>';
+        }
 
         try {
             $controller = new \App\Controllers\SessionScoresController();

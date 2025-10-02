@@ -108,11 +108,13 @@ class SessionScoresService
     {
         $processed = [];
         
-        // Map field labels to field IDs
-        $field_mapping = $this->getFieldMapping($form);
+        // Get visible fields from GravityView configuration
+        $visible_fields = $this->getVisibleFieldsFromView($view_id, $form);
         
-        // Get summable fields from GravityView configuration
-        $summable_fields = $this->getSummableFieldsFromView($view_id, $form);
+        // Filter summable fields
+        $summable_fields = array_filter($visible_fields, function($field) {
+            return $field['is_summable'];
+        });
 
         foreach ($entries as $entry) {
             // Extract the required data
@@ -120,16 +122,19 @@ class SessionScoresService
                 'id' => $entry['id'],
                 'date_created' => date_i18n('Y/m/d H:i', strtotime($entry['date_created'])),
                 'form_id' => $entry['form_id'],
-                'entry_data' => []
+                'entry_data' => [],
+                'visible_fields' => $visible_fields
             ];
 
-            // Extract field values
-            foreach ($field_mapping as $label => $field_id) {
+            // Extract field values for all visible fields
+            foreach ($visible_fields as $field_info) {
+                $field_id = $field_info['field_id'];
+                $field_label = $field_info['field_label'];
                 $value = isset($entry[$field_id]) ? $entry[$field_id] : '';
-                $processed_entry['entry_data'][$label] = $value;
+                $processed_entry['entry_data'][$field_label] = $value;
             }
 
-            // Calculate sum of scores for summable fields
+            // Calculate sum of scores for summable fields only
             $sum_score = 0;
             
             foreach ($summable_fields as $field_info) {
@@ -232,6 +237,54 @@ class SessionScoresService
         }
 
         return $summable_fields;
+    }
+
+    /**
+     * Get all visible fields from GravityView configuration
+     */
+    public function getVisibleFieldsFromView($view_id, $form)
+    {
+        $visible_fields = [];
+
+        if ($view_id && function_exists('get_post_meta')) {
+            // Get GravityView directory fields configuration
+            $directory_fields = get_post_meta($view_id, '_gravityview_directory_fields', true);
+            
+            if (is_array($directory_fields)) {
+                // Focus on directory_table zone for table view
+                $table_fields = $directory_fields['directory_table'] ?? [];
+                
+                if (is_array($table_fields)) {
+                    foreach ($table_fields as $field_key => $field_config) {
+                        $field_id = $field_config['id'] ?? '';
+                        $field_label = $this->getFieldLabel($field_id, $form);
+                        
+                        if ($field_id && $field_label) {
+                            $visible_fields[] = [
+                                'field_id' => $field_id,
+                                'field_label' => $field_label,
+                                'field_config' => $field_config,
+                                'is_summable' => $this->isFieldSummable($field_config)
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: if no GravityView config found, use all form fields
+        if (empty($visible_fields) && isset($form['fields'])) {
+            foreach ($form['fields'] as $field) {
+                $visible_fields[] = [
+                    'field_id' => (string)$field->id,
+                    'field_label' => $field->label,
+                    'field_config' => [],
+                    'is_summable' => $this->isNumericField($field)
+                ];
+            }
+        }
+
+        return $visible_fields;
     }
 
     /**
