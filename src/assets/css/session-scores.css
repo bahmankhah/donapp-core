@@ -1,0 +1,94 @@
+/**
+ * Session Scores Table CSS
+ * Additional styles for the donap_gravity_session_scores_table shortcode
+ */
+
+/* Loading states */
+.donap-loading {
+    position: relative;
+}
+
+.donap-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.donap-loading::before {
+    content: 'در حال بارگذاری...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    font-weight: bold;
+    color: #007cba;
+}
+
+/* Notifications */
+.donap-notification {
+    font-family: 'IRANSans', Tahoma, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Print styles */
+@media print {
+    .donap-export-controls,
+    .donap-pagination {
+        display: none !important;
+    }
+    
+    .donap-checkbox-col {
+        display: none !important;
+    }
+    
+    .donap-scores-table {
+        border-collapse: collapse;
+    }
+    
+    .donap-scores-table th,
+    .donap-scores-table td {
+        border: 1px solid #000;
+        padding: 8px;
+    }
+}
+
+/* Accessibility improvements */
+.donap-entry-checkbox:focus,
+#donap-select-all-checkbox:focus {
+    outline: 2px solid #007cba;
+    outline-offset: 2px;
+}
+
+.donap-btn:focus {
+    outline: 2px solid #007cba;
+    outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .donap-scores-table th {
+        background: #000;
+        color: #fff;
+    }
+    
+    .donap-entry-row:hover {
+        background: #f0f0f0;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .donap-btn,
+    .donap-page-link {
+        transition: none;
+    }
+}

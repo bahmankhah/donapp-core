@@ -16,6 +16,7 @@ use App\Providers\AppServiceProvider;
 use App\Providers\ElementorServiceProvider;
 use App\Providers\GravityServiceProvider;
 use App\Providers\HookFilterServiceProvider;
+use App\Providers\SessionScoresServiceProvider;
 use App\Providers\ShortcodeServiceProvider;
 use App\Providers\SSOServiceProvider;
 use App\Providers\WooServiceProvider;
@@ -109,6 +110,8 @@ add_action('init', function () {
     (new ElementorServiceProvider())->boot();
     (new RouteServiceProvider())->boot();
     (new ShortcodeServiceProvider())->boot();
+    (new SessionScoresServiceProvider())->register();
+    (new SessionScoresServiceProvider())->boot();
     (new SSOServiceProvider())->boot();
     (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
