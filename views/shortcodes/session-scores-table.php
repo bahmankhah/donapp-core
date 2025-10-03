@@ -204,7 +204,7 @@ $unique_id = 'donap-session-scores-' . uniqid();
     <?php endif; ?>
 
     <!-- Column Totals Summary Table -->
-    <?php if ($atts['show_summary_table'] === 'true' && !empty($column_totals) && !empty($summable_fields)): ?>
+    <?php if (true || $atts['show_summary_table'] === 'true' && !empty($column_totals) && !empty($summable_fields)): ?>
         <div class="donap-summary-section">
             <h4 class="donap-summary-title">خلاصه مجموع ستون‌ها (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
             <div class="donap-summary-table-container">
