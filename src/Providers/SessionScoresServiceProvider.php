@@ -41,6 +41,7 @@ class SessionScoresServiceProvider
             'show_pagination' => 'true',
             'show_checkboxes' => 'true',
             'show_sum_column' => 'true',
+            'show_summary_table' => 'true',  // Show column totals summary table
             'sort_by_sum' => 'true',
             'sort_order' => 'DESC'  // DESC for highest scores first
         ], $atts);

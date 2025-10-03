@@ -433,6 +433,74 @@ class SessionScoresService
     }
 
     /**
+     * Calculate column totals for all entries (across all pages)
+     */
+    public function getColumnTotals($params = [])
+    {
+        try {
+            // Get ALL entries without pagination
+            $all_params = $params;
+            $all_params['per_page'] = 1000; // Large number to get all entries
+            $all_params['page'] = 1;
+            
+            $result = $this->getSessionScoresEntries($all_params);
+            
+            if (!$result['success'] || empty($result['data'])) {
+                return [
+                    'success' => false,
+                    'message' => 'No data available for totals calculation'
+                ];
+            }
+            
+            $entries = $result['data'];
+            $column_totals = [];
+            
+            // Get summable fields from the first entry
+            if (!empty($entries)) {
+                $summable_fields = $entries[0]['summable_fields'] ?? [];
+                
+                // Initialize totals for each summable field
+                foreach ($summable_fields as $field_info) {
+                    $field_label = $field_info['field_label'];
+                    $column_totals[$field_label] = 0;
+                }
+                
+                // Calculate totals across all entries
+                foreach ($entries as $entry) {
+                    foreach ($summable_fields as $field_info) {
+                        $field_label = $field_info['field_label'];
+                        $field_value = $entry['entry_data'][$field_label] ?? '';
+                        
+                        if (is_numeric($field_value)) {
+                            $column_totals[$field_label] += floatval($field_value);
+                        }
+                    }
+                }
+                
+                // Add grand total (sum of all sum_scores)
+                $grand_total = 0;
+                foreach ($entries as $entry) {
+                    $grand_total += $entry['sum_score'] ?? 0;
+                }
+                $column_totals['جمع کل'] = $grand_total;
+            }
+            
+            return [
+                'success' => true,
+                'data' => $column_totals,
+                'total_entries' => count($entries)
+            ];
+            
+        } catch (Exception $e) {
+            error_log('SessionScoresService getColumnTotals Error: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Prepare CSV data from entries
      */
     private function prepareCsvData($entries)
