@@ -197,7 +197,7 @@ if (!isset($entries) || !isset($columns)) {
     <!-- Column Totals Summary Table -->
     <?php if (isset($atts['show_summary_table']) && $atts['show_summary_table'] === 'true' && !empty($column_totals) && !empty($summable_fields)): ?>
         <div class="donap-summary-section">
-            <div class="donap-summary-header">
+            <div class="donap-summary-header-section">
                 <h4 class="donap-summary-title">خلاصه مجموع ستون‌ها (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
                 <button type="button" id="donap-export-summary" class="donap-btn donap-btn-success donap-export-summary-btn">
                     <span class="donap-export-icon">📊</span>
@@ -252,6 +252,107 @@ if (!isset($entries) || !isset($columns)) {
     <input type="hidden" id="donap-form-id" value="<?php echo esc_attr($atts['form_id']); ?>">
     <input type="hidden" id="donap-view-id" value="<?php echo esc_attr($atts['view_id'] ?? ''); ?>">
 </div>
+
+<script>
+jQuery(document).ready(function($) {
+    // Summary export functionality
+    $(document).on('click', '#donap-export-summary', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        const $btn = $(this);
+        const originalText = $btn.text();
+        $btn.prop('disabled', true).text('در حال اکسپورت...');
+
+        // Get data from hidden fields
+        const viewId = $('#donap-view-id').val();
+        const formId = $('#donap-form-id').val();
+
+        // Prepare data for API call
+        const exportData = {
+            type: 'summary',
+            view_id: viewId,
+            form_id: formId
+        };
+
+        // Make API call
+        fetch('/wp-json/donapp/v1/session-scores/export', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(exportData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            // Get filename from response headers or create default
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'session-scores-summary.csv';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // Show success notification
+            showNotification('فایل خلاصه با موفقیت دانلود شد', 'success');
+        })
+        .catch(error => {
+            console.error('Export error:', error);
+            showNotification('خطا در دانلود فایل خلاصه', 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            $btn.prop('disabled', false).text(originalText);
+        });
+    });
+
+    // Simple notification function
+    function showNotification(message, type) {
+        const $notification = $('<div>', {
+            text: message,
+            css: {
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                backgroundColor: type === 'error' ? '#dc3545' : '#28a745',
+                color: 'white',
+                padding: '12px 20px',
+                borderRadius: '4px',
+                zIndex: 9999,
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+            }
+        });
+
+        $('body').append($notification);
+
+        // Auto remove after 3 seconds
+        setTimeout(function() {
+            $notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+});
+</script>
 
 <style>
 .donap-session-scores-wrapper {
@@ -545,7 +646,7 @@ if (!isset($entries) || !isset($columns)) {
     border-radius: 8px;
 }
 
-.donap-summary-header {
+.donap-summary-header-section {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -666,7 +767,7 @@ if (!isset($entries) || !isset($columns)) {
         padding: 15px;
     }
 
-    .donap-summary-header {
+    .donap-summary-header-section {
         flex-direction: column;
         gap: 10px;
     }
