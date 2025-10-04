@@ -275,8 +275,10 @@ jQuery(document).ready(function($) {
             form_id: formId
         };
 
+        const base = <?php echo json_encode(appConfig('app.api.namespace')); ?>;
+
         // Make API call
-        fetch('/wp-json/donapp/v1/session-scores/export', {
+        fetch(`wp-json/${base}/session-scores/export`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
