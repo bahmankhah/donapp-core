@@ -19,12 +19,10 @@ class SessionScoresSummaryXlsx extends XlsxManager implements SpreadsheetFile
      */
     public function __construct()
     {
-        // Define the schema for session scores summary
+        // Define the schema for session scores summary (exactly like the table)
         $this->schema = [
             'column_name' => 'نام ستون',
-            'total_score' => 'مجموع امتیاز',
-            'total_entries' => 'تعداد کل ورودی‌ها',
-            'average_score' => 'میانگین امتیاز'
+            'total_score' => 'مجموع'
         ];
         
         $this->title = 'خلاصه امتیازات جلسات';
@@ -71,14 +69,10 @@ class SessionScoresSummaryXlsx extends XlsxManager implements SpreadsheetFile
             if ($columnName === 'جمع کل') {
                 continue;
             }
-
-            $average = $this->totalEntriesCount > 0 ? round($total / $this->totalEntriesCount, 2) : 0;
             
             $formatted_data[] = [
                 'column_name' => $columnName,
-                'total_score' => number_format($total, 2),
-                'total_entries' => $this->totalEntriesCount,
-                'average_score' => number_format($average, 2)
+                'total_score' => number_format($total, 2)
             ];
         }
 
@@ -87,20 +81,13 @@ class SessionScoresSummaryXlsx extends XlsxManager implements SpreadsheetFile
             // Add empty row separator
             $formatted_data[] = [
                 'column_name' => '',
-                'total_score' => '',
-                'total_entries' => '',
-                'average_score' => ''
+                'total_score' => ''
             ];
 
             // Add grand total row
-            $grandTotalAverage = $this->totalEntriesCount > 0 ? 
-                round($this->columnTotals['جمع کل'] / $this->totalEntriesCount, 2) : 0;
-                
             $formatted_data[] = [
                 'column_name' => 'مجموع کل امتیازها',
-                'total_score' => number_format($this->columnTotals['جمع کل'], 2),
-                'total_entries' => $this->totalEntriesCount,
-                'average_score' => number_format($grandTotalAverage, 2)
+                'total_score' => number_format($this->columnTotals['جمع کل'], 2)
             ];
         }
         

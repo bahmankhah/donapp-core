@@ -52,36 +52,28 @@ class SessionScoresSummaryCsv extends CsvManager implements ExportableFile
                 ];
             }
 
-            // Prepare CSV headers
+            // Prepare CSV headers (exactly like the table)
             $headers = [
                 'نام ستون',
-                'مجموع امتیاز',
-                'تعداد کل ورودی‌ها',
-                'میانگین امتیاز'
+                'مجموع'
             ];
 
             // Prepare CSV data
             $csvData = [$headers];
 
             foreach ($this->columnTotals as $columnName => $total) {
-                $average = $this->totalEntriesCount > 0 ? round($total / $this->totalEntriesCount, 2) : 0;
-                
                 $csvData[] = [
                     $columnName,
-                    number_format($total, 2),
-                    $this->totalEntriesCount,
-                    number_format($average, 2)
+                    number_format($total, 2)
                 ];
             }
 
             // Add summary row if there's a grand total
             if (isset($this->columnTotals['جمع کل'])) {
-                $csvData[] = ['', '', '', '']; // Empty row separator
+                $csvData[] = ['', '']; // Empty row separator
                 $csvData[] = [
                     'مجموع کل امتیازها',
-                    number_format($this->columnTotals['جمع کل'], 2),
-                    $this->totalEntriesCount,
-                    $this->totalEntriesCount > 0 ? number_format($this->columnTotals['جمع کل'] / $this->totalEntriesCount, 2) : '0'
+                    number_format($this->columnTotals['جمع کل'], 2)
                 ];
             }
 
