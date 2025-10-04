@@ -186,10 +186,158 @@
         }
     };
 
+    // Summary Table functionality
+    const SummaryTableExport = {
+        init: function() {
+            this.bindEvents();
+            this.updateSummarySelectionCount();
+        },
+
+        bindEvents: function() {
+            // Summary table select all functionality
+            $(document).on('change', '#donap-summary-select-all-checkbox', this.handleSummarySelectAll.bind(this));
+            $(document).on('click', '#donap-summary-select-all', this.toggleSummarySelectAll.bind(this));
+            
+            // Individual summary checkbox selection
+            $(document).on('change', '.donap-summary-row-checkbox', this.handleSummaryIndividualSelect.bind(this));
+            
+            // Summary export buttons
+            $(document).on('click', '#donap-summary-export-selected', this.exportSummarySelected.bind(this));
+            $(document).on('click', '#donap-summary-export-all', this.exportSummaryAll.bind(this));
+        },
+
+        handleSummarySelectAll: function() {
+            const isChecked = $('#donap-summary-select-all-checkbox').is(':checked');
+            $('.donap-summary-row-checkbox').prop('checked', isChecked);
+            this.updateSummarySelectionCount();
+        },
+
+        toggleSummarySelectAll: function(e) {
+            e.preventDefault();
+            const selectAllCheckbox = $('#donap-summary-select-all-checkbox');
+            const currentState = selectAllCheckbox.is(':checked');
+            selectAllCheckbox.prop('checked', !currentState).trigger('change');
+        },
+
+        handleSummaryIndividualSelect: function() {
+            this.updateSummarySelectionCount();
+            
+            // Update select all checkbox state
+            const totalCheckboxes = $('.donap-summary-row-checkbox').length;
+            const checkedCheckboxes = $('.donap-summary-row-checkbox:checked').length;
+            
+            $('#donap-summary-select-all-checkbox').prop('checked', totalCheckboxes === checkedCheckboxes);
+        },
+
+        updateSummarySelectionCount: function() {
+            const selectedCount = $('.donap-summary-row-checkbox:checked').length;
+            $('#donap-summary-selected-count').text(selectedCount);
+            
+            // Enable/disable export selected button
+            $('#donap-summary-export-selected').prop('disabled', selectedCount === 0);
+        },
+
+        getSelectedSummaryColumns: function() {
+            const selectedColumns = [];
+            $('.donap-summary-row-checkbox:checked').each(function() {
+                selectedColumns.push($(this).val());
+            });
+            return selectedColumns;
+        },
+
+        exportSummarySelected: function(e) {
+            e.preventDefault();
+            
+            const selectedColumns = this.getSelectedSummaryColumns();
+            
+            if (selectedColumns.length === 0) {
+                alert('لطفا حداقل یک ستون را انتخاب کنید');
+                return;
+            }
+
+            this.performSummaryExport(selectedColumns);
+        },
+
+        exportSummaryAll: function(e) {
+            e.preventDefault();
+            this.performSummaryExport([]);
+        },
+
+        performSummaryExport: function(selectedColumns) {
+            // Show loading state
+            const exportBtn = selectedColumns.length > 0 ? '#donap-summary-export-selected' : '#donap-summary-export-all';
+            const $btn = $(exportBtn);
+            const originalText = $btn.text();
+            
+            $btn.prop('disabled', true).text('در حال اکسپورت...');
+
+            // Create form for CSV export
+            const $form = $('<form>', {
+                method: 'POST',
+                action: donapSessionScores.ajaxUrl,
+                style: 'display: none;'
+            });
+
+            // Add form fields
+            $form.append($('<input>', {
+                type: 'hidden',
+                name: 'action',
+                value: 'donap_export_summary_table'
+            }));
+
+            $form.append($('<input>', {
+                type: 'hidden',
+                name: 'nonce',
+                value: donapSessionScores.nonce
+            }));
+
+            // Add view_id if available
+            if (donapSessionScores.viewId) {
+                $form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'view_id',
+                    value: donapSessionScores.viewId
+                }));
+            }
+
+            // Add form_id
+            const formId = $('#donap-form-id').val();
+            if (formId) {
+                $form.append($('<input>', {
+                    type: 'hidden',
+                    name: 'form_id',
+                    value: formId
+                }));
+            }
+
+            // Add selected columns
+            if (selectedColumns.length > 0) {
+                selectedColumns.forEach(function(column) {
+                    $form.append($('<input>', {
+                        type: 'hidden',
+                        name: 'selected_columns[]',
+                        value: column
+                    }));
+                });
+            }
+
+            // Add form to page and submit
+            $('body').append($form);
+            $form.submit();
+
+            // Reset button state after a delay
+            setTimeout(function() {
+                $btn.prop('disabled', false).text(originalText);
+                $form.remove();
+            }, 2000);
+        }
+    };
+
     // Initialize when document is ready
     $(document).ready(function() {
         if ($('.donap-session-scores-wrapper').length > 0) {
             SessionScoresTable.init();
+            SummaryTableExport.init();
         }
     });
 

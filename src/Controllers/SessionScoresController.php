@@ -148,6 +148,60 @@ class SessionScoresController
     }
 
     /**
+     * Handle summary table CSV export via AJAX
+     */
+    public function handleSummaryExport()
+    {
+        try {
+            // Get selected column names from POST data
+            $selected_columns = isset($_POST['selected_columns']) ? $_POST['selected_columns'] : [];
+            $view_id = isset($_POST['view_id']) ? intval($_POST['view_id']) : null;
+            $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : null;
+            
+            // Validate and sanitize column names
+            $column_names = [];
+            if (is_array($selected_columns)) {
+                foreach ($selected_columns as $column) {
+                    $column_names[] = sanitize_text_field($column);
+                }
+            }
+
+            // Get the summary export data from service
+            $export_result = $this->sessionScoresService->exportSummaryTableToCSV($column_names, [
+                'view_id' => $view_id,
+                'form_id' => $form_id
+            ]);
+
+            if (!$export_result['success']) {
+                wp_send_json_error(['message' => $export_result['message']]);
+                return;
+            }
+
+            // Use the CSV helper from ExportFactory
+            $csvExporter = ExportFactory::createCsvExporter();
+            
+            // Set data for the CSV exporter
+            $csvExporter->setData($export_result['data']);
+            $csvExporter->setTitle('Column Totals Summary Export');
+            
+            // Generate the CSV
+            $csvResult = $csvExporter->generate();
+            
+            if (!$csvResult['success']) {
+                wp_send_json_error(['message' => 'Failed to generate CSV: ' . $csvResult['message']]);
+                return;
+            }
+
+            // Serve the CSV file for download
+            $csvExporter->serve($csvResult['data'], $csvResult['filename']);
+
+        } catch (Exception $e) {
+            error_log('SessionScoresController handleSummaryExport Error: ' . $e->getMessage());
+            wp_send_json_error(['message' => 'Summary export failed: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Get entries for AJAX requests (for dynamic loading, filtering, etc.)
      */
     public function getEntriesAjax()
