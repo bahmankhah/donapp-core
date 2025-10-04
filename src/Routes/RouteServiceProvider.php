@@ -67,5 +67,8 @@ class RouteServiceProvider
         Route::get('workflow/my-tasks', [WorkflowController::class, 'getMyTasks'])->make()->name('workflow-my-tasks');
         Route::get('workflow/history', [WorkflowController::class, 'getEntryWorkflowHistory'])->make()->name('workflow-entry-history');
         Route::post('workflow/test', [WorkflowController::class, 'createTestWorkflow'])->make()->name('workflow-test');
+
+        // Session Scores export routes
+        Route::post('session-scores/export', [\App\Controllers\SessionScoresController::class, 'export'])->make()->name('session-scores-export');
     }
 }

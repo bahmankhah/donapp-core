@@ -7,6 +7,8 @@ use App\Utils\Export\Concrete\GravityApprovedEntriesXlsx;
 use App\Utils\Export\Concrete\GravityApprovedEntriesPdf;
 use App\Utils\Export\Concrete\GravitySingleEntryPdf;
 use App\Utils\Export\Concrete\GravitySingleEntryXlsx;
+use App\Utils\Export\Concrete\SessionScoresSummaryCsv;
+use App\Utils\Export\Concrete\SessionScoresSummaryXlsx;
 use Exception;
 
 /**
@@ -80,5 +82,24 @@ class ExportFactory
     public static function createPdfExporter(): PdfManager
     {
         return new PdfManager();
+    }
+
+    /**
+     * Create a session scores summary exporter
+     * @param string $format csv|xlsx|excel
+     * @return SessionScoresSummaryCsv|SessionScoresSummaryXlsx
+     * @throws Exception
+     */
+    public static function createSessionScoresSummaryExporter(string $format)
+    {
+        switch (strtolower($format)) {
+            case 'csv':
+                return new SessionScoresSummaryCsv();
+            case 'xlsx':
+            case 'excel':
+                return new SessionScoresSummaryXlsx();
+            default:
+                throw new Exception('Unsupported session scores summary export format: ' . $format);
+        }
     }
 }

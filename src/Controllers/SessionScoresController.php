@@ -180,4 +180,213 @@ class SessionScoresController
             wp_send_json_error(['message' => 'Request failed: ' . $e->getMessage()]);
         }
     }
+
+    /**
+     * Export session scores to CSV
+     * POST /wp-json/donapp/v1/session-scores/export
+     */
+    public function export()
+    {
+        try {
+            // Get POST data
+            $request_body = file_get_contents('php://input');
+            $data = json_decode($request_body, true) ?: [];
+            
+            // Get parameters
+            $view_id = isset($data['view_id']) ? intval($data['view_id']) : null;
+            $form_id = isset($data['form_id']) ? intval($data['form_id']) : null;
+            $rows = isset($data['rows']) ? $data['rows'] : [];
+            $export_type = isset($data['type']) && $data['type'] === 'summary' ? 'summary' : 'entries';
+
+            // Validate required parameters
+            if (!$view_id && !$form_id) {
+                wp_send_json_error([
+                    'message' => 'view_id یا form_id الزامی است'
+                ], 400);
+                return;
+            }
+
+            if ($export_type === 'summary') {
+                // Export summary (column totals)
+                $this->exportSummary($view_id, $form_id);
+            } else {
+                // Export entries (selected or all)
+                $this->exportEntries($view_id, $form_id, $rows);
+            }
+
+        } catch (Exception $e) {
+            error_log('SessionScoresController Export Error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => 'خطا در اکسپورت: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export summary data (column totals)
+     */
+    private function exportSummary(?int $view_id, ?int $form_id): void
+    {
+        try {
+            // Get column totals from service
+            $params = array_filter([
+                'view_id' => $view_id,
+                'form_id' => $form_id
+            ]);
+
+            $column_totals_result = $this->sessionScoresService->getColumnTotals($params);
+
+            if (!$column_totals_result['success']) {
+                wp_send_json_error([
+                    'message' => 'خطا در دریافت مجموع ستون‌ها: ' . $column_totals_result['message']
+                ], 500);
+                return;
+            }
+
+            // Create summary CSV exporter
+            $csvExporter = ExportFactory::createSessionScoresSummaryExporter('csv');
+            
+            // Set data
+            $csvExporter->setColumnTotalsData($column_totals_result['data']);
+            $csvExporter->setTotalEntriesCount($column_totals_result['total_entries']);
+
+            // Generate CSV
+            $result = $csvExporter->generate();
+
+            if (!$result['success']) {
+                wp_send_json_error([
+                    'message' => 'خطا در تولید CSV: ' . $result['message']
+                ], 500);
+                return;
+            }
+
+            // Serve the file
+            $csvExporter->serve($result['data'], $result['filename']);
+
+        } catch (Exception $e) {
+            error_log('SessionScoresController exportSummary Error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => 'خطا در اکسپورت خلاصه: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export entries data (selected or all)
+     */
+    private function exportEntries(?int $view_id, ?int $form_id, array $rows = []): void
+    {
+        try {
+            $params = array_filter([
+                'view_id' => $view_id,
+                'form_id' => $form_id,
+                'per_page' => 1000, // Large number to get all entries
+                'page' => 1
+            ]);
+
+            // Get entries from service
+            if (!empty($rows)) {
+                // Get specific entries by IDs
+                $entries_result = $this->sessionScoresService->getEntriesByIds($rows, $params);
+            } else {
+                // Get all entries
+                $entries_result = $this->sessionScoresService->getSessionScoresEntries($params);
+            }
+
+            if (!$entries_result['success']) {
+                wp_send_json_error([
+                    'message' => 'خطا در دریافت اطلاعات: ' . $entries_result['message']
+                ], 500);
+                return;
+            }
+
+            $entries = $entries_result['data'];
+
+            if (empty($entries)) {
+                wp_send_json_error([
+                    'message' => 'هیچ داده‌ای برای اکسپورت یافت نشد'
+                ], 404);
+                return;
+            }
+
+            // Prepare CSV data
+            $csv_data = $this->prepareCsvData($entries);
+
+            // Create generic CSV exporter
+            $csvExporter = ExportFactory::createCsvExporter();
+            
+            // Set data directly as tabular format
+            $csvExporter->setData($csv_data);
+            $csvExporter->setTitle('Session Scores Export');
+
+            // Generate CSV
+            $result = $csvExporter->generate();
+
+            if (!$result['success']) {
+                wp_send_json_error([
+                    'message' => 'خطا در تولید CSV: ' . $result['message']
+                ], 500);
+                return;
+            }
+
+            // Serve the file
+            $filename = 'session-scores-' . date('Y-m-d-H-i-s') . '.csv';
+            $csvExporter->serve($result['data'], $filename);
+
+        } catch (Exception $e) {
+            error_log('SessionScoresController exportEntries Error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => 'خطا در اکسپورت جدول: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Prepare CSV data from entries
+     */
+    private function prepareCsvData(array $entries): array
+    {
+        $csv_data = [];
+        
+        if (empty($entries)) {
+            return $csv_data;
+        }
+
+        // Get all field keys from the first entry to build dynamic headers
+        $first_entry = $entries[0];
+        $headers = ['شناسه', 'تاریخ ایجاد'];
+        
+        // Add headers for all entry data fields
+        if (isset($first_entry['entry_data']) && is_array($first_entry['entry_data'])) {
+            foreach ($first_entry['entry_data'] as $field_label => $value) {
+                if ($field_label !== 'جمع امتیازها') { // We'll add this at the end
+                    $headers[] = $field_label;
+                }
+            }
+        }
+        
+        // Add sum column at the end
+        $headers[] = 'جمع امتیازها';
+        $csv_data[] = $headers;
+
+        // Add data rows
+        foreach ($entries as $entry) {
+            $row = [$entry['id'], $entry['date_created']];
+            
+            // Add all field values in the same order as headers
+            if (isset($entry['entry_data']) && is_array($entry['entry_data'])) {
+                foreach ($first_entry['entry_data'] as $field_label => $value) {
+                    if ($field_label !== 'جمع امتیازها') {
+                        $row[] = $entry['entry_data'][$field_label] ?? '';
+                    }
+                }
+            }
+            
+            // Add sum score at the end
+            $row[] = $entry['sum_score'] ?? 0;
+            $csv_data[] = $row;
+        }
+
+        return $csv_data;
+    }
 }
