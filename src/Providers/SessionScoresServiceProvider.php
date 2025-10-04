@@ -24,6 +24,10 @@ class SessionScoresServiceProvider
         add_action('wp_ajax_donap_export_selected_scores', [$this, 'handle_ajax_export']);
         add_action('wp_ajax_nopriv_donap_export_selected_scores', [$this, 'handle_ajax_export']);
         
+        // Register AJAX endpoints for summary table export
+        add_action('wp_ajax_donap_export_summary_table', [$this, 'handle_summary_export']);
+        add_action('wp_ajax_nopriv_donap_export_summary_table', [$this, 'handle_summary_export']);
+        
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
     }
@@ -40,7 +44,7 @@ class SessionScoresServiceProvider
             'per_page' => 20,
             'show_pagination' => 'true',
             'show_checkboxes' => 'true',
-            'show_sum_column' => 'true',
+            'show_sum_column' => 'false',
             'show_summary_table' => 'true',  // Show column totals summary table
             'sort_by_sum' => 'true',
             'sort_order' => 'DESC'  // DESC for highest scores first
@@ -90,6 +94,25 @@ class SessionScoresServiceProvider
             $controller->handleExport();
         } catch (Exception $e) {
             error_log('SessionScores Export Error: ' . $e->getMessage());
+            wp_die('Export failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Handle AJAX summary table export request
+     */
+    public function handle_summary_export()
+    {
+        // Verify nonce for security
+        if (!wp_verify_nonce($_POST['nonce'], 'donap_export_scores')) {
+            wp_die('Security check failed');
+        }
+
+        try {
+            $controller = new \App\Controllers\SessionScoresController();
+            $controller->handleSummaryExport();
+        } catch (Exception $e) {
+            error_log('SessionScores Summary Export Error: ' . $e->getMessage());
             wp_die('Export failed: ' . $e->getMessage());
         }
     }
