@@ -24,6 +24,7 @@
             // Export buttons
             $(document).on('click', '#donap-export-selected', this.exportSelected.bind(this));
             $(document).on('click', '#donap-export-all', this.exportAll.bind(this));
+            $(document).on('click', '#donap-export-summary', this.exportSummary.bind(this));
         },
 
         handleSelectAll: function() {
@@ -183,6 +184,74 @@
                     $(this).remove();
                 });
             }, 3000);
+        },
+
+        exportSummary: function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            const $btn = $('#donap-export-summary');
+            const originalText = $btn.text();
+            $btn.prop('disabled', true).text('در حال اکسپورت...');
+
+            // Get data from hidden fields
+            const viewId = $('#donap-view-id').val();
+            const formId = $('#donap-form-id').val();
+
+            // Prepare data for API call
+            const exportData = {
+                type: 'summary',
+                view_id: viewId,
+                form_id: formId
+            };
+
+            // Make API call
+            fetch('/wp-json/donapp/v1/session-scores/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(exportData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                // Get filename from response headers or create default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'session-scores-summary.csv';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                SessionScoresTable.showNotification('فایل خلاصه با موفقیت دانلود شد', 'success');
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                SessionScoresTable.showNotification('خطا در دانلود فایل خلاصه', 'error');
+            })
+            .finally(() => {
+                // Reset button state
+                $btn.prop('disabled', false).text(originalText);
+            });
         }
     };
 

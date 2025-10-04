@@ -197,7 +197,13 @@ if (!isset($entries) || !isset($columns)) {
     <!-- Column Totals Summary Table -->
     <?php if (isset($atts['show_summary_table']) && $atts['show_summary_table'] === 'true' && !empty($column_totals) && !empty($summable_fields)): ?>
         <div class="donap-summary-section">
-            <h4 class="donap-summary-title">خلاصه مجموع ستون‌ها (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
+            <div class="donap-summary-header">
+                <h4 class="donap-summary-title">خلاصه مجموع ستون‌ها (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
+                <button type="button" id="donap-export-summary" class="donap-btn donap-btn-success donap-export-summary-btn">
+                    <span class="donap-export-icon">📊</span>
+                    اکسپورت خلاصه
+                </button>
+            </div>
             <div class="donap-summary-table-container">
                 <table class="donap-summary-table">
                     <thead>
@@ -244,6 +250,7 @@ if (!isset($entries) || !isset($columns)) {
     <!-- Hidden fields for AJAX -->
     <input type="hidden" id="donap-nonce" value="<?php echo esc_attr($nonce); ?>">
     <input type="hidden" id="donap-form-id" value="<?php echo esc_attr($atts['form_id']); ?>">
+    <input type="hidden" id="donap-view-id" value="<?php echo esc_attr($atts['view_id'] ?? ''); ?>">
 </div>
 
 <style>
@@ -538,14 +545,49 @@ if (!isset($entries) || !isset($columns)) {
     border-radius: 8px;
 }
 
+.donap-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
 .donap-summary-title {
-    margin: 0 0 15px 0;
+    margin: 0;
     color: #2c3e50;
     font-size: 18px;
     font-weight: bold;
     text-align: center;
     border-bottom: 2px solid #007cba;
     padding-bottom: 10px;
+    flex: 1;
+}
+
+.donap-export-summary-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    margin-right: 15px;
+}
+
+.donap-export-summary-btn:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+    transform: translateY(-1px);
+}
+
+.donap-export-summary-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .donap-summary-table-container {
@@ -623,9 +665,22 @@ if (!isset($entries) || !isset($columns)) {
         margin-top: 20px;
         padding: 15px;
     }
+
+    .donap-summary-header {
+        flex-direction: column;
+        gap: 10px;
+    }
     
     .donap-summary-title {
         font-size: 16px;
+        text-align: center;
+    }
+
+    .donap-export-summary-btn {
+        align-self: center;
+        margin-right: 0;
+        padding: 10px 16px;
+        font-size: 14px;
     }
     
     .donap-summary-table {

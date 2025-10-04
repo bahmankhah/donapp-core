@@ -384,7 +384,7 @@ class SessionScoresService
                 $entries = $entries_result['data'];
             } else {
                 // Get specific entries
-                $entries = $this->getEntriesByIds($entry_ids, $view_id);
+                $entries = $this->getEntriesByIdsPrivate($entry_ids, $view_id);
             }
 
             if (empty($entries)) {
@@ -409,9 +409,9 @@ class SessionScoresService
     }
 
     /**
-     * Get specific entries by IDs
+     * Get specific entries by IDs (private implementation)
      */
-    private function getEntriesByIds($entry_ids, $view_id = null)
+    private function getEntriesByIdsPrivate($entry_ids, $view_id = null)
     {
         $entries = [];
         
@@ -430,6 +430,29 @@ class SessionScoresService
         }
 
         return $entries;
+    }
+
+    /**
+     * Public method to get specific entries by IDs
+     */
+    public function getEntriesByIds($entry_ids, $params = [])
+    {
+        try {
+            $view_id = $params['view_id'] ?? null;
+            $entries = $this->getEntriesByIdsPrivate($entry_ids, $view_id);
+            
+            return [
+                'success' => true,
+                'data' => $entries,
+                'message' => 'Entries retrieved successfully'
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'data' => [],
+                'message' => $e->getMessage()
+            ];
+        }
     }
 
     /**
