@@ -275,10 +275,10 @@ jQuery(document).ready(function($) {
             form_id: formId
         };
 
-        const base = <?php echo json_encode(appConfig('app.api.namespace')); ?>;
+        const url = <?php echo json_encode(rest_url('dnp/v1/session-scores/export')); ?>;
 
         // Make API call
-        fetch(`wp-json/${base}/session-scores/export`, {
+        fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
