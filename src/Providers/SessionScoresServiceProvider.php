@@ -105,7 +105,7 @@ class SessionScoresServiceProvider
                 'donap-session-scores',
                 plugin_dir_url(__DIR__ . '/../../') . 'src/assets/js/session-scores.js',
                 ['jquery'],
-                '1.0.0',
+                time(),
                 true
             );
 
