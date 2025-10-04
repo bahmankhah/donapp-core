@@ -148,32 +148,27 @@ class SessionScoresController
     }
 
     /**
-     * Handle summary table CSV export via AJAX
+     * Handle CSV export for summary table
      */
     public function handleSummaryExport()
     {
         try {
-            // Get selected column names from POST data
-            $selected_columns = isset($_POST['selected_columns']) ? $_POST['selected_columns'] : [];
+            // Get view_id from POST data
             $view_id = isset($_POST['view_id']) ? intval($_POST['view_id']) : null;
-            $form_id = isset($_POST['form_id']) ? intval($_POST['form_id']) : null;
             
-            // Validate and sanitize column names
-            $column_names = [];
-            if (is_array($selected_columns)) {
-                foreach ($selected_columns as $column) {
-                    $column_names[] = sanitize_text_field($column);
-                }
+            // Get the column totals from service
+            $column_totals_result = $this->sessionScoresService->getColumnTotals(['view_id' => $view_id]);
+
+            if (!$column_totals_result['success']) {
+                wp_send_json_error(['message' => $column_totals_result['message']]);
+                return;
             }
 
-            // Get the summary export data from service
-            $export_result = $this->sessionScoresService->exportSummaryTableToCSV($column_names, [
-                'view_id' => $view_id,
-                'form_id' => $form_id
-            ]);
+            // Prepare summary data for CSV export
+            $summary_data = $this->sessionScoresService->prepareSummaryData($column_totals_result);
 
-            if (!$export_result['success']) {
-                wp_send_json_error(['message' => $export_result['message']]);
+            if (!$summary_data['success']) {
+                wp_send_json_error(['message' => $summary_data['message']]);
                 return;
             }
 
@@ -181,8 +176,8 @@ class SessionScoresController
             $csvExporter = ExportFactory::createCsvExporter();
             
             // Set data for the CSV exporter
-            $csvExporter->setData($export_result['data']);
-            $csvExporter->setTitle('Column Totals Summary Export');
+            $csvExporter->setData($summary_data['data']);
+            $csvExporter->setTitle('Session Scores Summary');
             
             // Generate the CSV
             $csvResult = $csvExporter->generate();

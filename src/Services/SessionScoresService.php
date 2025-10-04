@@ -409,6 +409,48 @@ class SessionScoresService
     }
 
     /**
+     * Prepare summary data for CSV export
+     */
+    public function prepareSummaryData($column_totals_result)
+    {
+        try {
+            if (!$column_totals_result['success']) {
+                throw new Exception('Column totals data not available');
+            }
+
+            $column_totals = $column_totals_result['data'];
+            $total_entries_count = $column_totals_result['total_entries'];
+
+            // Prepare CSV data for summary
+            $csv_data = [];
+            
+            // Add headers
+            $csv_data[] = ['نام ستون', 'مجموع', 'تعداد ورودی‌ها'];
+            
+            // Add column totals
+            foreach ($column_totals as $field_label => $total) {
+                $csv_data[] = [
+                    $field_label,
+                    number_format($total, 2),
+                    $total_entries_count
+                ];
+            }
+
+            return [
+                'success' => true,
+                'data' => $csv_data,
+                'filename' => 'session-scores-summary-' . date('Y-m-d-H-i-s') . '.csv'
+            ];
+
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Get specific entries by IDs
      */
     private function getEntriesByIds($entry_ids, $view_id = null)
@@ -493,86 +535,6 @@ class SessionScoresService
             
         } catch (Exception $e) {
             error_log('SessionScoresService getColumnTotals Error: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
-        }
-    }
-
-    /**
-     * Export summary table (column totals) to CSV
-     */
-    public function exportSummaryTableToCSV($selected_columns = [], $params = [])
-    {
-        try {
-            $view_id = $params['view_id'] ?? null;
-            $form_id = $params['form_id'] ?? null;
-            
-            // Get column totals
-            $totals_result = $this->getColumnTotals(['view_id' => $view_id, 'form_id' => $form_id]);
-            
-            if (!$totals_result['success']) {
-                return [
-                    'success' => false,
-                    'message' => 'Failed to calculate column totals: ' . $totals_result['message']
-                ];
-            }
-            
-            $column_totals = $totals_result['data'];
-            $total_entries = $totals_result['total_entries'];
-            
-            // If no specific columns selected, export all
-            if (empty($selected_columns)) {
-                $selected_columns = array_keys($column_totals);
-            }
-            
-            // Prepare CSV data
-            $csv_data = [];
-            
-            // Add header
-            $csv_data[] = [
-                'نام ستون',
-                'مجموع',
-                'تعداد ورودی‌ها',
-                'میانگین',
-                'تاریخ اکسپورت'
-            ];
-            
-            // Add data rows for selected columns
-            foreach ($selected_columns as $column_name) {
-                if (isset($column_totals[$column_name])) {
-                    $total = $column_totals[$column_name];
-                    $average = $total_entries > 0 ? ($total / $total_entries) : 0;
-                    
-                    $csv_data[] = [
-                        $column_name,
-                        number_format($total, 2),
-                        $total_entries,
-                        number_format($average, 2),
-                        date('Y-m-d H:i:s')
-                    ];
-                }
-            }
-            
-            // Add summary row
-            $grand_total = array_sum(array_intersect_key($column_totals, array_flip($selected_columns)));
-            $csv_data[] = [
-                'مجموع کل ستون‌های انتخاب شده',
-                number_format($grand_total, 2),
-                $total_entries,
-                number_format($total_entries > 0 ? ($grand_total / $total_entries) : 0, 2),
-                date('Y-m-d H:i:s')
-            ];
-            
-            return [
-                'success' => true,
-                'data' => $csv_data,
-                'filename' => 'column-totals-summary-' . date('Y-m-d-H-i-s') . '.csv'
-            ];
-
-        } catch (Exception $e) {
-            error_log('SessionScoresService exportSummaryTableToCSV Error: ' . $e->getMessage());
             return [
                 'success' => false,
                 'message' => $e->getMessage()

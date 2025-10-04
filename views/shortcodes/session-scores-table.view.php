@@ -199,46 +199,24 @@ if (!isset($entries) || !isset($columns)) {
         <div class="donap-summary-section">
             <div class="donap-summary-header">
                 <h4 class="donap-summary-title">خلاصه مجموع ستون‌ها (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
-                
-                <!-- Summary Export Controls -->
                 <div class="donap-summary-export-controls">
-                    <div class="donap-summary-selection-info">
-                        <span id="donap-summary-selected-count">0</span> ستون انتخاب شده
-                    </div>
-                    <div class="donap-summary-export-buttons">
-                        <button type="button" id="donap-summary-select-all" class="donap-btn donap-btn-secondary">
-                            انتخاب همه ستون‌ها
-                        </button>
-                        <button type="button" id="donap-summary-export-selected" class="donap-btn donap-btn-primary" disabled>
-                            اکسپورت ستون‌های انتخاب شده
-                        </button>
-                        <button type="button" id="donap-summary-export-all" class="donap-btn donap-btn-outline">
-                            اکسپورت کل خلاصه
-                        </button>
-                    </div>
+                    <button type="button" id="donap-export-summary" class="donap-btn donap-btn-outline donap-summary-export-btn">
+                        <span class="donap-export-icon">📊</span>
+                        اکسپورت خلاصه
+                    </button>
                 </div>
             </div>
-            
             <div class="donap-summary-table-container">
                 <table class="donap-summary-table">
                     <thead>
                         <tr>
-                            <th class="donap-summary-checkbox-header">
-                                <input type="checkbox" id="donap-summary-select-all-checkbox" title="انتخاب همه ستون‌ها">
-                            </th>
                             <th class="donap-summary-header">نام ستون</th>
                             <th class="donap-summary-header">مجموع</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($summable_fields as $field_info): ?>
-                            <tr class="donap-summary-row" data-field-name="<?php echo esc_attr($field_info['field_label']); ?>">
-                                <td class="donap-summary-checkbox-cell">
-                                    <input type="checkbox" 
-                                           class="donap-summary-row-checkbox" 
-                                           value="<?php echo esc_attr($field_info['field_label']); ?>"
-                                           data-field-total="<?php echo esc_attr($column_totals[$field_info['field_label']] ?? 0); ?>">
-                                </td>
+                            <tr class="donap-summary-row">
                                 <td class="donap-summary-field-name">
                                     <?php echo esc_html($field_info['field_label']); ?>
                                 </td>
@@ -254,13 +232,7 @@ if (!isset($entries) || !isset($columns)) {
                         <?php endforeach; ?>
                         
                         <?php if (isset($atts['show_sum_column']) && $atts['show_sum_column'] === 'true' && isset($column_totals['جمع کل'])): ?>
-                            <tr class="donap-summary-row donap-grand-total-row" data-field-name="جمع کل امتیازها">
-                                <td class="donap-summary-checkbox-cell">
-                                    <input type="checkbox" 
-                                           class="donap-summary-row-checkbox" 
-                                           value="جمع کل امتیازها"
-                                           data-field-total="<?php echo esc_attr($column_totals['جمع کل']); ?>">
-                                </td>
+                            <tr class="donap-summary-row donap-grand-total-row">
                                 <td class="donap-summary-field-name">
                                     <strong>جمع کل امتیازها</strong>
                                 </td>
@@ -280,7 +252,15 @@ if (!isset($entries) || !isset($columns)) {
     <!-- Hidden fields for AJAX -->
     <input type="hidden" id="donap-nonce" value="<?php echo esc_attr($nonce); ?>">
     <input type="hidden" id="donap-form-id" value="<?php echo esc_attr($atts['form_id']); ?>">
+    <input type="hidden" id="donap-view-id" value="<?php echo esc_attr($atts['view_id'] ?? ''); ?>">
 </div>
+
+<script>
+// Set view ID for AJAX calls
+if (typeof donapSessionScores !== 'undefined') {
+    donapSessionScores.viewId = '<?php echo esc_js($atts['view_id'] ?? ''); ?>';
+}
+</script>
 
 <style>
 .donap-session-scores-wrapper {
@@ -578,8 +558,7 @@ if (!isset($entries) || !isset($columns)) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+    margin-bottom: 15px;
     gap: 15px;
 }
 
@@ -590,25 +569,38 @@ if (!isset($entries) || !isset($columns)) {
     font-weight: bold;
     border-bottom: 2px solid #007cba;
     padding-bottom: 10px;
+    flex: 1;
 }
 
 .donap-summary-export-controls {
     display: flex;
     align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
 }
 
-.donap-summary-selection-info {
-    font-size: 14px;
-    color: #666;
-    font-weight: 500;
-}
-
-.donap-summary-export-buttons {
+.donap-summary-export-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.donap-summary-export-btn:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+    transform: translateY(-1px);
+}
+
+.donap-summary-export-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .donap-summary-table-container {
@@ -640,25 +632,6 @@ if (!isset($entries) || !isset($columns)) {
     text-align: center;
     border-bottom: 1px solid #e9ecef;
     vertical-align: middle;
-}
-
-.donap-summary-checkbox-header,
-.donap-summary-checkbox-cell {
-    width: 50px;
-    text-align: center;
-    padding: 8px;
-}
-
-.donap-summary-row-checkbox,
-#donap-summary-select-all-checkbox {
-    transform: scale(1.2);
-    cursor: pointer;
-}
-
-.donap-summary-row-checkbox:focus,
-#donap-summary-select-all-checkbox:focus {
-    outline: 2px solid #007cba;
-    outline-offset: 2px;
 }
 
 .donap-summary-row:nth-child(even) {
@@ -705,27 +678,24 @@ if (!isset($entries) || !isset($columns)) {
         margin-top: 20px;
         padding: 15px;
     }
-    
+
     .donap-summary-header {
         flex-direction: column;
-        align-items: stretch;
         gap: 10px;
+    }
+
+    .donap-summary-title {
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .donap-summary-export-btn {
+        padding: 10px 16px;
+        font-size: 14px;
     }
     
     .donap-summary-title {
         font-size: 16px;
-        text-align: center;
-    }
-    
-    .donap-summary-export-controls {
-        flex-direction: column;
-        align-items: stretch;
-        text-align: center;
-    }
-    
-    .donap-summary-export-buttons {
-        justify-content: center;
-        flex-wrap: wrap;
     }
     
     .donap-summary-table {
@@ -734,13 +704,7 @@ if (!isset($entries) || !isset($columns)) {
     
     .donap-summary-table th,
     .donap-summary-table td {
-        padding: 8px 4px;
-    }
-    
-    .donap-summary-checkbox-header,
-    .donap-summary-checkbox-cell {
-        width: 40px;
-        padding: 4px;
+        padding: 10px 8px;
     }
 }
 </style>
