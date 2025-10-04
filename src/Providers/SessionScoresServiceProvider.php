@@ -24,9 +24,9 @@ class SessionScoresServiceProvider
         add_action('wp_ajax_donap_export_selected_scores', [$this, 'handle_ajax_export']);
         add_action('wp_ajax_nopriv_donap_export_selected_scores', [$this, 'handle_ajax_export']);
         
-        // Register AJAX endpoints for summary table export
-        add_action('wp_ajax_donap_export_summary_table', [$this, 'handle_summary_export']);
-        add_action('wp_ajax_nopriv_donap_export_summary_table', [$this, 'handle_summary_export']);
+        // Register AJAX endpoints for summary export
+        add_action('wp_ajax_donap_export_summary_scores', [$this, 'handle_ajax_summary_export']);
+        add_action('wp_ajax_nopriv_donap_export_summary_scores', [$this, 'handle_ajax_summary_export']);
         
         // Enqueue scripts and styles
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
@@ -99,9 +99,9 @@ class SessionScoresServiceProvider
     }
 
     /**
-     * Handle AJAX summary table export request
+     * Handle AJAX summary export request
      */
-    public function handle_summary_export()
+    public function handle_ajax_summary_export()
     {
         // Verify nonce for security
         if (!wp_verify_nonce($_POST['nonce'], 'donap_export_scores')) {
@@ -143,6 +143,7 @@ class SessionScoresServiceProvider
             wp_localize_script('donap-session-scores', 'donapSessionScores', [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('donap_export_scores'),
+                'viewId' => '', // This will be set dynamically per shortcode instance
                 'strings' => [
                     'selectItems' => 'لطفا حداقل یک مورد را انتخاب کنید',
                     'exportError' => 'خطا در اکسپورت فایل',
