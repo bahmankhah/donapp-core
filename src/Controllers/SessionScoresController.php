@@ -148,55 +148,6 @@ class SessionScoresController
     }
 
     /**
-     * Handle CSV export for summary table
-     */
-    public function handleSummaryExport()
-    {
-        try {
-            // Get view_id from POST data
-            $view_id = isset($_POST['view_id']) ? intval($_POST['view_id']) : null;
-            
-            // Get the column totals from service
-            $column_totals_result = $this->sessionScoresService->getColumnTotals(['view_id' => $view_id]);
-
-            if (!$column_totals_result['success']) {
-                wp_send_json_error(['message' => $column_totals_result['message']]);
-                return;
-            }
-
-            // Prepare summary data for CSV export
-            $summary_data = $this->sessionScoresService->prepareSummaryData($column_totals_result);
-
-            if (!$summary_data['success']) {
-                wp_send_json_error(['message' => $summary_data['message']]);
-                return;
-            }
-
-            // Use the CSV helper from ExportFactory
-            $csvExporter = ExportFactory::createCsvExporter();
-            
-            // Set data for the CSV exporter
-            $csvExporter->setData($summary_data['data']);
-            $csvExporter->setTitle('Session Scores Summary');
-            
-            // Generate the CSV
-            $csvResult = $csvExporter->generate();
-            
-            if (!$csvResult['success']) {
-                wp_send_json_error(['message' => 'Failed to generate CSV: ' . $csvResult['message']]);
-                return;
-            }
-
-            // Serve the CSV file for download
-            $csvExporter->serve($csvResult['data'], $csvResult['filename']);
-
-        } catch (Exception $e) {
-            error_log('SessionScoresController handleSummaryExport Error: ' . $e->getMessage());
-            wp_send_json_error(['message' => 'Summary export failed: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
      * Get entries for AJAX requests (for dynamic loading, filtering, etc.)
      */
     public function getEntriesAjax()

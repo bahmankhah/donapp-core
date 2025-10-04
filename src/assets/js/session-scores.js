@@ -24,7 +24,6 @@
             // Export buttons
             $(document).on('click', '#donap-export-selected', this.exportSelected.bind(this));
             $(document).on('click', '#donap-export-all', this.exportAll.bind(this));
-            $(document).on('click', '#donap-export-summary', this.exportSummary.bind(this));
         },
 
         handleSelectAll: function() {
@@ -96,11 +95,6 @@
         exportAll: function(e) {
             e.preventDefault();
             SessionScoresTable.performExport([]);
-        },
-
-        exportSummary: function(e) {
-            e.preventDefault();
-            SessionScoresTable.performSummaryExport();
         },
 
         performExport: function(selectedIds) {
@@ -189,53 +183,6 @@
                     $(this).remove();
                 });
             }, 3000);
-        },
-
-        performSummaryExport: function() {
-            // Show loading state
-            const $btn = $('#donap-export-summary');
-            const originalText = $btn.text();
-            
-            $btn.prop('disabled', true).text('در حال اکسپورت...');
-
-            // Create form for summary CSV export
-            const $form = $('<form>', {
-                method: 'POST',
-                action: donapSessionScores.ajaxUrl,
-                style: 'display: none;'
-            });
-
-            // Add form fields
-            $form.append($('<input>', {
-                type: 'hidden',
-                name: 'action',
-                value: 'donap_export_summary_scores'
-            }));
-
-            $form.append($('<input>', {
-                type: 'hidden',
-                name: 'nonce',
-                value: donapSessionScores.nonce
-            }));
-
-            // Add view_id if available
-            if (donapSessionScores.viewId) {
-                $form.append($('<input>', {
-                    type: 'hidden',
-                    name: 'view_id',
-                    value: donapSessionScores.viewId
-                }));
-            }
-
-            // Submit the form to trigger download
-            $('body').append($form);
-            $form.submit();
-            $form.remove();
-
-            // Reset button state
-            setTimeout(function() {
-                $btn.prop('disabled', false).text(originalText);
-            }, 2000);
         }
     };
 

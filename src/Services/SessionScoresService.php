@@ -409,48 +409,6 @@ class SessionScoresService
     }
 
     /**
-     * Prepare summary data for CSV export
-     */
-    public function prepareSummaryData($column_totals_result)
-    {
-        try {
-            if (!$column_totals_result['success']) {
-                throw new Exception('Column totals data not available');
-            }
-
-            $column_totals = $column_totals_result['data'];
-            $total_entries_count = $column_totals_result['total_entries'];
-
-            // Prepare CSV data for summary
-            $csv_data = [];
-            
-            // Add headers
-            $csv_data[] = ['نام ستون', 'مجموع', 'تعداد ورودی‌ها'];
-            
-            // Add column totals
-            foreach ($column_totals as $field_label => $total) {
-                $csv_data[] = [
-                    $field_label,
-                    number_format($total, 2),
-                    $total_entries_count
-                ];
-            }
-
-            return [
-                'success' => true,
-                'data' => $csv_data,
-                'filename' => 'session-scores-summary-' . date('Y-m-d-H-i-s') . '.csv'
-            ];
-
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => $e->getMessage()
-            ];
-        }
-    }
-
-    /**
      * Get specific entries by IDs
      */
     private function getEntriesByIds($entry_ids, $view_id = null)
