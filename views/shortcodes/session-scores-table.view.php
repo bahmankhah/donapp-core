@@ -209,7 +209,7 @@ if (!isset($entries) || !isset($columns)) {
                 <button type="button" id="donap-export-summary"
                     class="donap-btn donap-btn-success donap-export-summary-btn">
                     <span class="donap-export-icon">📊</span>
-                    اکسپورت اکسل
+                    خروجی اکسل
                 </button>
             </div>
             <div class="donap-summary-table-container">
