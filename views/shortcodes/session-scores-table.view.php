@@ -13,193 +13,201 @@ if (!isset($entries) || !isset($columns)) {
 
 <div class="donap-session-scores-wrapper" dir="rtl">
     <!-- Table Header with Title and Export Controls -->
-    <div class="donap-scores-header">
-        <h3 class="donap-scores-title"><?php echo esc_html($form_title); ?></h3>
-        
-        <?php if ($columns['checkbox']): ?>
-        <div class="donap-export-controls">
-            <div class="donap-selection-info">
-                <span id="donap-selected-count">0</span> مورد انتخاب شده
-            </div>
-            <div class="donap-export-buttons">
-                <button type="button" id="donap-select-all" class="donap-btn donap-btn-secondary">
-                    انتخاب همه
-                </button>
-                <button type="button" id="donap-export-selected" class="donap-btn donap-btn-primary" disabled>
-                    اکسپورت موارد انتخاب شده
-                </button>
-                <button type="button" id="donap-export-all" class="donap-btn donap-btn-outline">
-                    اکسپورت همه
-                </button>
-            </div>
-        </div>
-        <?php endif; ?>
-    </div>
+    <?php if (isset($atts['show_main_table']) && $atts['show_main_table'] === 'true'): ?>
+        <div class="donap-scores-header">
+            <h3 class="donap-scores-title"><?php echo esc_html($form_title); ?></h3>
 
-    <!-- Statistics Summary -->
-    <?php if (!empty($entries)): ?>
-    <div class="donap-stats-summary">
-        <div class="donap-stat">
-            <span class="donap-stat-label">تعداد کل:</span>
-            <span class="donap-stat-value"><?php echo $pagination['total_items']; ?></span>
+            <?php if ($columns['checkbox']): ?>
+                <div class="donap-export-controls">
+                    <div class="donap-selection-info">
+                        <span id="donap-selected-count">0</span> مورد انتخاب شده
+                    </div>
+                    <div class="donap-export-buttons">
+                        <button type="button" id="donap-select-all" class="donap-btn donap-btn-secondary">
+                            انتخاب همه
+                        </button>
+                        <button type="button" id="donap-export-selected" class="donap-btn donap-btn-primary" disabled>
+                            اکسپورت موارد انتخاب شده
+                        </button>
+                        <button type="button" id="donap-export-all" class="donap-btn donap-btn-outline">
+                            اکسپورت همه
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
-        <?php if (isset($atts['show_sum_column']) && $atts['show_sum_column'] === 'true'): ?>
-        <div class="donap-stat">
-            <span class="donap-stat-label">میانگین امتیاز:</span>
-            <span class="donap-stat-value">
-                <?php 
-                $total_sum = array_sum(array_column($entries, 'sum_score'));
-                $average = count($entries) > 0 ? round($total_sum / count($entries), 2) : 0;
-                echo $average;
-                ?>
-            </span>
-        </div>
-        <div class="donap-stat">
-            <span class="donap-stat-label">بالاترین امتیاز:</span>
-            <span class="donap-stat-value">
-                <?php echo count($entries) > 0 ? max(array_column($entries, 'sum_score')) : 0; ?>
-            </span>
-        </div>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
 
-    <!-- Main Table -->
-    <div class="donap-table-container">
-        <?php if (empty($entries)): ?>
-            <div class="donap-no-data">
-                <p>هیچ داده‌ای برای نمایش وجود ندارد.</p>
+        <!-- Statistics Summary -->
+        <?php if (!empty($entries)): ?>
+            <div class="donap-stats-summary">
+                <div class="donap-stat">
+                    <span class="donap-stat-label">تعداد کل:</span>
+                    <span class="donap-stat-value"><?php echo $pagination['total_items']; ?></span>
+                </div>
+                <?php if (isset($atts['show_sum_column']) && $atts['show_sum_column'] === 'true'): ?>
+                    <div class="donap-stat">
+                        <span class="donap-stat-label">میانگین امتیاز:</span>
+                        <span class="donap-stat-value">
+                            <?php
+                            $total_sum = array_sum(array_column($entries, 'sum_score'));
+                            $average = count($entries) > 0 ? round($total_sum / count($entries), 2) : 0;
+                            echo $average;
+                            ?>
+                        </span>
+                    </div>
+                    <div class="donap-stat">
+                        <span class="donap-stat-label">بالاترین امتیاز:</span>
+                        <span class="donap-stat-value">
+                            <?php echo count($entries) > 0 ? max(array_column($entries, 'sum_score')) : 0; ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php else: ?>
-            <form id="donap-scores-form">
-                <table class="donap-scores-table" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <?php if ($columns['checkbox']): ?>
-                            <th class="donap-checkbox-col">
-                                <input type="checkbox" id="donap-select-all-checkbox" title="انتخاب همه">
-                            </th>
-                            <?php endif; ?>
-                            
-                            <th>ردیف</th>
-                            <th>تاریخ ایجاد</th>
-                            
-                            <?php foreach ($columns as $column_key => $is_visible): ?>
-                                <?php if ($is_visible && $column_key !== 'checkbox'): ?>
-                                <th class="donap-col-<?php echo sanitize_html_class($column_key); ?>">
-                                    <?php echo esc_html($column_key); ?>
-                                    <?php if ($column_key === 'جمع امتیازها'): ?>
-                                        <span class="donap-sort-indicator" title="مرتب شده بر اساس این ستون">↓</span>
+        <?php endif; ?>
+
+        <!-- Main Table -->
+        <div class="donap-table-container">
+            <?php if (empty($entries)): ?>
+                <div class="donap-no-data">
+                    <p>هیچ داده‌ای برای نمایش وجود ندارد.</p>
+                </div>
+            <?php else: ?>
+                <form id="donap-scores-form">
+                    <table class="donap-scores-table" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <?php if ($columns['checkbox']): ?>
+                                    <th class="donap-checkbox-col">
+                                        <input type="checkbox" id="donap-select-all-checkbox" title="انتخاب همه">
+                                    </th>
+                                <?php endif; ?>
+
+                                <th>ردیف</th>
+                                <th>تاریخ ایجاد</th>
+
+                                <?php foreach ($columns as $column_key => $is_visible): ?>
+                                    <?php if ($is_visible && $column_key !== 'checkbox'): ?>
+                                        <th class="donap-col-<?php echo sanitize_html_class($column_key); ?>">
+                                            <?php echo esc_html($column_key); ?>
+                                            <?php if ($column_key === 'جمع امتیازها'): ?>
+                                                <span class="donap-sort-indicator" title="مرتب شده بر اساس این ستون">↓</span>
+                                            <?php endif; ?>
+                                        </th>
                                     <?php endif; ?>
-                                </th>
-                                <?php endif; ?>
+                                <?php endforeach; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $row_index = ($pagination['current_page'] - 1) * $pagination['per_page'] + 1;
+                            foreach ($entries as $entry):
+                                ?>
+                                <tr class="donap-entry-row" data-entry-id="<?php echo esc_attr($entry['id']); ?>">
+                                    <?php if ($columns['checkbox']): ?>
+                                        <td class="donap-checkbox-col">
+                                            <input type="checkbox" name="selected_entries[]"
+                                                value="<?php echo esc_attr($entry['id']); ?>" class="donap-entry-checkbox">
+                                        </td>
+                                    <?php endif; ?>
+
+                                    <td class="donap-row-number"><?php echo $row_index++; ?></td>
+                                    <td class="donap-date"><?php echo esc_html($entry['date_created']); ?></td>
+
+                                    <?php foreach ($columns as $column_key => $is_visible): ?>
+                                        <?php if ($is_visible && $column_key !== 'checkbox'): ?>
+                                            <td class="donap-col-<?php echo sanitize_html_class($column_key); ?>">
+                                                <?php
+                                                $value = isset($entry['entry_data'][$column_key]) ? $entry['entry_data'][$column_key] : '';
+
+                                                // Special formatting for score columns
+                                                if (in_array($column_key, ['بهسازی سالن', 'جلسه والدین', 'غنی سازی زنگ تفریح', 'جمع امتیازها'])) {
+                                                    $score = floatval($value);
+                                                    echo '<span class="donap-score-value">' . esc_html($score) . '</span>';
+
+                                                    // Add score badge for sum column
+                                                    if ($column_key === 'جمع امتیازها') {
+                                                        $badge_class = '';
+                                                        if ($score >= 240)
+                                                            $badge_class = 'donap-badge-excellent';
+                                                        elseif ($score >= 200)
+                                                            $badge_class = 'donap-badge-good';
+                                                        elseif ($score >= 150)
+                                                            $badge_class = 'donap-badge-average';
+                                                        else
+                                                            $badge_class = 'donap-badge-low';
+
+                                                        echo '<span class="donap-score-badge ' . $badge_class . '"></span>';
+                                                    }
+                                                } else {
+                                                    echo esc_html($value);
+                                                }
+                                                ?>
+                                            </td>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </tr>
                             <?php endforeach; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        $row_index = ($pagination['current_page'] - 1) * $pagination['per_page'] + 1;
-                        foreach ($entries as $entry): 
+                        </tbody>
+                    </table>
+                </form>
+            <?php endif; ?>
+        </div>
+
+        <!-- Pagination -->
+        <?php if ($atts['show_pagination'] === 'true' && $pagination['total_pages'] > 1): ?>
+            <div class="donap-pagination">
+                <div class="donap-pagination-info">
+                    صفحه <?php echo $pagination['current_page']; ?> از <?php echo $pagination['total_pages']; ?>
+                    (<?php echo $pagination['total_items']; ?> مورد)
+                </div>
+
+                <div class="donap-pagination-links">
+                    <?php
+                    $current_url = add_query_arg(null, null);
+                    $current_url = remove_query_arg('paged', $current_url);
+
+                    // Previous page link
+                    if ($pagination['current_page'] > 1):
+                        $prev_url = add_query_arg('paged', $pagination['current_page'] - 1, $current_url);
                         ?>
-                        <tr class="donap-entry-row" data-entry-id="<?php echo esc_attr($entry['id']); ?>">
-                            <?php if ($columns['checkbox']): ?>
-                            <td class="donap-checkbox-col">
-                                <input type="checkbox" name="selected_entries[]" value="<?php echo esc_attr($entry['id']); ?>" class="donap-entry-checkbox">
-                            </td>
-                            <?php endif; ?>
-                            
-                            <td class="donap-row-number"><?php echo $row_index++; ?></td>
-                            <td class="donap-date"><?php echo esc_html($entry['date_created']); ?></td>
-                            
-                            <?php foreach ($columns as $column_key => $is_visible): ?>
-                                <?php if ($is_visible && $column_key !== 'checkbox'): ?>
-                                <td class="donap-col-<?php echo sanitize_html_class($column_key); ?>">
-                                    <?php 
-                                    $value = isset($entry['entry_data'][$column_key]) ? $entry['entry_data'][$column_key] : '';
-                                    
-                                    // Special formatting for score columns
-                                    if (in_array($column_key, ['بهسازی سالن', 'جلسه والدین', 'غنی سازی زنگ تفریح', 'جمع امتیازها'])) {
-                                        $score = floatval($value);
-                                        echo '<span class="donap-score-value">' . esc_html($score) . '</span>';
-                                        
-                                        // Add score badge for sum column
-                                        if ($column_key === 'جمع امتیازها') {
-                                            $badge_class = '';
-                                            if ($score >= 240) $badge_class = 'donap-badge-excellent';
-                                            elseif ($score >= 200) $badge_class = 'donap-badge-good';
-                                            elseif ($score >= 150) $badge_class = 'donap-badge-average';
-                                            else $badge_class = 'donap-badge-low';
-                                            
-                                            echo '<span class="donap-score-badge ' . $badge_class . '"></span>';
-                                        }
-                                    } else {
-                                        echo esc_html($value);
-                                    }
-                                    ?>
-                                </td>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </form>
+                        <a href="<?php echo esc_url($prev_url); ?>" class="donap-page-link donap-prev">« قبلی</a>
+                    <?php endif; ?>
+
+                    <?php
+                    // Page number links
+                    $start_page = max(1, $pagination['current_page'] - 2);
+                    $end_page = min($pagination['total_pages'], $pagination['current_page'] + 2);
+
+                    for ($page = $start_page; $page <= $end_page; $page++):
+                        if ($page == $pagination['current_page']):
+                            ?>
+                            <span class="donap-page-link donap-current"><?php echo $page; ?></span>
+                        <?php else:
+                            $page_url = add_query_arg('paged', $page, $current_url);
+                            ?>
+                            <a href="<?php echo esc_url($page_url); ?>" class="donap-page-link"><?php echo $page; ?></a>
+                        <?php endif;
+                    endfor; ?>
+
+                    <?php
+                    // Next page link
+                    if ($pagination['current_page'] < $pagination['total_pages']):
+                        $next_url = add_query_arg('paged', $pagination['current_page'] + 1, $current_url);
+                        ?>
+                        <a href="<?php echo esc_url($next_url); ?>" class="donap-page-link donap-next">بعدی »</a>
+                    <?php endif; ?>
+                </div>
+            </div>
         <?php endif; ?>
-    </div>
-
-    <!-- Pagination -->
-    <?php if ($atts['show_pagination'] === 'true' && $pagination['total_pages'] > 1): ?>
-    <div class="donap-pagination">
-        <div class="donap-pagination-info">
-            صفحه <?php echo $pagination['current_page']; ?> از <?php echo $pagination['total_pages']; ?>
-            (<?php echo $pagination['total_items']; ?> مورد)
-        </div>
-        
-        <div class="donap-pagination-links">
-            <?php
-            $current_url = add_query_arg(null, null);
-            $current_url = remove_query_arg('paged', $current_url);
-            
-            // Previous page link
-            if ($pagination['current_page'] > 1):
-                $prev_url = add_query_arg('paged', $pagination['current_page'] - 1, $current_url);
-            ?>
-                <a href="<?php echo esc_url($prev_url); ?>" class="donap-page-link donap-prev">« قبلی</a>
-            <?php endif; ?>
-            
-            <?php
-            // Page number links
-            $start_page = max(1, $pagination['current_page'] - 2);
-            $end_page = min($pagination['total_pages'], $pagination['current_page'] + 2);
-            
-            for ($page = $start_page; $page <= $end_page; $page++):
-                if ($page == $pagination['current_page']):
-            ?>
-                    <span class="donap-page-link donap-current"><?php echo $page; ?></span>
-                <?php else:
-                    $page_url = add_query_arg('paged', $page, $current_url);
-                ?>
-                    <a href="<?php echo esc_url($page_url); ?>" class="donap-page-link"><?php echo $page; ?></a>
-                <?php endif;
-            endfor; ?>
-            
-            <?php
-            // Next page link
-            if ($pagination['current_page'] < $pagination['total_pages']):
-                $next_url = add_query_arg('paged', $pagination['current_page'] + 1, $current_url);
-            ?>
-                <a href="<?php echo esc_url($next_url); ?>" class="donap-page-link donap-next">بعدی »</a>
-            <?php endif; ?>
-        </div>
-    </div>
     <?php endif; ?>
-
     <!-- Column Totals Summary Table -->
     <?php if (isset($atts['show_summary_table']) && $atts['show_summary_table'] === 'true' && !empty($column_totals) && !empty($summable_fields)): ?>
         <div class="donap-summary-section">
             <div class="donap-summary-header-section">
-                <h4 class="donap-summary-title">لیست مجموع اقدامات (کل <?php echo esc_html($total_entries_count); ?> امتیاز دهی)</h4>
-                <button type="button" id="donap-export-summary" class="donap-btn donap-btn-success donap-export-summary-btn">
+                <h4 class="donap-summary-title">لیست مجموع اقدامات (کل <?php echo esc_html($total_entries_count); ?> امتیاز
+                    دهی)</h4>
+                <button type="button" id="donap-export-summary"
+                    class="donap-btn donap-btn-success donap-export-summary-btn">
                     <span class="donap-export-icon">📊</span>
                     اکسپورت اکسل
                 </button>
@@ -217,16 +225,16 @@ if (!isset($entries) || !isset($columns)) {
                         <?php foreach ($summable_fields as $field_info): ?>
                             <tr class="donap-summary-row" data-field-name="<?php echo esc_attr($field_info['field_label']); ?>">
                                 <td class="donap-summary-checkbox-col">
-                                    <input type="checkbox" name="selected_summary_rows[]" 
-                                           value="<?php echo esc_attr($field_info['field_label']); ?>" 
-                                           class="donap-summary-checkbox">
+                                    <input type="checkbox" name="selected_summary_rows[]"
+                                        value="<?php echo esc_attr($field_info['field_label']); ?>"
+                                        class="donap-summary-checkbox">
                                 </td>
                                 <td class="donap-summary-field-name">
                                     <?php echo esc_html($field_info['field_label']); ?>
                                 </td>
                                 <td class="donap-summary-field-total">
                                     <strong>
-                                        <?php 
+                                        <?php
                                         $total = $column_totals[$field_info['field_label']] ?? 0;
                                         echo esc_html(number_format($total));
                                         ?>
@@ -234,13 +242,12 @@ if (!isset($entries) || !isset($columns)) {
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        
+
                         <?php if (isset($atts['show_sum_column']) && $atts['show_sum_column'] === 'true' && isset($column_totals['جمع کل'])): ?>
                             <tr class="donap-summary-row donap-grand-total-row" data-field-name="جمع کل">
                                 <td class="donap-summary-checkbox-col">
-                                    <input type="checkbox" name="selected_summary_rows[]" 
-                                           value="جمع کل" 
-                                           class="donap-summary-checkbox">
+                                    <input type="checkbox" name="selected_summary_rows[]" value="جمع کل"
+                                        class="donap-summary-checkbox">
                                 </td>
                                 <td class="donap-summary-field-name">
                                     <strong>جمع کل امتیازها</strong>
@@ -265,569 +272,580 @@ if (!isset($entries) || !isset($columns)) {
 </div>
 
 <script>
-jQuery(document).ready(function($) {
-    // Summary export functionality
-    $(document).on('click', '#donap-export-summary', function(e) {
-        e.preventDefault();
-        
-        // Show loading state
-        const $btn = $(this);
-        const originalText = $btn.text();
-        $btn.prop('disabled', true).text('در حال اکسپورت...');
+    jQuery(document).ready(function ($) {
+        // Summary export functionality
+        $(document).on('click', '#donap-export-summary', function (e) {
+            e.preventDefault();
 
-        // Get data from hidden fields
-        const viewId = $('#donap-view-id').val();
-        const formId = $('#donap-form-id').val();
+            // Show loading state
+            const $btn = $(this);
+            const originalText = $btn.text();
+            $btn.prop('disabled', true).text('در حال اکسپورت...');
 
-        // Get selected summary rows
-        const selectedRows = [];
-        $('.donap-summary-checkbox:checked').each(function() {
-            selectedRows.push($(this).val());
-        });
+            // Get data from hidden fields
+            const viewId = $('#donap-view-id').val();
+            const formId = $('#donap-form-id').val();
 
-        // Prepare data for API call
-        const exportData = {
-            type: 'summary',
-            view_id: viewId,
-            form_id: formId,
-            rows: selectedRows
-        };
-
-        const url = <?php echo json_encode(rest_url('dnp/v1/session-scores/export')); ?>;
-
-        // Make API call
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(exportData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            
-            // Get filename from response headers or create default
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = 'session-scores-summary.csv';
-            if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-                if (filenameMatch) {
-                    filename = filenameMatch[1];
-                }
-            }
-            
-            return response.blob().then(blob => ({ blob, filename }));
-        })
-        .then(({ blob, filename }) => {
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-            // Show success notification
-            showNotification('فایل خلاصه با موفقیت دانلود شد', 'success');
-        })
-        .catch(error => {
-            console.error('Export error:', error);
-            showNotification('خطا در دانلود فایل خلاصه', 'error');
-        })
-        .finally(() => {
-            // Reset button state
-            $btn.prop('disabled', false).text(originalText);
-        });
-    });
-
-    // Simple notification function
-    function showNotification(message, type) {
-        const $notification = $('<div>', {
-            text: message,
-            css: {
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                backgroundColor: type === 'error' ? '#dc3545' : '#28a745',
-                color: 'white',
-                padding: '12px 20px',
-                borderRadius: '4px',
-                zIndex: 9999,
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-            }
-        });
-
-        $('body').append($notification);
-
-        // Auto remove after 3 seconds
-        setTimeout(function() {
-            $notification.fadeOut(300, function() {
-                $(this).remove();
+            // Get selected summary rows
+            const selectedRows = [];
+            $('.donap-summary-checkbox:checked').each(function () {
+                selectedRows.push($(this).val());
             });
-        }, 3000);
-    }
-});
+
+            // Prepare data for API call
+            const exportData = {
+                type: 'summary',
+                view_id: viewId,
+                form_id: formId,
+                rows: selectedRows
+            };
+
+            const url = <?php echo json_encode(rest_url('dnp/v1/session-scores/export')); ?>;
+
+            // Make API call
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(exportData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    // Get filename from response headers or create default
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = 'session-scores-summary.csv';
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                        if (filenameMatch) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+
+                    return response.blob().then(blob => ({ blob, filename }));
+                })
+                .then(({ blob, filename }) => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    // Show success notification
+                    showNotification('فایل خلاصه با موفقیت دانلود شد', 'success');
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showNotification('خطا در دانلود فایل خلاصه', 'error');
+                })
+                .finally(() => {
+                    // Reset button state
+                    $btn.prop('disabled', false).text(originalText);
+                });
+        });
+
+        // Simple notification function
+        function showNotification(message, type) {
+            const $notification = $('<div>', {
+                text: message,
+                css: {
+                    position: 'fixed',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: type === 'error' ? '#dc3545' : '#28a745',
+                    color: 'white',
+                    padding: '12px 20px',
+                    borderRadius: '4px',
+                    zIndex: 9999,
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }
+            });
+
+            $('body').append($notification);
+
+            // Auto remove after 3 seconds
+            setTimeout(function () {
+                $notification.fadeOut(300, function () {
+                    $(this).remove();
+                });
+            }, 3000);
+        }
+    });
 </script>
 
 <style>
-.donap-session-scores-wrapper {
-    font-family: 'IRANSans', Tahoma, Arial, sans-serif;
-    background: #fff;
-    border: 1px solid #e1e1e1;
-    border-radius: 6px;
-    margin: 20px 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
+    .donap-session-scores-wrapper {
+        font-family: 'IRANSans', Tahoma, Arial, sans-serif;
+        background: #fff;
+        border: 1px solid #e1e1e1;
+        border-radius: 6px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
 
-.donap-scores-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e1e1e1;
-    background: #f8f9fa;
-}
-
-.donap-scores-title {
-    margin: 0;
-    color: #2c3e50;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.donap-export-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.donap-selection-info {
-    font-size: 14px;
-    color: #666;
-}
-
-.donap-export-buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.donap-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.donap-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.donap-btn-primary {
-    background: #007cba;
-    color: white;
-}
-
-.donap-btn-primary:hover:not(:disabled) {
-    background: #005a87;
-}
-
-.donap-btn-secondary {
-    background: #666;
-    color: white;
-}
-
-.donap-btn-secondary:hover {
-    background: #555;
-}
-
-.donap-btn-outline {
-    background: transparent;
-    border: 1px solid #007cba;
-    color: #007cba;
-}
-
-.donap-btn-outline:hover {
-    background: #007cba;
-    color: white;
-}
-
-.donap-stats-summary {
-    display: flex;
-    gap: 30px;
-    padding: 15px 20px;
-    background: #f0f8ff;
-    border-bottom: 1px solid #e1e1e1;
-    flex-wrap: wrap;
-}
-
-.donap-stat {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.donap-stat-label {
-    font-weight: 600;
-    color: #555;
-}
-
-.donap-stat-value {
-    font-weight: bold;
-    color: #2c3e50;
-    background: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-}
-
-.donap-table-container {
-    overflow-x: auto;
-}
-
-.donap-scores-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.donap-scores-table th {
-    background: #f8f9fa;
-    padding: 12px 8px;
-    text-align: center;
-    font-weight: bold;
-    color: #2c3e50;
-    border-bottom: 2px solid #dee2e6;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-
-.donap-scores-table td {
-    padding: 10px 8px;
-    text-align: center;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.donap-entry-row:hover {
-    background: #f8f9fa;
-}
-
-.donap-entry-row:nth-child(even) {
-    background: #fafbfc;
-}
-
-.donap-entry-row:nth-child(even):hover {
-    background: #f0f2f5;
-}
-
-.donap-checkbox-col {
-    width: 40px;
-}
-
-.donap-row-number {
-    font-weight: bold;
-    color: #666;
-    width: 60px;
-}
-
-.donap-score-value {
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-.donap-score-badge {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-right: 5px;
-}
-
-.donap-badge-excellent { background: #28a745; }
-.donap-badge-good { background: #17a2b8; }
-.donap-badge-average { background: #ffc107; }
-.donap-badge-low { background: #dc3545; }
-
-.donap-sort-indicator {
-    font-size: 12px;
-    margin-right: 4px;
-    color: #007cba;
-}
-
-.donap-pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-top: 1px solid #e1e1e1;
-    background: #f8f9fa;
-}
-
-.donap-pagination-info {
-    color: #666;
-    font-size: 14px;
-}
-
-.donap-pagination-links {
-    display: flex;
-    gap: 5px;
-}
-
-.donap-page-link {
-    padding: 6px 12px;
-    text-decoration: none;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    color: #007cba;
-    background: white;
-    transition: all 0.2s ease;
-}
-
-.donap-page-link:hover {
-    background: #007cba;
-    color: white;
-    border-color: #007cba;
-}
-
-.donap-page-link.donap-current {
-    background: #007cba;
-    color: white;
-    border-color: #007cba;
-}
-
-.donap-no-data {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-}
-
-.donap-error {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 15px;
-    margin: 10px 0;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
     .donap-scores-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e1e1e1;
+        background: #f8f9fa;
     }
-    
+
+    .donap-scores-title {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
     .donap-export-controls {
-        flex-direction: column;
-        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 15px;
     }
-    
+
+    .donap-selection-info {
+        font-size: 14px;
+        color: #666;
+    }
+
     .donap-export-buttons {
-        justify-content: center;
+        display: flex;
+        gap: 10px;
     }
-    
+
+    .donap-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .donap-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .donap-btn-primary {
+        background: #007cba;
+        color: white;
+    }
+
+    .donap-btn-primary:hover:not(:disabled) {
+        background: #005a87;
+    }
+
+    .donap-btn-secondary {
+        background: #666;
+        color: white;
+    }
+
+    .donap-btn-secondary:hover {
+        background: #555;
+    }
+
+    .donap-btn-outline {
+        background: transparent;
+        border: 1px solid #007cba;
+        color: #007cba;
+    }
+
+    .donap-btn-outline:hover {
+        background: #007cba;
+        color: white;
+    }
+
     .donap-stats-summary {
-        flex-direction: column;
-        gap: 10px;
+        display: flex;
+        gap: 30px;
+        padding: 15px 20px;
+        background: #f0f8ff;
+        border-bottom: 1px solid #e1e1e1;
+        flex-wrap: wrap;
     }
-    
+
+    .donap-stat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .donap-stat-label {
+        font-weight: 600;
+        color: #555;
+    }
+
+    .donap-stat-value {
+        font-weight: bold;
+        color: #2c3e50;
+        background: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+    }
+
+    .donap-table-container {
+        overflow-x: auto;
+    }
+
     .donap-scores-table {
-        font-size: 12px;
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
     }
-    
-    .donap-scores-table th,
+
+    .donap-scores-table th {
+        background: #f8f9fa;
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
     .donap-scores-table td {
-        padding: 8px 4px;
+        padding: 10px 8px;
+        text-align: center;
+        border-bottom: 1px solid #e9ecef;
     }
-    
+
+    .donap-entry-row:hover {
+        background: #f8f9fa;
+    }
+
+    .donap-entry-row:nth-child(even) {
+        background: #fafbfc;
+    }
+
+    .donap-entry-row:nth-child(even):hover {
+        background: #f0f2f5;
+    }
+
+    .donap-checkbox-col {
+        width: 40px;
+    }
+
+    .donap-row-number {
+        font-weight: bold;
+        color: #666;
+        width: 60px;
+    }
+
+    .donap-score-value {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .donap-score-badge {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .donap-badge-excellent {
+        background: #28a745;
+    }
+
+    .donap-badge-good {
+        background: #17a2b8;
+    }
+
+    .donap-badge-average {
+        background: #ffc107;
+    }
+
+    .donap-badge-low {
+        background: #dc3545;
+    }
+
+    .donap-sort-indicator {
+        font-size: 12px;
+        margin-right: 4px;
+        color: #007cba;
+    }
+
     .donap-pagination {
-        flex-direction: column;
-        gap: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        border-top: 1px solid #e1e1e1;
+        background: #f8f9fa;
     }
-}
 
-/* Summary Table Styles */
-.donap-summary-section {
-    margin-top: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-}
+    .donap-pagination-info {
+        color: #666;
+        font-size: 14px;
+    }
 
-.donap-summary-header-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
+    .donap-pagination-links {
+        display: flex;
+        gap: 5px;
+    }
 
-.donap-summary-title {
-    margin: 0;
-    color: #2c3e50;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    border-bottom: 2px solid #007cba;
-    padding-bottom: 10px;
-    flex: 1;
-}
+    .donap-page-link {
+        padding: 6px 12px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        color: #007cba;
+        background: white;
+        transition: all 0.2s ease;
+    }
 
-.donap-export-summary-btn {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    margin-right: 15px;
-}
+    .donap-page-link:hover {
+        background: #007cba;
+        color: white;
+        border-color: #007cba;
+    }
 
-.donap-export-summary-btn:hover {
-    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
-    transform: translateY(-1px);
-}
+    .donap-page-link.donap-current {
+        background: #007cba;
+        color: white;
+        border-color: #007cba;
+    }
 
-.donap-export-summary-btn:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-    transform: none;
-}
+    .donap-no-data {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
 
-.donap-summary-table-container {
-    overflow-x: auto;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.donap-summary-table {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    border-collapse: collapse;
-    background: white;
-    font-size: 14px;
-}
-
-.donap-summary-table th {
-    background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
-    color: white;
-    font-weight: bold;
-    padding: 12px 15px;
-    text-align: center;
-    border-bottom: 2px solid #004973;
-}
-
-.donap-summary-checkbox-col {
-    width: 50px;
-    text-align: center;
-}
-
-.donap-summary-checkbox {
-    margin: 0;
-    cursor: pointer;
-}
-
-.donap-summary-table td {
-    padding: 12px 15px;
-    text-align: center;
-    border-bottom: 1px solid #e9ecef;
-    vertical-align: middle;
-}
-
-.donap-summary-row:nth-child(even) {
-    background-color: #f8f9fa;
-}
-
-.donap-summary-row:hover {
-    background-color: #e3f2fd;
-    transition: background-color 0.2s ease;
-}
-
-.donap-summary-field-name {
-    font-weight: 500;
-    color: #495057;
-    text-align: right;
-    width: 60%;
-}
-
-.donap-summary-field-total {
-    font-size: 16px;
-    color: #28a745;
-    width: 40%;
-}
-
-.donap-grand-total-row {
-    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%) !important;
-    border-top: 2px solid #28a745;
-}
-
-.donap-grand-total-row .donap-summary-field-name {
-    color: #155724;
-    font-weight: bold;
-}
-
-.donap-grand-total-value {
-    color: #155724 !important;
-    font-size: 18px;
-    font-weight: bold;
-}
-
-/* Responsive design for summary table */
-@media (max-width: 768px) {
-    .donap-summary-section {
-        margin-top: 20px;
+    .donap-error {
+        background: #f8d7da;
+        color: #721c24;
         padding: 15px;
+        margin: 10px 0;
+        border: 1px solid #f5c6cb;
+        border-radius: 4px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .donap-scores-header {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .donap-export-controls {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .donap-export-buttons {
+            justify-content: center;
+        }
+
+        .donap-stats-summary {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .donap-scores-table {
+            font-size: 12px;
+        }
+
+        .donap-scores-table th,
+        .donap-scores-table td {
+            padding: 8px 4px;
+        }
+
+        .donap-pagination {
+            flex-direction: column;
+            gap: 10px;
+        }
+    }
+
+    /* Summary Table Styles */
+    .donap-summary-section {
+        margin-top: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
     }
 
     .donap-summary-header-section {
-        flex-direction: column;
-        gap: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
     }
-    
+
     .donap-summary-title {
-        font-size: 16px;
+        margin: 0;
+        color: #2c3e50;
+        font-size: 18px;
+        font-weight: bold;
         text-align: center;
+        border-bottom: 2px solid #007cba;
+        padding-bottom: 10px;
+        flex: 1;
     }
 
     .donap-export-summary-btn {
-        align-self: center;
-        margin-right: 0;
-        padding: 10px 16px;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        margin-right: 15px;
+    }
+
+    .donap-export-summary-btn:hover {
+        background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+        transform: translateY(-1px);
+    }
+
+    .donap-export-summary-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .donap-summary-table-container {
+        overflow-x: auto;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .donap-summary-table {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        border-collapse: collapse;
+        background: white;
         font-size: 14px;
     }
-    
-    .donap-summary-table {
-        font-size: 12px;
+
+    .donap-summary-table th {
+        background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+        color: white;
+        font-weight: bold;
+        padding: 12px 15px;
+        text-align: center;
+        border-bottom: 2px solid #004973;
     }
-    
-    .donap-summary-table th,
+
+    .donap-summary-checkbox-col {
+        width: 50px;
+        text-align: center;
+    }
+
+    .donap-summary-checkbox {
+        margin: 0;
+        cursor: pointer;
+    }
+
     .donap-summary-table td {
-        padding: 10px 8px;
+        padding: 12px 15px;
+        text-align: center;
+        border-bottom: 1px solid #e9ecef;
+        vertical-align: middle;
     }
-}
+
+    .donap-summary-row:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    .donap-summary-row:hover {
+        background-color: #e3f2fd;
+        transition: background-color 0.2s ease;
+    }
+
+    .donap-summary-field-name {
+        font-weight: 500;
+        color: #495057;
+        text-align: right;
+        width: 60%;
+    }
+
+    .donap-summary-field-total {
+        font-size: 16px;
+        color: #28a745;
+        width: 40%;
+    }
+
+    .donap-grand-total-row {
+        background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%) !important;
+        border-top: 2px solid #28a745;
+    }
+
+    .donap-grand-total-row .donap-summary-field-name {
+        color: #155724;
+        font-weight: bold;
+    }
+
+    .donap-grand-total-value {
+        color: #155724 !important;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    /* Responsive design for summary table */
+    @media (max-width: 768px) {
+        .donap-summary-section {
+            margin-top: 20px;
+            padding: 15px;
+        }
+
+        .donap-summary-header-section {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .donap-summary-title {
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .donap-export-summary-btn {
+            align-self: center;
+            margin-right: 0;
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        .donap-summary-table {
+            font-size: 12px;
+        }
+
+        .donap-summary-table th,
+        .donap-summary-table td {
+            padding: 10px 8px;
+        }
+    }
 </style>
 
 <script type="text/javascript">
-// Extend the donapSessionScores object with view-specific data
-if (typeof donapSessionScores !== 'undefined') {
-    donapSessionScores.viewId = '<?php echo esc_js($view_id); ?>';
-}
+    // Extend the donapSessionScores object with view-specific data
+    if (typeof donapSessionScores !== 'undefined') {
+        donapSessionScores.viewId = '<?php echo esc_js($view_id); ?>';
+    }
 </script>
