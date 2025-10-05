@@ -38,6 +38,7 @@ class SessionScoresServiceProvider
             'view_id' => '',    // GravityView ID for detecting fields and form
             'secret' => '',     // Secret key for validation
             'per_page' => 20,
+            'show_main_table'=>'false',
             'show_pagination' => 'true',
             'show_checkboxes' => 'true',
             'show_sum_column' => 'false',
