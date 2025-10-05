@@ -10,12 +10,10 @@ use App\Services\GravityService;
 use App\Services\Modules\Proxy\ProxyService;
 use App\Services\ProductService;
 use App\Services\TransactionService;
-use App\Services\UserRoleService;
 use App\Services\UserService;
 use App\Services\VideoService;
 use App\Services\WalletService;
 use App\Services\WooService;
-use App\Services\WorkflowService;
 use Kernel\Container;
 
 class AppServiceProvider
@@ -76,9 +74,9 @@ class AppServiceProvider
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         // Execute both table creations
-        dbDelta($sql_carts);
-        dbDelta($sql_wallets);
-        dbDelta($sql_wallet_tx);
+        dbDelta( $sql_carts );
+        dbDelta( $sql_wallets );
+        dbDelta( $sql_wallet_tx );
     }
 
 
@@ -110,28 +108,21 @@ class AppServiceProvider
         Container::bind('WalletService', function () {
             return new WalletService();
         });
-
+        
         Container::bind('GiftService', function () {
             return new GiftService();
         });
-
+        
         Container::bind('UserService', function () {
             return new UserService();
         });
-
+        
         Container::bind('GravityService', function () {
             return new GravityService();
         });
         
         Container::bind('GravityFlowInboxService', function () {
             return new GravityFlowInboxService();
-        });
-        Container::bind('WorkflowService', function () {
-            return new WorkflowService();
-        });
-
-        Container::bind('UserRoleService', function () {
-            return new UserRoleService();
         });
     }
 }
