@@ -12,6 +12,7 @@ class SessionScoresSummaryCsv extends CsvManager implements ExportableFile
 {
     private array $columnTotals = [];
     private array $selectedRows = [];
+    private int $totalEntriesCount = 0;
     private string $filename = '';
 
     /**
@@ -22,6 +23,17 @@ class SessionScoresSummaryCsv extends CsvManager implements ExportableFile
     public function setColumnTotalsData(array $columnTotals): self
     {
         $this->columnTotals = $columnTotals;
+        return $this;
+    }
+
+    /**
+     * Set total entries count
+     * @param int $count
+     * @return self
+     */
+    public function setTotalEntriesCount(int $count): self
+    {
+        $this->totalEntriesCount = $count;
         return $this;
     }
 
