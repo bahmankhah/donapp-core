@@ -57,11 +57,11 @@ class RouteServiceProvider {
         Route::get('gravity/entry/timeline', [GravityController::class, 'getEntryTimeline'])->make()->name('gravity-entry-timeline');
 
         // Workflow automation API routes
-        Route::get('workflow/dashboard', [WorkflowController::class, 'getDashboardData'])->make()->name('workflow-dashboard-api');
-        Route::post('workflow/task-action', [WorkflowController::class, 'handleTaskAction'])->make()->name('workflow-task-action');
-        Route::get('workflow/my-tasks', [WorkflowController::class, 'getMyTasks'])->make()->name('workflow-my-tasks');
-        Route::get('workflow/history', [WorkflowController::class, 'getEntryWorkflowHistory'])->make()->name('workflow-entry-history');
-        Route::post('workflow/test', [WorkflowController::class, 'createTestWorkflow'])->make()->name('workflow-test');
+        // Route::get('workflow/dashboard', [WorkflowController::class, 'getDashboardData'])->make()->name('workflow-dashboard-api');
+        // Route::post('workflow/task-action', [WorkflowController::class, 'handleTaskAction'])->make()->name('workflow-task-action');
+        // Route::get('workflow/my-tasks', [WorkflowController::class, 'getMyTasks'])->make()->name('workflow-my-tasks');
+        // Route::get('workflow/history', [WorkflowController::class, 'getEntryWorkflowHistory'])->make()->name('workflow-entry-history');
+        // Route::post('workflow/test', [WorkflowController::class, 'createTestWorkflow'])->make()->name('workflow-test');
 
         // Session Scores export routes
         Route::post('session-scores/export', [\App\Controllers\SessionScoresController::class, 'export'])->make()->name('session-scores-export');
