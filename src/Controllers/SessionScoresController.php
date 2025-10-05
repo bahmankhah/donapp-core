@@ -208,7 +208,7 @@ class SessionScoresController
 
             if ($export_type === 'summary') {
                 // Export summary (column totals)
-                $this->exportSummary($view_id, $form_id);
+                $this->exportSummary($view_id, $form_id, $rows);
             } else {
                 // Export entries (selected or all)
                 $this->exportEntries($view_id, $form_id, $rows);
@@ -225,7 +225,7 @@ class SessionScoresController
     /**
      * Export summary data (column totals)
      */
-    private function exportSummary(?int $view_id, ?int $form_id): void
+    private function exportSummary(?int $view_id, ?int $form_id, array $selected_rows = []): void
     {
         try {
             // Get column totals from service
@@ -249,6 +249,7 @@ class SessionScoresController
             // Set data
             $csvExporter->setColumnTotalsData($column_totals_result['data']);
             $csvExporter->setTotalEntriesCount($column_totals_result['total_entries']);
+            $csvExporter->setSelectedRows($selected_rows);
 
             // Generate CSV
             $result = $csvExporter->generate();

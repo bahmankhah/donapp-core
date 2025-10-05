@@ -13,6 +13,7 @@ class SessionScoresSummaryXlsx extends XlsxManager implements SpreadsheetFile
     private array $columnTotals = [];
     private int $totalEntriesCount = 0;
     private string $filename = '';
+    private array $selectedRows = [];
 
     /**
      * Constructor - Set up default schema and title
@@ -53,6 +54,18 @@ class SessionScoresSummaryXlsx extends XlsxManager implements SpreadsheetFile
     }
 
     /**
+     * Set selected rows for filtering
+     * @param array $selectedRows
+     * @return self
+     */
+    public function setSelectedRows(array $selectedRows): self
+    {
+        $this->selectedRows = $selectedRows;
+        $this->prepareFormattedData();
+        return $this;
+    }
+
+    /**
      * Prepare formatted data for XLSX export
      * @return void
      */
@@ -67,6 +80,11 @@ class SessionScoresSummaryXlsx extends XlsxManager implements SpreadsheetFile
         foreach ($this->columnTotals as $columnName => $total) {
             // Skip grand total for individual columns section
             if ($columnName === 'جمع کل') {
+                continue;
+            }
+
+            // Filter by selected rows if any selected
+            if (!empty($this->selectedRows) && !in_array($columnName, $this->selectedRows)) {
                 continue;
             }
             
@@ -84,10 +102,21 @@ class SessionScoresSummaryXlsx extends XlsxManager implements SpreadsheetFile
                 'total_score' => ''
             ];
 
+            // Calculate grand total for selected rows only if filters applied
+            $grandTotal = $this->columnTotals['جمع کل'];
+            if (!empty($this->selectedRows)) {
+                $grandTotal = 0;
+                foreach ($this->selectedRows as $selectedRow) {
+                    if (isset($this->columnTotals[$selectedRow])) {
+                        $grandTotal += $this->columnTotals[$selectedRow];
+                    }
+                }
+            }
+
             // Add grand total row
             $formatted_data[] = [
                 'column_name' => 'مجموع کل امتیازها',
-                'total_score' => number_format($this->columnTotals['جمع کل'], 2)
+                'total_score' => number_format($grandTotal, 2)
             ];
         }
         

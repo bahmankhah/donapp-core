@@ -198,7 +198,7 @@ if (!isset($entries) || !isset($columns)) {
     <?php if (isset($atts['show_summary_table']) && $atts['show_summary_table'] === 'true' && !empty($column_totals) && !empty($summable_fields)): ?>
         <div class="donap-summary-section">
             <div class="donap-summary-header-section">
-                <h4 class="donap-summary-title">خلاصه مجموع ستون‌ها (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
+                <h4 class="donap-summary-title">خلاصه مجموع اقدامات (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
                 <button type="button" id="donap-export-summary" class="donap-btn donap-btn-success donap-export-summary-btn">
                     <span class="donap-export-icon">📊</span>
                     اکسپورت خلاصه
@@ -208,13 +208,19 @@ if (!isset($entries) || !isset($columns)) {
                 <table class="donap-summary-table">
                     <thead>
                         <tr>
-                            <th class="donap-summary-header">نام ستون</th>
+                            <th class="donap-summary-header donap-summary-checkbox-col">انتخاب</th>
+                            <th class="donap-summary-header">نام اقدام</th>
                             <th class="donap-summary-header">مجموع</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($summable_fields as $field_info): ?>
-                            <tr class="donap-summary-row">
+                            <tr class="donap-summary-row" data-field-name="<?php echo esc_attr($field_info['field_label']); ?>">
+                                <td class="donap-summary-checkbox-col">
+                                    <input type="checkbox" name="selected_summary_rows[]" 
+                                           value="<?php echo esc_attr($field_info['field_label']); ?>" 
+                                           class="donap-summary-checkbox">
+                                </td>
                                 <td class="donap-summary-field-name">
                                     <?php echo esc_html($field_info['field_label']); ?>
                                 </td>
@@ -230,7 +236,12 @@ if (!isset($entries) || !isset($columns)) {
                         <?php endforeach; ?>
                         
                         <?php if (isset($atts['show_sum_column']) && $atts['show_sum_column'] === 'true' && isset($column_totals['جمع کل'])): ?>
-                            <tr class="donap-summary-row donap-grand-total-row">
+                            <tr class="donap-summary-row donap-grand-total-row" data-field-name="جمع کل">
+                                <td class="donap-summary-checkbox-col">
+                                    <input type="checkbox" name="selected_summary_rows[]" 
+                                           value="جمع کل" 
+                                           class="donap-summary-checkbox">
+                                </td>
                                 <td class="donap-summary-field-name">
                                     <strong>جمع کل امتیازها</strong>
                                 </td>
@@ -268,11 +279,18 @@ jQuery(document).ready(function($) {
         const viewId = $('#donap-view-id').val();
         const formId = $('#donap-form-id').val();
 
+        // Get selected summary rows
+        const selectedRows = [];
+        $('.donap-summary-checkbox:checked').each(function() {
+            selectedRows.push($(this).val());
+        });
+
         // Prepare data for API call
         const exportData = {
             type: 'summary',
             view_id: viewId,
-            form_id: formId
+            form_id: formId,
+            rows: selectedRows
         };
 
         const url = <?php echo json_encode(rest_url('dnp/v1/session-scores/export')); ?>;
@@ -715,6 +733,16 @@ jQuery(document).ready(function($) {
     padding: 12px 15px;
     text-align: center;
     border-bottom: 2px solid #004973;
+}
+
+.donap-summary-checkbox-col {
+    width: 50px;
+    text-align: center;
+}
+
+.donap-summary-checkbox {
+    margin: 0;
+    cursor: pointer;
 }
 
 .donap-summary-table td {
