@@ -23,18 +23,18 @@ class GravityController
     {
         try {
             // Check user permissions
-            if (!current_user_can('manage_options')) {
-                http_response_code(403);
-                wp_die('شما اجازه دسترسی به این بخش را ندارید.', 'خطای دسترسی', ['response' => 403]);
-                return;
-            }
+            // if (!current_user_can('manage_options')) {
+            //     http_response_code(403);
+            //     wp_die('شما اجازه دسترسی به این بخش را ندارید.', 'خطای دسترسی', ['response' => 403]);
+            //     return;
+            // }
 
             // Verify nonce for security
-            if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'export_gravity_csv')) {
-                http_response_code(403);
-                wp_die('خطای امنیتی: نانس نامعتبر است.', 'خطای امنیتی', ['response' => 403]);
-                return;
-            }
+            // if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'export_gravity_csv')) {
+            //     http_response_code(403);
+            //     wp_die('خطای امنیتی: نانس نامعتبر است.', 'خطای امنیتی', ['response' => 403]);
+            //     return;
+            // }
 
             $uid = $_GET['uid'];
             if(!$uid) {
@@ -109,6 +109,63 @@ class GravityController
                 fastcgi_finish_request();
             }
             exit();
+
+        } catch (Exception $e) {
+            error_log('Gravity CSV Export Error: ' . $e->getMessage());
+            http_response_code(500);
+            wp_die('خطای داخلی سرور: ' . $e->getMessage(), 'خطای سرور', ['response' => 500]);
+        }
+    }
+
+    /**
+     * Export approved Gravity Flow entries to XLSX
+     */
+    public function exportXLSX()
+    {
+        try {
+            $uid = $_GET['uid'];
+            if(!$uid) {
+                http_response_code(404);
+                wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
+                return;
+            }
+
+            $user = get_user_by('ID', $uid);
+            if (!$user) {
+                http_response_code(404);
+                wp_die('کاربر یافت نشد.', 'خطا', ['response' => 404]);
+                return;
+            }
+
+            // Get export data from service
+            $export_result = $this->gravityService->exportApprovedEntriesToCSV($user);
+
+            if (!$export_result['success']) {
+                http_response_code(400);
+                wp_die('خطا در تولید XLSX: ' . $export_result['message'], 'خطا در صادرات', ['response' => 400]);
+                return;
+            }
+
+            $csv_data = $export_result['data'];
+
+            // Check if we have data
+            if (empty($csv_data) || count($csv_data) <= 1) {
+                http_response_code(404);
+                wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
+                return;
+            }
+
+            // Convert CSV data to XLSX using FileHelper
+            $xlsx_result = FileHelper::csv2Xlsx($csv_data, 'فرم‌های تأیید شده');
+
+            if (!$xlsx_result['success']) {
+                http_response_code(500);
+                wp_die('خطا در تولید XLSX: ' . $xlsx_result['message'], 'خطای سرور', ['response' => 500]);
+                return;
+            }
+
+            // Serve XLSX download
+            FileHelper::serveXlsxDownload($xlsx_result['data'], $xlsx_result['filename']);
 
         } catch (Exception $e) {
             error_log('Gravity CSV Export Error: ' . $e->getMessage());

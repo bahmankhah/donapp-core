@@ -30,6 +30,7 @@ class RouteServiceProvider {
 
         // Gravity Flow routes
         Route::get('gravity/export-csv', [GravityController::class, 'exportCSV'])->make()->name('gravity-export-csv');
+        Route::get('gravity/export-xlsx', [GravityController::class, 'exportXLSX'])->make()->name('gravity-export-xlsx');
         Route::get('gravity/entries', [GravityController::class, 'getApprovedEntries'])->make()->name('gravity-entries-api');
 
     }
