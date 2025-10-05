@@ -67,10 +67,16 @@ class SessionScoresController
             // Get column totals for summary table (only if needed)
             $column_totals = [];
             $total_entries_count = 0;
+            $filtered_summable_fields = $summable_fields;
             if ($atts['show_summary_table'] === 'true' && !empty($summable_fields)) {
                 $column_totals_result = $this->sessionScoresService->getColumnTotals($params);
                 $column_totals = $column_totals_result['success'] ? $column_totals_result['data'] : [];
                 $total_entries_count = $column_totals_result['success'] ? $column_totals_result['total_entries'] : 0;
+                
+                // Use filtered summable fields if available
+                if ($column_totals_result['success'] && isset($column_totals_result['filtered_summable_fields'])) {
+                    $filtered_summable_fields = $column_totals_result['filtered_summable_fields'];
+                }
             }
 
             // Prepare data for view
@@ -83,9 +89,9 @@ class SessionScoresController
                 'nonce' => wp_create_nonce('donap_export_scores'),
                 'view_id' => $atts['view_id'] ?? '',
                 'visible_fields' => $visible_fields,
-                'summable_fields' => $summable_fields,
+                'summable_fields' => $filtered_summable_fields, // Use filtered fields
                 'column_totals' => $column_totals,
-                'total_entries_count' => $total_entries_count
+                'total_entries_count' => count($filtered_summable_fields) // Count of filtered fields
             ];
 
             // Return the rendered view

@@ -456,6 +456,38 @@ class SessionScoresService
     }
 
     /**
+     * Filter summable fields to only include those with numeric values
+     * @param array $summable_fields
+     * @param array $entries
+     * @return array
+     */
+    private function filterNumericSummableFields($summable_fields, $entries)
+    {
+        $fields_with_numeric_values = [];
+        
+        foreach ($summable_fields as $field_info) {
+            $field_label = $field_info['field_label'];
+            $has_numeric = false;
+            
+            // Check all entries for this field
+            foreach ($entries as $entry) {
+                $field_value = $entry['entry_data'][$field_label] ?? '';
+                if (is_numeric($field_value) && !empty(trim($field_value))) {
+                    $has_numeric = true;
+                    break;
+                }
+            }
+            
+            // Only include fields that have at least one numeric value
+            if ($has_numeric) {
+                $fields_with_numeric_values[] = $field_info;
+            }
+        }
+        
+        return $fields_with_numeric_values;
+    }
+
+    /**
      * Calculate column totals for all entries (across all pages)
      */
     public function getColumnTotals($params = [])
@@ -482,15 +514,18 @@ class SessionScoresService
             if (!empty($entries)) {
                 $summable_fields = $entries[0]['summable_fields'] ?? [];
                 
-                // Initialize totals for each summable field
-                foreach ($summable_fields as $field_info) {
+                // Filter to only include fields with numeric values
+                $fields_with_numeric_values = $this->filterNumericSummableFields($summable_fields, $entries);
+                
+                // Initialize totals for fields with numeric values
+                foreach ($fields_with_numeric_values as $field_info) {
                     $field_label = $field_info['field_label'];
                     $column_totals[$field_label] = 0;
                 }
                 
-                // Calculate totals across all entries
+                // Calculate totals across all entries for fields with numeric values only
                 foreach ($entries as $entry) {
-                    foreach ($summable_fields as $field_info) {
+                    foreach ($fields_with_numeric_values as $field_info) {
                         $field_label = $field_info['field_label'];
                         $field_value = $entry['entry_data'][$field_label] ?? '';
                         
@@ -511,7 +546,8 @@ class SessionScoresService
             return [
                 'success' => true,
                 'data' => $column_totals,
-                'total_entries' => count($entries)
+                'total_entries' => count($entries),
+                'filtered_summable_fields' => $fields_with_numeric_values
             ];
             
         } catch (Exception $e) {

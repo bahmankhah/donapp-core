@@ -198,10 +198,10 @@ if (!isset($entries) || !isset($columns)) {
     <?php if (isset($atts['show_summary_table']) && $atts['show_summary_table'] === 'true' && !empty($column_totals) && !empty($summable_fields)): ?>
         <div class="donap-summary-section">
             <div class="donap-summary-header-section">
-                <h4 class="donap-summary-title">خلاصه مجموع اقدامات (کل <?php echo esc_html($total_entries_count); ?> ورودی)</h4>
+                <h4 class="donap-summary-title">لیست مجموع اقدامات (کل <?php echo esc_html($total_entries_count); ?> امتیاز دهی)</h4>
                 <button type="button" id="donap-export-summary" class="donap-btn donap-btn-success donap-export-summary-btn">
                     <span class="donap-export-icon">📊</span>
-                    اکسپورت خلاصه
+                    اکسپورت اکسل
                 </button>
             </div>
             <div class="donap-summary-table-container">
@@ -228,7 +228,7 @@ if (!isset($entries) || !isset($columns)) {
                                     <strong>
                                         <?php 
                                         $total = $column_totals[$field_info['field_label']] ?? 0;
-                                        echo esc_html(number_format($total, 2));
+                                        echo esc_html(number_format($total));
                                         ?>
                                     </strong>
                                 </td>
@@ -247,7 +247,7 @@ if (!isset($entries) || !isset($columns)) {
                                 </td>
                                 <td class="donap-summary-field-total">
                                     <strong class="donap-grand-total-value">
-                                        <?php echo esc_html(number_format($column_totals['جمع کل'], 2)); ?>
+                                        <?php echo esc_html(number_format($column_totals['جمع کل'])); ?>
                                     </strong>
                                 </td>
                             </tr>
