@@ -77,6 +77,15 @@ class SessionScoresController
                 if ($column_totals_result['success'] && isset($column_totals_result['filtered_summable_fields'])) {
                     $filtered_summable_fields = $column_totals_result['filtered_summable_fields'];
                 }
+                
+                // Sort summable fields by their totals in descending order
+                if (!empty($column_totals) && !empty($filtered_summable_fields)) {
+                    usort($filtered_summable_fields, function($a, $b) use ($column_totals) {
+                        $total_a = $column_totals[$a['field_label']] ?? 0;
+                        $total_b = $column_totals[$b['field_label']] ?? 0;
+                        return $total_b <=> $total_a; // Descending order (highest first)
+                    });
+                }
             }
 
             // Prepare data for view
