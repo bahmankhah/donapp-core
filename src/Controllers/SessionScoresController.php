@@ -68,7 +68,6 @@ class SessionScoresController
             $column_totals = [];
             $total_entries_count = 0;
             $filtered_summable_fields = $summable_fields;
-            appLogger('DEBUG: summable fields: ' . var_dump($summable_fields, true));
 
             if ($atts['show_summary_table'] === 'true' && !empty($summable_fields)) {
                 $column_totals_result = $this->sessionScoresService->getColumnTotals($params);
@@ -83,24 +82,17 @@ class SessionScoresController
                 // Sort summable fields by their totals in descending order
                 // Sort summable fields by their totals in descending order
                 // Debug: Log the input data
-                appLogger('DEBUG: Column totals: ' . json_encode($column_totals, true));
-                appLogger('DEBUG: Filtered summable fields: ' . json_encode($filtered_summable_fields, true));
                 if (!empty($column_totals) && !empty($filtered_summable_fields)) {
                     // Debug: Log the data before sorting
-                    appLogger('DEBUG: Column totals: ' . json_encode($column_totals, true));
-                    appLogger('DEBUG: Fields before sorting: ' . json_encode(array_column($filtered_summable_fields, 'field_label'), true));
 
                     usort($filtered_summable_fields, function ($a, $b) use ($column_totals) {
                         $total_a = $column_totals[$a['field_label']] ?? 0;
                         $total_b = $column_totals[$b['field_label']] ?? 0;
-                        appLogger("DEBUG: Comparing {$a['field_label']} ($total_a) vs {$b['field_label']} ($total_b)");
                         return $total_b <=> $total_a; // Descending order (highest first)
                     });
 
                     // Debug: Log the data after sorting
-                    appLogger('DEBUG: Fields after sorting: ' . json_encode(array_column($filtered_summable_fields, 'field_label'), true));
                 } else {
-                    appLogger('DEBUG: Sorting condition not met - column_totals empty: ' . (empty($column_totals) ? 'yes' : 'no') . ', filtered_summable_fields empty: ' . (empty($filtered_summable_fields) ? 'yes' : 'no'));
                 }
             }
 
