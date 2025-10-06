@@ -80,11 +80,21 @@ class SessionScoresController
                 
                 // Sort summable fields by their totals in descending order
                 if (!empty($column_totals) && !empty($filtered_summable_fields)) {
+                    // Debug: Log the data before sorting
+                    appLogger('DEBUG: Column totals: ' . print_r($column_totals, true));
+                    appLogger('DEBUG: Fields before sorting: ' . print_r(array_column($filtered_summable_fields, 'field_label'), true));
+                    
                     usort($filtered_summable_fields, function($a, $b) use ($column_totals) {
                         $total_a = $column_totals[$a['field_label']] ?? 0;
                         $total_b = $column_totals[$b['field_label']] ?? 0;
+                        appLogger("DEBUG: Comparing {$a['field_label']} ($total_a) vs {$b['field_label']} ($total_b)");
                         return $total_b <=> $total_a; // Descending order (highest first)
                     });
+                    
+                    // Debug: Log the data after sorting
+                    appLogger('DEBUG: Fields after sorting: ' . print_r(array_column($filtered_summable_fields, 'field_label'), true));
+                } else {
+                    appLogger('DEBUG: Sorting condition not met - column_totals empty: ' . (empty($column_totals) ? 'yes' : 'no') . ', filtered_summable_fields empty: ' . (empty($filtered_summable_fields) ? 'yes' : 'no'));
                 }
             }
 
