@@ -41,7 +41,7 @@ class SessionScoresController
             // Get visible fields from the first entry to build dynamic columns
             $visible_fields = [];
             $summable_fields = [];
-            
+
             if (!empty($result['data'])) {
                 $first_entry = $result['data'][0];
                 if (isset($first_entry['visible_fields'])) {
@@ -58,7 +58,7 @@ class SessionScoresController
                 $field_label = $field_info['field_label'];
                 $columns[$field_label] = true;
             }
-            
+
             // Add sum column if enabled and there are summable fields
             if ($atts['show_sum_column'] === 'true' && !empty($summable_fields)) {
                 $columns['جمع امتیازها'] = true;
@@ -68,29 +68,35 @@ class SessionScoresController
             $column_totals = [];
             $total_entries_count = 0;
             $filtered_summable_fields = $summable_fields;
+            appLogger('DEBUG: summable fields: ' . print_r($summable_fields, true));
+
             if ($atts['show_summary_table'] === 'true' && !empty($summable_fields)) {
                 $column_totals_result = $this->sessionScoresService->getColumnTotals($params);
                 $column_totals = $column_totals_result['success'] ? $column_totals_result['data'] : [];
                 $total_entries_count = $column_totals_result['success'] ? $column_totals_result['total_entries'] : 0;
-                
+
                 // Use filtered summable fields if available
                 if ($column_totals_result['success'] && isset($column_totals_result['filtered_summable_fields'])) {
                     $filtered_summable_fields = $column_totals_result['filtered_summable_fields'];
                 }
-                
+
                 // Sort summable fields by their totals in descending order
+                // Sort summable fields by their totals in descending order
+                // Debug: Log the input data
+                appLogger('DEBUG: Column totals: ' . print_r($column_totals, true));
+                appLogger('DEBUG: Filtered summable fields: ' . print_r($filtered_summable_fields, true));
                 if (!empty($column_totals) && !empty($filtered_summable_fields)) {
                     // Debug: Log the data before sorting
                     appLogger('DEBUG: Column totals: ' . print_r($column_totals, true));
                     appLogger('DEBUG: Fields before sorting: ' . print_r(array_column($filtered_summable_fields, 'field_label'), true));
-                    
-                    usort($filtered_summable_fields, function($a, $b) use ($column_totals) {
+
+                    usort($filtered_summable_fields, function ($a, $b) use ($column_totals) {
                         $total_a = $column_totals[$a['field_label']] ?? 0;
                         $total_b = $column_totals[$b['field_label']] ?? 0;
                         appLogger("DEBUG: Comparing {$a['field_label']} ($total_a) vs {$b['field_label']} ($total_b)");
                         return $total_b <=> $total_a; // Descending order (highest first)
                     });
-                    
+
                     // Debug: Log the data after sorting
                     appLogger('DEBUG: Fields after sorting: ' . print_r(array_column($filtered_summable_fields, 'field_label'), true));
                 } else {
@@ -131,7 +137,7 @@ class SessionScoresController
             // Get selected entry IDs from POST data
             $selected_ids = isset($_POST['selected_ids']) ? $_POST['selected_ids'] : [];
             $view_id = isset($_POST['view_id']) ? intval($_POST['view_id']) : null;
-            
+
             // Validate and sanitize IDs
             $entry_ids = [];
             if (is_array($selected_ids)) {
@@ -150,14 +156,14 @@ class SessionScoresController
 
             // Use the CSV helper from ExportFactory
             $csvExporter = ExportFactory::createCsvExporter();
-            
+
             // Set data for the CSV exporter
             $csvExporter->setData($export_result['data']);
             $csvExporter->setTitle('Session Scores Export');
-            
+
             // Generate the CSV
             $csvResult = $csvExporter->generate();
-            
+
             if (!$csvResult['success']) {
                 wp_send_json_error(['message' => 'Failed to generate CSV: ' . $csvResult['message']]);
                 return;
@@ -216,7 +222,7 @@ class SessionScoresController
             // Get POST data
             $request_body = file_get_contents('php://input');
             $data = json_decode($request_body, true) ?: [];
-            
+
             // Get parameters
             $view_id = isset($data['view_id']) ? intval($data['view_id']) : null;
             $form_id = isset($data['form_id']) ? intval($data['form_id']) : null;
@@ -270,7 +276,7 @@ class SessionScoresController
 
             // Create summary CSV exporter
             $csvExporter = ExportFactory::createSessionScoresSummaryExporter('csv');
-            
+
             // Set data
             $csvExporter->setColumnTotalsData($column_totals_result['data']);
             $csvExporter->setTotalEntriesCount($column_totals_result['total_entries']);
@@ -340,7 +346,7 @@ class SessionScoresController
 
             // Create generic CSV exporter
             $csvExporter = ExportFactory::createCsvExporter();
-            
+
             // Set data directly as tabular format
             $csvExporter->setData($csv_data);
             $csvExporter->setTitle('Session Scores Export');
@@ -373,7 +379,7 @@ class SessionScoresController
     private function prepareCsvData(array $entries): array
     {
         $csv_data = [];
-        
+
         if (empty($entries)) {
             return $csv_data;
         }
@@ -381,7 +387,7 @@ class SessionScoresController
         // Get all field keys from the first entry to build dynamic headers
         $first_entry = $entries[0];
         $headers = ['شناسه', 'تاریخ ایجاد'];
-        
+
         // Add headers for all entry data fields
         if (isset($first_entry['entry_data']) && is_array($first_entry['entry_data'])) {
             foreach ($first_entry['entry_data'] as $field_label => $value) {
@@ -390,7 +396,7 @@ class SessionScoresController
                 }
             }
         }
-        
+
         // Add sum column at the end
         $headers[] = 'جمع امتیازها';
         $csv_data[] = $headers;
@@ -398,7 +404,7 @@ class SessionScoresController
         // Add data rows
         foreach ($entries as $entry) {
             $row = [$entry['id'], $entry['date_created']];
-            
+
             // Add all field values in the same order as headers
             if (isset($entry['entry_data']) && is_array($entry['entry_data'])) {
                 foreach ($first_entry['entry_data'] as $field_label => $value) {
@@ -407,7 +413,7 @@ class SessionScoresController
                     }
                 }
             }
-            
+
             // Add sum score at the end
             $row[] = $entry['sum_score'] ?? 0;
             $csv_data[] = $row;
