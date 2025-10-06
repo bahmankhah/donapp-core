@@ -384,10 +384,10 @@ if (!isset($entries) || !isset($columns)) {
 <style>
     .donap-session-scores-wrapper {
         font-family: 'IRANSans', Tahoma, Arial, sans-serif;
-        background: #fff;
+        /* background: #fff;
         border: 1px solid #e1e1e1;
         border-radius: 6px;
-        margin: 20px 0;
+        margin: 20px 0; */
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
@@ -677,11 +677,11 @@ if (!isset($entries) || !isset($columns)) {
 
     /* Summary Table Styles */
     .donap-summary-section {
-        margin-top: 30px;
+        /* margin-top: 30px; */
         padding: 20px;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
+        /* background: #f8f9fa; */
+        /* border: 1px solid #dee2e6; */
+        /* border-radius: 8px; */
     }
 
     .donap-summary-header-section {
