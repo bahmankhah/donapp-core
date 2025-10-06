@@ -224,8 +224,6 @@ if (!isset($entries) || !isset($columns)) {
                     <tbody>
                         <?php 
                         // Debug: Log what we receive in the view
-                        appLogger('DEBUG VIEW: summable_fields: ' . print_r($summable_fields, true));
-                        appLogger('DEBUG VIEW: column_totals: ' . print_r($column_totals, true));
                         foreach ($summable_fields as $field_info): ?>
                             <tr class="donap-summary-row" data-field-name="<?php echo esc_attr($field_info['field_label']); ?>">
                                 <td class="donap-summary-checkbox-col">
