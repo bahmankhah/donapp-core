@@ -80,6 +80,7 @@ class SSOGuard extends Adapter implements Guard
                 'client_id' => $clientId,
                 'scope' => 'openid profile',
                 'code' => $credential['code'],
+                'redirect_uri' => $this->config['redirect_url'],
                 'session_state' => $credential['session_state'] ?? null,
             ],
         ]);
