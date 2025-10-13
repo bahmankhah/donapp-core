@@ -32,7 +32,8 @@ class SSOServiceProvider
 
             Auth::sso()->attempt([
                 'code' => $_GET['code'],
-                'session_state' => $_GET['session_state'] ?? null
+                'session_state' => $_GET['session_state'] ?? null,
+                'redirect_url' => isset($_GET['redirect_uri']) && !empty($_GET['redirect_uri']) ? $_GET['redirect_uri'] : null
             ]);
             $this->remove_code_param_redirect();
         }

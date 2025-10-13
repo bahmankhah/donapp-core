@@ -71,7 +71,7 @@ class SSOGuard extends Adapter implements Guard
         $api_url = $this->config['validate_url'];
         $api_url = trim($api_url, '"');
         $clientId = $this->config['client_id'];
-
+        $redirect = isset($credential['redirect_url']) && !empty($credential['redirect_url']) ? $credential['redirect_url'] : $this->config['redirect_url'];
         // Exchange code for token
         appLogger('Raw API URL: ' . var_export($api_url, true));
         $response = wp_remote_post($api_url, [
@@ -80,7 +80,7 @@ class SSOGuard extends Adapter implements Guard
                 'client_id' => $clientId,
                 'scope' => 'openid profile',
                 'code' => $credential['code'],
-                'redirect_uri' => $this->config['redirect_url'],
+                'redirect_uri' => $redirect,
                 'session_state' => $credential['session_state'] ?? null,
             ],
         ]);
