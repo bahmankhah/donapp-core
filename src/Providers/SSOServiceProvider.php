@@ -58,8 +58,24 @@ class SSOServiceProvider
             unset($query_params['code']);
         }
         if(isset($query_params['session_state'])){
+            if($this->isValidUrl($query_params['session_state'])){
+                // Prevent open redirect vulnerabilities
+                wp_redirect($query_params['session_state'], 302, 'DonappSSO');
+                exit;
+            }
             unset( $query_params['session_state']);
         }
+        
+        if(isset($query_params['state'])){
+            if($this->isValidUrl($query_params['state'])){
+                // Prevent open redirect vulnerabilities
+                wp_redirect($query_params['state'], 302, 'DonappSSO');
+                exit;
+            }
+            unset( $query_params['state']);
+        }
+        
+
         if(isset( $query_params['iss'])){
             unset( $query_params['iss']);
         }
@@ -68,10 +84,19 @@ class SSOServiceProvider
         $new_url = $url_parts['path'] . ($new_query_string ? '?' . $new_query_string : '');
 
     // Safe redirect after login; ensure cookies are already set
-    wp_redirect($new_url, 302, 'DonappSSO');
+        wp_redirect($new_url, 302, 'DonappSSO');
         exit;
     }
-
+    /**
+     * Validate if a string is a valid URL
+     *
+     * @param string $url
+     * @return bool
+     */
+    public function isValidUrl($url)
+    {
+        return filter_var($url, FILTER_VALIDATE_URL) !== false;
+    }
 
 
     /**
