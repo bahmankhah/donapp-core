@@ -30,19 +30,11 @@ class SSOServiceProvider
                 nocache_headers();
             }
 
-            $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'];
-            $uri = $_SERVER['REQUEST_URI'];
-            $current_uri = $scheme . '://' . $host . $uri;
-            
-            $url_parts = parse_url($current_uri);
-            $uri_without_params = $url_parts['scheme'] . '://' . $url_parts['host'] . $url_parts['path'];
-            
-            appLogger('SSO callback redirect_url: ' . $uri_without_params);
+            // appLogger('SSO callback redirect_url: ' . $_SERVER['REQUEST_URI']);
             Auth::sso()->attempt([
                 'code' => $_GET['code'],
                 'session_state' => $_GET['session_state'] ?? null,
-                'redirect_url' => $uri_without_params
+                'redirect_url' => null
             ]);
             $this->remove_code_param_redirect();
         }
