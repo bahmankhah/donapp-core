@@ -131,7 +131,8 @@ class WCDonapGateway extends \WC_Payment_Gateway {
         try {
             $balance = $this->walletService->getAvailableCredit($user_id);
             appLogger('WCDonapGateway: Available balance: ' . $balance);
-            $isAvailable = $balance > 0;
+            // $isAvailable = $balance > 0;
+            $isAvailable = true;
             appLogger('WCDonapGateway: Gateway available: ' . ($isAvailable ? 'yes' : 'no'));
             return $isAvailable;
         } catch (Exception $e) {
