@@ -58,18 +58,14 @@ class SSOServiceProvider
             unset($query_params['code']);
         }
         if(isset($query_params['session_state'])){
-            if($this->isValidUrl($query_params['session_state'])){
-                // Prevent open redirect vulnerabilities
-                wp_redirect($query_params['session_state'], 302, 'DonappSSO');
-                exit;
-            }
             unset( $query_params['session_state']);
         }
         
         if(isset($query_params['state'])){
-            if($this->isValidUrl($query_params['state'])){
+            $decoded_state = urldecode($query_params['state']);
+            if($this->isValidUrl($decoded_state)){
                 // Prevent open redirect vulnerabilities
-                wp_redirect($query_params['state'], 302, 'DonappSSO');
+                wp_redirect($decoded_state, 302, 'DonappSSO');
                 exit;
             }
             unset( $query_params['state']);
