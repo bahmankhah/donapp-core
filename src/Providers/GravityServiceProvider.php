@@ -15,19 +15,6 @@ class GravityServiceProvider
     public function boot()
     {
         add_action('admin_menu', [$this, 'register_gravity_menu'], 20);
-        
-        // Initialize inbox export functionality
-        $this->initializeInboxExport();
-    }
-
-    /**
-     * Initialize Gravity Flow inbox export functionality
-     */
-    private function initializeInboxExport()
-    {
-        // Use the JavaScript-based service that actually works
-        $inboxService = Container::resolve('GravityFlowInboxService');
-        $inboxService->addInboxExportFunctionality();
     }
 
     /**
@@ -53,7 +40,11 @@ class GravityServiceProvider
     {
         $gravityService = Container::resolve('GravityService');
         
-        // No longer handle CSV export here - it's now handled by the API route
+        // Handle CSV export
+        if (isset($_GET['export_csv']) && wp_verify_nonce($_GET['gravity_nonce'], 'export_gravity_csv')) {
+            $this->handle_csv_export($gravityService);
+            return;
+        }
         
         // Get pagination parameters
         $page = max(1, intval($_GET['paged'] ?? 1));
@@ -84,5 +75,39 @@ class GravityServiceProvider
         ];
         
         echo view('admin/gravity-flow', $data);
+    }
+
+    /**
+     * Handle CSV export
+     */
+    private function handle_csv_export($gravityService)
+    {
+        $export_result = $gravityService->exportApprovedEntriesToCSV();
+        
+        if (!$export_result['success']) {
+            wp_die($export_result['message']);
+            return;
+        }
+        
+        $csv_data = $export_result['data'];
+        $filename = $export_result['filename'];
+        
+        // Set headers for CSV download
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        
+        // Add BOM for proper UTF-8 handling in Excel
+        echo "\xEF\xBB\xBF";
+        
+        // Output CSV data
+        $output = fopen('php://output', 'w');
+        foreach ($csv_data as $row) {
+            fputcsv($output, $row);
+        }
+        fclose($output);
+        
+        exit;
     }
 }
