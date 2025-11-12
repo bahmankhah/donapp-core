@@ -14,6 +14,15 @@ return [
             ]
         ]
     ],
+    'party' => [
+        'default' => 'donap',
+        'contexts' => [
+            'donap' => [
+                'context' => App\Adapters\Party\Contexts\Donap::class,
+                'main_url' => getenv('PARTY_MAIN_URL') ?? 'https://devapi.donap.ir'
+            ]
+        ]
+    ],
 
     'auth' => [
         'default' => 'sso',
