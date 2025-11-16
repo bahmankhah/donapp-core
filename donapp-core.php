@@ -96,8 +96,8 @@ function donapp_check_login_redirect()
     }
 
     if ($should_redirect) {
-        wp_redirect(Auth::sso()->getLoginUrl());
-        exit;
+        // wp_redirect(Auth::sso()->getLoginUrl());
+        // exit;
     }
 }
 
@@ -126,7 +126,7 @@ add_action('init', function () {
     (new WooServiceProvider())->boot();
     (new AdminServiceProvider())->boot();
     (new GravityServiceProvider())->boot();
-    (new WorkflowServiceProvider())->boot();
+    // (new WorkflowServiceProvider())->boot();
     (new HookFilterServiceProvider())->boot();
 
     // Add login redirect check in init
