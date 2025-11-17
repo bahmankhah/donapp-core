@@ -124,8 +124,7 @@ class AppServiceProvider
         Container::bind('GravityFlowInboxService', function () {
             return new GravityFlowInboxService();
         });
-
-        
+        $this->enqueue_assets();   
     }
 
     public function enqueue_assets()
