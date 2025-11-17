@@ -599,8 +599,7 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
                     <option value="">انتخاب عملیات گروهی</option>
                     <option value="approve">تأیید</option>
                     <option value="reject">رد</option>
-                    <option value="delete">حذف</option>
-                    <option value="export">صادرات</option>
+                    <option value="export">خروجی</option>
                 </select>
                 <button type="button" id="bulk-action-apply" class="donap-action-btn" style="background: #667eea; padding: 8px 16px; font-size: 14px;" disabled>
                     <i class="fas fa-check"></i>
@@ -886,8 +885,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const actionNames = {
             'approve': 'تأیید',
             'reject': 'رد', 
-            'delete': 'حذف',
-            'export': 'صادرات'
+            'export': 'خروجی'
         };
 
         const actionName = actionNames[action] || 'پردازش';

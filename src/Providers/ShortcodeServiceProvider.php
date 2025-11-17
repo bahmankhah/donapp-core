@@ -205,7 +205,7 @@ class ShortcodeServiceProvider
                 'attributes' => $atts,
                 'current_page' => $current_page,
                 'success' => $result['success'],
-                'bulk_action_url' => \rest_url('dnp/v1/gravity/bulk-action'),
+                'bulk_action_url' => \rest_url('dnp/v1/gravity/bulk-action?uid=' . $current_user_id),
                 'inbox_csv_url' => \rest_url('dnp/v1/gravity/inbox/export-csv?uid=' . $current_user_id),
                 'inbox_excel_url' => \rest_url('dnp/v1/gravity/inbox/export-xlsx?uid=' . $current_user_id),
                 'inbox_pdf_url' => \rest_url('dnp/v1/gravity/inbox/export-pdf?uid=' . $current_user_id)

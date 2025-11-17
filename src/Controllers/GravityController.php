@@ -317,6 +317,12 @@ class GravityController
     public function handleBulkAction()
     {
         try {
+            $uid = $_GET['uid'] ?? null;
+            $user = get_user_by('ID', $uid);
+            if (!$user) {
+                wp_send_json_error(['message' => 'کاربر یافت نشد'], 404);
+                return;
+            }
             // Handle both POST and GET requests for flexibility
             $request_method = $_SERVER['REQUEST_METHOD'] ?? 'POST';
             $request_data = $request_method === 'GET' ? $_GET : $_POST;
@@ -345,6 +351,28 @@ class GravityController
             $results = [];
             $success_count = 0;
             $error_count = 0;
+
+            if($bulk_action == 'export'){
+                $entries = $this->gravityService->getGravityFlowInboxPage(1, 1000, $user);
+                $result = [];
+                foreach($entries['data'] as $entry){
+                    if(in_array($entry['id'], $entry_ids)){
+                        $result[] = $entry;
+                    }
+                }
+                $csvExporter = new GravityFlowInboxCsv();
+                $exportResult = $csvExporter->setInboxEntriesData($entries)->generate();
+
+                if (!$exportResult['success']) {
+                    http_response_code(500);
+                    wp_die('خطا در تولید CSV: ' . $exportResult['message'], 'خطای سرور', ['response' => 500]);
+                    return;
+                }
+
+                // Serve CSV download
+                $csvExporter->serve($exportResult['data'], $exportResult['filename']);
+                exit;
+            }
 
             foreach ($entry_ids as $entry_id) {
                 appLogger("GravityController: Processing bulk action '$bulk_action' for entry ID: $entry_id");
