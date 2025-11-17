@@ -96,8 +96,8 @@ function donapp_check_login_redirect()
     }
 
     if ($should_redirect) {
-        // wp_redirect(Auth::sso()->getLoginUrl());
-        // exit;
+        wp_redirect(Auth::sso()->getLoginUrl());
+        exit;
     }
 }
 
