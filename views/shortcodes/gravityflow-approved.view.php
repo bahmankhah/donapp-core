@@ -223,7 +223,7 @@
 
 <style>
 .donap-gravity-flow-shortcode {
-    font-family: 'Vazir', sans-serif;
+    font-family: 'iransans', sans-serif;
     direction: rtl;
     margin: 20px 0;
 }

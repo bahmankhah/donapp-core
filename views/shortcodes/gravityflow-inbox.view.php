@@ -26,7 +26,7 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
             display:none;
         }
         .donap-gravityflow-inbox-wrapper {
-            font-family: 'Vazir', sans-serif;
+            font-family: 'iransans', sans-serif;
             direction: rtl;
             margin: 20px 0;
         }

@@ -124,5 +124,19 @@ class AppServiceProvider
         Container::bind('GravityFlowInboxService', function () {
             return new GravityFlowInboxService();
         });
+
+        
+    }
+
+    public function enqueue_assets()
+    {
+        add_action('wp_enqueue_scripts',function() {
+            wp_enqueue_style(
+                'donapp-fonts',
+                plugin_dir_url(__FILE__) . 'src/assets/fonts/fonts.css',
+                array(),
+                '1.0'
+            );
+        });
     }
 }
