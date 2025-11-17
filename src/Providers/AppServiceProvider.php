@@ -83,6 +83,8 @@ class AppServiceProvider
 
     public function boot()
     {
+        App::setPluginPath();
+
         Container::bind('AuthService', function () {
             return new AuthService();
         });

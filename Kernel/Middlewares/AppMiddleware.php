@@ -7,7 +7,6 @@ use Kernel\Facades\App;
 class AppMiddleware implements Middleware{
     public function handle($request,Pipeline $pipeline){
         App::setRequest($request);
-        App::setPluginPath();
         return $pipeline->next($request);
     }
 }
