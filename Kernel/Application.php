@@ -54,7 +54,7 @@ class Application extends Container{
     }
 
     public function setPluginPath(){
-        self::bind('plugin_path', function() {
+        Container::bind('plugin_path', function() {
             return plugin_dir_url(__FILE__) . '..';
         });
     }
