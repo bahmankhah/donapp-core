@@ -137,7 +137,7 @@ class AppServiceProvider
                 'donapp-fonts',
                 App::pluginPath() . 'src/assets/fonts/fonts.css',
                 array(),
-                time()
+                '1.1'
             );
         });
     }
