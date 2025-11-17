@@ -59,7 +59,7 @@ class Application extends Container{
         });
     }
 
-    public function plluginPath(){
+    public function pluginPath(){
         return Container::resolve('plugin_path');
     }
 
