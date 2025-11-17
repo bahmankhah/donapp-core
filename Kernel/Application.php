@@ -53,6 +53,16 @@ class Application extends Container{
         return $reflection->newInstanceArgs($resolved);
     }
 
+    public function setPluginPath(){
+        self::bind('plugin_path', function() {
+            return plugin_dir_url(__FILE__) . '..';
+        });
+    }
+
+    public function plluginPath(){
+        return Container::resolve('plugin_path');
+    }
+
     public function setRequest($request){
         Container::bind('request', function() use ($request) {
             return $request;

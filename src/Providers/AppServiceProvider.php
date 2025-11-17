@@ -15,6 +15,7 @@ use App\Services\VideoService;
 use App\Services\WalletService;
 use App\Services\WooService;
 use Kernel\Container;
+use Kernel\Facades\App;
 
 class AppServiceProvider
 {
@@ -129,11 +130,10 @@ class AppServiceProvider
 
     public function enqueue_assets()
     {
-        $plugin_dir = WP_PLUGIN_DIR . '/' . appConfig('app.name');
-        add_action('wp_enqueue_scripts',function() use($plugin_dir) {
+        add_action('wp_enqueue_scripts',function() {
             wp_enqueue_style(
                 'donapp-fonts',
-                $plugin_dir . '/src/assets/fonts/fonts.css',
+                App::pluginPath() . 'src/assets/fonts/fonts.css',
                 array(),
                 '1.0'
             );
