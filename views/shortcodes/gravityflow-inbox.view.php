@@ -915,10 +915,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         fetch(bulkActionUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': contentType
-            },
-            body: formData.toString(),
+            // headers: {
+            //     'Content-Type': contentType
+            // },
+            body: formData,
             credentials: 'same-origin'
         })
         .then(async response => {
