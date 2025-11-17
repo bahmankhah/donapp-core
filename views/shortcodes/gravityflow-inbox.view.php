@@ -958,6 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Bulk action failed:', error);
             alert(error.message || 'خطا در برقراری ارتباط با سرور.');
             
+        }).finally(() => {
             // Restore button state
             bulkActionApply.disabled = false;
             bulkActionApply.innerHTML = '<i class="fas fa-check"></i> اعمال';
