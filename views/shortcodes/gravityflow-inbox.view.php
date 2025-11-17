@@ -906,11 +906,17 @@ document.addEventListener('DOMContentLoaded', function() {
         entryIds.forEach(entryId => {
             formData.append('entry_ids[]', entryId);
         });
+        let contentType = 'application/x-www-form-urlencoded; charset=UTF-8';
+        let isExport = action === 'export';
+
+        if (isExport) {
+            contentType = 'application/json; charset=UTF-8';
+        }
 
         fetch(bulkActionUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                'Content-Type': contentType
             },
             body: formData.toString(),
             credentials: 'same-origin'
@@ -919,6 +925,9 @@ document.addEventListener('DOMContentLoaded', function() {
             let data = null;
 
             try {
+                if (isExport) {
+                    return await response.blob();   // ⬅️ get file blob for download
+                }
                 data = await response.json();
             } catch (jsonError) {
                 console.warn('Failed to parse JSON response:', jsonError);
