@@ -926,7 +926,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 if (isExport) {
-                    return await response.blob();   // ⬅️ get file blob for download
+                    // CSV download
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'export.csv'; // name your file
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    return;
                 }
                 data = await response.json();
             } catch (jsonError) {
