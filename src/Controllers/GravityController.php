@@ -361,7 +361,7 @@ class GravityController
                     }
                 }
                 $csvExporter = new GravityFlowInboxCsv();
-                $exportResult = $csvExporter->setInboxEntriesData($entries)->generate();
+                $exportResult = $csvExporter->setInboxEntriesData($result)->generate();
 
                 if (!$exportResult['success']) {
                     http_response_code(500);
