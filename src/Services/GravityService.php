@@ -1142,6 +1142,8 @@ class GravityService
                 ];
             }
 
+            appLogger('Total inbox entries after processing: ' . json_encode($inbox_entries));
+
             // Sort by priority and date (API may already handle some sorting)
             usort($inbox_entries, function ($a, $b) {
                 // First sort by priority (higher priority first)
