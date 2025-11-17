@@ -129,10 +129,11 @@ class AppServiceProvider
 
     public function enqueue_assets()
     {
-        add_action('wp_enqueue_scripts',function() {
+        $plugin_dir = WP_PLUGIN_DIR . '/' . appConfig('app.name');
+        add_action('wp_enqueue_scripts',function() use($plugin_dir) {
             wp_enqueue_style(
                 'donapp-fonts',
-                plugin_dir_url(__FILE__) . 'src/assets/fonts/fonts.css',
+                $plugin_dir . '/src/assets/fonts/fonts.css',
                 array(),
                 '1.0'
             );
