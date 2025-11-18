@@ -209,7 +209,6 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
             cursor: pointer;
             transition: all 0.3s ease;
             color: white;
-            display: inline-flex;
             align-items: center;
             text-align: center;
             gap: 4px;
