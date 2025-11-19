@@ -33,7 +33,7 @@
             <?php if ($show_export): ?>
                 <div class="donap-export-section">
                 <a target="_blank" href="<?php echo rest_url('dnp/v1/gravity/export-csv?uid=' . get_current_user_id()); ?>" 
-                       class="donap-btn donap-btn-primary">
+                       class="export-btn-main">
                         <span class="donap-icon">⬇</span>
                         خروجی CSV
                     </a>
@@ -222,6 +222,26 @@
 </div>
 
 <style>
+    .export-btn-main {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .export-btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
 .donap-gravity-flow-shortcode {
     font-family: 'iransans', sans-serif;
     direction: rtl;
