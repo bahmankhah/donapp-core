@@ -15,7 +15,41 @@ class GravityServiceProvider
     public function boot()
     {
         add_action('admin_menu', [$this, 'register_gravity_menu'], 20);
+        $this->populateForm();
     }
+
+    public function populateForm(){
+        add_filter('gform_pre_render', 'populate_gravity_form_fields');
+        add_filter('gform_pre_validation', 'populate_gravity_form_fields');
+        add_filter('gform_pre_submission_filter', 'populate_gravity_form_fields');
+        add_filter('gform_admin_pre_render', 'populate_gravity_form_fields');
+
+        function get_user_firstname_lastname() {
+            $user = wp_get_current_user();
+            return array(
+                'firstname' => $user->first_name,
+                'lastname' => $user->last_name
+            );
+        }
+        function populate_gravity_form_fields($form) {
+            // Fetch custom attributes (e.g., from user session, profile, etc.)
+            $user_data = get_user_firstname_lastname();
+
+            // Loop through all fields in the form
+            foreach ($form['fields'] as &$field) {
+
+                if ($field->label == 'firstname_field') { // Match by field label or slug
+                    $field->defaultValue = $user_data['firstname'];
+                }
+                if ($field->label == 'lastname_field') { // Match by field label or slug
+                    $field->defaultValue = $user_data['lastname'];
+                }
+            }
+
+            return $form;
+        }
+    }
+    
 
     /**
      * Register Gravity Flow submenu under Donap dashboard
