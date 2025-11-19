@@ -20,6 +20,17 @@ class GravityServiceProvider
         $this->populateForm();
     }
 
+    public function fields(){
+        $fields_to_save = [
+            'national_code_field' => 'national_code',
+            'name_field' => 'name',
+            'birth_date_field' => 'birth_date',
+            'father_name_field' => 'father_name',
+            'school_title_field' => 'school_title',
+        ];
+        return $fields_to_save;
+    }
+
     public function populateForm()
     {
         add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
@@ -31,13 +42,8 @@ class GravityServiceProvider
 
     public function save_user_meta_after_submission($entry, $form)
     {
-        $fields_to_save = [
-            'national_code_field' => 'national_code',
-            'name_field' => 'name',
-            'birth_date_field' => 'birth_date',
-            'father_name_field' => 'father_name',
-        ];
-
+        $fields_to_save = $this->fields();
+        
         foreach ($form['fields'] as $field) {
             if (in_array($field->adminLabel, array_keys($fields_to_save))) {
                 $field_value = rgar($entry, $field->id);
@@ -51,22 +57,12 @@ class GravityServiceProvider
 
     public function populate_gravity_form_fields($form)
     {
+        $fields_to_save = $this->fields();
 
         $user_meta = get_user_meta(get_current_user_id(), '', true);
         foreach ($form['fields'] as &$field) {
-            switch ($field->adminLabel) {
-                case 'national_code_field':
-                    $field->defaultValue = isset($user_meta['national_code']) ? $user_meta['national_code'] : '';
-                    break;
-                case 'name_field':
-                    $field->defaultValue = isset($user_meta['name']) ? $user_meta['name'] : '';
-                    break;
-                case 'birth_date_field':
-                    $field->defaultValue = isset($user_meta['birth_date']) ? $user_meta['birth_date'] : '';
-                    break;
-                case 'father_name_field':
-                    $field->defaultValue = isset($user_meta['father_name']) ? $user_meta['father_name'] : '';
-                    break;
+            if(in_array($field->adminLabel, array_keys($fields_to_save))) {
+                $field->defaultValue = isset($user_meta[$fields_to_save[$field->adminLabel]]) ? $user_meta[$fields_to_save[$field->adminLabel]] : '';
             }
         }
 
