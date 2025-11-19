@@ -1329,15 +1329,7 @@ class GravityController
                 return;
             }
 
-            $dompdf = new \Dompdf\Dompdf();
-            $dompdf->loadHtml($exportResult['data']);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->render();
-
-            $pdfBinary = $dompdf->output();
-
-            // Serve PDF download
-            $pdfExporter->serve($pdfBinary, $exportResult['filename']);
+            $pdfExporter->serve($exportResult['data'], $exportResult['filename']);
         } catch (Exception $e) {
             error_log('Gravity Inbox PDF Export Error: ' . $e->getMessage());
             http_response_code(500);

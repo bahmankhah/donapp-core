@@ -84,25 +84,36 @@ class PdfManager implements PdfFile
         }
     }
 
-    public function serve($pdfBinary, string $filename): void
+    public function serve($data, string $filename): void
     {
-        // Clean output buffer
+        // Clean any output that might have been sent
         while (ob_get_level()) {
             ob_end_clean();
         }
 
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . strlen($pdfBinary));
-        header('Cache-Control: no-cache, must-revalidate');
+        // Set headers for HTML display (user can print as PDF)
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Content-Disposition: inline; filename="' . str_replace('.pdf', '.html', $filename) . '"');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
         header('Pragma: public');
 
-        echo $pdfBinary;
+        // Add auto-print parameter to URL for automatic PDF generation
+        $html_with_auto_print = str_replace(
+            '</script>',
+            'if (!window.location.search.includes("auto_print=1")) {
+                window.location.search += (window.location.search ? "&" : "?") + "auto_print=1";
+            }</script>',
+            $data
+        );
 
+        // Output the HTML data
+        echo $html_with_auto_print;
+
+        // Force output and exit cleanly
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         }
-        exit;
+        exit();
     }
 
     public function getMimeType(): string
