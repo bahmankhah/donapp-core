@@ -65,19 +65,6 @@
                                 <?php endif; ?>
                             </select>
                         </div>
-                        
-                        <div class="donap-filter-item">
-                            <label for="start_date">از تاریخ:</label>
-                            <input type="date" name="start_date" id="start_date" 
-                                   value="<?php echo esc_attr($current_filters['start_date']); ?>" />
-                        </div>
-                        
-                        <div class="donap-filter-item">
-                            <label for="end_date">تا تاریخ:</label>
-                            <input type="date" name="end_date" id="end_date" 
-                                   value="<?php echo esc_attr($current_filters['end_date']); ?>" />
-                        </div>
-                        
                         <div class="donap-filter-actions">
                             <input type="submit" class="donap-btn donap-btn-secondary" value="اعمال فیلتر" />
                             <a href="<?php echo esc_url($base_url); ?>" class="donap-btn donap-btn-light">پاک کردن فیلتر</a>
