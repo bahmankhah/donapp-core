@@ -45,11 +45,11 @@ class GravityServiceProvider
 
         // Loop through all fields in the form
         foreach ($form['fields'] as &$field) {
-            appLogger(json_encode($field));
-            if ($field->label == 'firstname_field') { // Match by field label or slug
+            // appLogger(json_encode($field));
+            if ($field->adminLabel == 'firstname_field') { // Match by field label or slug
                 $field->defaultValue = $user_data['firstname'];
             }
-            if ($field->label == 'lastname_field') { // Match by field label or slug
+            if ($field->adminLabel == 'lastname_field') { // Match by field label or slug
                 $field->defaultValue = $user_data['lastname'];
             }
         }
