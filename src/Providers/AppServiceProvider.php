@@ -15,6 +15,7 @@ use App\Services\VideoService;
 use App\Services\WalletService;
 use App\Services\WooService;
 use Kernel\Container;
+use Kernel\Facades\App;
 
 class AppServiceProvider
 {
@@ -82,6 +83,8 @@ class AppServiceProvider
 
     public function boot()
     {
+        App::setPluginPath();
+
         Container::bind('AuthService', function () {
             return new AuthService();
         });
@@ -123,6 +126,19 @@ class AppServiceProvider
         
         Container::bind('GravityFlowInboxService', function () {
             return new GravityFlowInboxService();
+        });
+        $this->enqueue_assets();   
+    }
+
+    public function enqueue_assets()
+    {
+        add_action('wp_enqueue_scripts',function() {
+            wp_enqueue_style(
+                'donapp-fonts',
+                App::pluginPath() . 'src/assets/fonts/fonts.css',
+                array(),
+                '1.1'
+            );
         });
     }
 }

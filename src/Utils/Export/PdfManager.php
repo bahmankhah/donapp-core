@@ -118,7 +118,7 @@ class PdfManager implements PdfFile
 
     public function getMimeType(): string
     {
-        return 'text/html; charset=UTF-8';
+        return 'application/pdf';
     }
 
     public function getExtension(): string

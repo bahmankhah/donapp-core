@@ -278,24 +278,11 @@ class SessionScoresService
                         $field_label = $this->getFieldLabel($field_id, $form);
                         
                         if ($field_id && $field_label) {
-                            // Check if field is summable based on GravityView config first
-                            $is_summable_by_config = $this->isFieldSummable($field_config);
-                            
-                            // If no explicit config, check if it's a numeric field type
-                            if (!$is_summable_by_config && isset($form['fields'])) {
-                                foreach ($form['fields'] as $field) {
-                                    if ((string)$field->id === $field_id) {
-                                        $is_summable_by_config = $this->isNumericField($field);
-                                        break;
-                                    }
-                                }
-                            }
-                            
                             $visible_fields[] = [
                                 'field_id' => $field_id,
                                 'field_label' => $field_label,
                                 'field_config' => $field_config,
-                                'is_summable' => $is_summable_by_config
+                                'is_summable' => $this->isFieldSummable($field_config)
                             ];
                         }
                     }
@@ -352,8 +339,6 @@ class SessionScoresService
             }
         }
 
-        // If no specific GravityView configuration found, don't assume it's summable
-        // This prevents text/choice fields from being incorrectly marked as summable
         return false;
     }
 
@@ -377,11 +362,7 @@ class SessionScoresService
      */
     private function isNumericField($field)
     {
-        // Only include truly numeric field types
-        $numeric_types = ['number', 'calculation', 'product', 'quantity', 'price', 'total'];
-        
-        // Don't include 'select' and 'radio' as they can contain non-numeric values
-        // Only include them if they are explicitly configured for calculations in GravityView
+        $numeric_types = ['number', 'calculation', 'product', 'quantity', 'price', 'total', 'select', 'radio'];
         return in_array($field->type, $numeric_types);
     }
 
