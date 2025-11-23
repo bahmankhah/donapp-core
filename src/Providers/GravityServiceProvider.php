@@ -17,7 +17,7 @@ class GravityServiceProvider
     public function boot()
     {
         add_action('admin_menu', [$this, 'register_gravity_menu'], 20);
-        $this->populateForm();
+        // $this->populateForm();
     }
 
     public function fields(){
