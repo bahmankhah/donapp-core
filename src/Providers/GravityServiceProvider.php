@@ -33,11 +33,11 @@ class GravityServiceProvider
 
     public function populateForm()
     {
-        add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
-        add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
+        // add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
+        // add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
     }
 
     public function save_user_meta_after_submission($entry, $form)
