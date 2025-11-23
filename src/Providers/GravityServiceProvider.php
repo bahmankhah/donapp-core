@@ -50,7 +50,7 @@ class GravityServiceProvider
                 'meta_key' => 'father_name',
             ],
             [
-                'label' => 'مدرک تحصیلی',
+                'label' => 'مسئولیت مدرسه',
                 'tag'   => '{user_meta:school_title}',
                 'group' => 'اطلاعات دناپ',
 
@@ -62,14 +62,14 @@ class GravityServiceProvider
 
     public function populateForm()
     {
-        // add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
-        // add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
-        // add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
-        // add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
+        add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
+        add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
+        add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
+        add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
         
         add_filter( 'gform_custom_merge_tags', [$this, 'add_custom_user_meta_merge_tag'], 10, 4 );
         add_filter( 'gform_replace_merge_tags', [$this, 'replace_custom_merge_tags'], 10, 7 );
-        add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
+        // add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
     }
     
     public function replace_custom_merge_tags($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format){
@@ -117,12 +117,8 @@ class GravityServiceProvider
     public function populate_gravity_form_fields($form)
     {
         $fields_to_save = $this->fields();
-
-        $user_meta = get_user_meta(get_current_user_id(), '', true);
-        foreach ($form['fields'] as &$field) {
-            if(in_array($field->adminLabel, array_keys($fields_to_save))) {
-                $field->defaultValue = isset($user_meta[$fields_to_save[$field->adminLabel]]) ? $user_meta[$fields_to_save[$field->adminLabel]] : '';
-            }
+foreach ($form['fields'] as $field) {
+            appLogger('Field: '. json_encode($field));
         }
 
         return $form;
