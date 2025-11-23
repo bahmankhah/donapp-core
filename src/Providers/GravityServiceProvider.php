@@ -62,10 +62,10 @@ class GravityServiceProvider
 
     public function populateForm()
     {
-        add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
         
         add_filter( 'gform_custom_merge_tags', [$this, 'add_custom_user_meta_merge_tag'], 10, 4 );
         add_filter( 'gform_replace_merge_tags', [$this, 'replace_custom_merge_tags'], 10, 7 );
@@ -73,9 +73,7 @@ class GravityServiceProvider
     }
     
     public function replace_custom_merge_tags($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format){
-        foreach ($form['fields'] as $field) {
-            appLogger('Field: '. json_encode($field));
-        }
+
         foreach ( $this->fields() as $field ) {
             $meta_value = get_user_meta(get_current_user_id(), $field['meta_key'], true);
             if ( strpos( $text, $field['tag'] ) !== false ) {
@@ -110,19 +108,30 @@ class GravityServiceProvider
 
     public function save_user_meta_after_submission($entry, $form)
     {
-        $fields_to_save = $this->fields();
-
-    }
-
-    public function populate_gravity_form_fields($form)
-    {
-        $fields_to_save = $this->fields();
-foreach ($form['fields'] as $field) {
-            appLogger('Field: '. json_encode($field));
+        $feildsToSave = [];
+        foreach($this->fields() as $f){
+            $feildsToSave[$f['tag']] = $f['meta_key']; 
         }
-
-        return $form;
+        foreach ($form['fields'] as $field) {
+            if (in_array($field['defaultValue'],array_keys($feildsToSave))) {
+                $field_value = rgar($entry, $field['id']);
+    
+                if (!empty($field_value)) {
+                    update_user_meta(get_current_user_id(), $feildsToSave[$field['defaultValue']], $field_value);
+                }
+            }
+        }
     }
+
+//     public function populate_gravity_form_fields($form)
+//     {
+//         $fields_to_save = $this->fields();
+// foreach ($form['fields'] as $field) {
+//             appLogger('Field: '. json_encode($field));
+//         }
+
+//         return $form;
+//     }
     /**
      * Register Gravity Flow submenu under Donap dashboard
      */
