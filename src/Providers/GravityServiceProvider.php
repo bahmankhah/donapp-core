@@ -68,12 +68,12 @@ class GravityServiceProvider
         // add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
         
         add_filter( 'gform_custom_merge_tags', [$this, 'add_custom_user_meta_merge_tag'], 10, 4 );
-        add_filter( 'gform_replace_merge_tags', [$this, 'replace_custom_merge_tags'], 10, 7 );
-        // add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
+        add_filter( 'gform_replace_merge_tags', [$this, 'replace_custom_merge_tags'], 1, 7 );
+        add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
     }
     
     public function replace_custom_merge_tags($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format){
-
+        appLogger('Replace Merge Tags Called');
         foreach ( $this->fields() as $field ) {
             $meta_value = get_user_meta(get_current_user_id(), $field['meta_key'], true);
             if ( strpos( $text, $field['tag'] ) !== false ) {
