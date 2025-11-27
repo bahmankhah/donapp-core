@@ -21,7 +21,7 @@ class GravityService
      * @param int $per_page
      * @return array
      */
-    public function getApprovedGravityFlowEntries($page = 1, $per_page = 20, $currentUser = null)
+    public function getApprovedGravityFlowEntries($page = 1, $per_page = 20, $currentUser = null, $filters = [])
     {
         // appLogger('GravityService: Starting getApprovedGravityFlowEntries - Page: ' . $page . ', Per Page: ' . $per_page);
         
@@ -68,6 +68,13 @@ class GravityService
             
             // Check if this form has Gravity Flow enabled
             $form_id = $form['id'];
+
+            if(isset($filters['filter_form'])){
+                if($filters['filter_form'] != $form_id){
+                    // appLogger('GravityService: Skipping form ID ' . $form_id . ' due to filter');
+                    continue;
+                }
+            }
             
             // Check if Gravity_Flow_Form class exists before using it
             if (class_exists('Gravity_Flow_Form')) {

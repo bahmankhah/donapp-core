@@ -89,6 +89,30 @@ class GravityFlowInboxPdf extends PdfManager implements PdfFile
             line-height: 1.6;
             color: #333;
         }
+        .print-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .print-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .print-button:hover {
+            background: #5a67d8;
+        }
+
+        @media print {
+            .print-container {
+                display: none;
+            }
+        }
         
         .header {
             text-align: center;
@@ -328,6 +352,9 @@ class GravityFlowInboxPdf extends PdfManager implements PdfFile
         این گزارش به صورت خودکار از سیستم مدیریت گردش کاری تولید شده است.<br>
         تعداد کل ورودی‌ها: ' . count($this->inboxEntries) . ' مورد
     </div>
+    <div class="print-container">
+    <button class="print-button" onclick="window.print()">چاپ گزارش</button>
+</div>
 </body>
 </html>';
 

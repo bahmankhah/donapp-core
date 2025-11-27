@@ -210,6 +210,7 @@
 
 <style>
 .donap-gravity-flow-shortcode {
+    width: 100% !important;
     font-family: 'iransans', sans-serif;
     direction: rtl;
     margin: 20px 0;

@@ -22,52 +22,115 @@ class GravityServiceProvider
 
     public function fields(){
         $fields_to_save = [
-            'national_code_field' => 'national_code',
-            'name_field' => 'name',
-            'birth_date_field' => 'birth_date',
-            'father_name_field' => 'father_name',
-            'school_title_field' => 'school_title',
+            [
+                'label' => 'کد ملی',
+                'tag'   => '{user_meta:national_code}',
+                'group' => 'اطلاعات دناپ',
+                'meta_key' => 'national_code',
+            ],
+            [
+                'label' => 'نام و نام خانوادگی',
+                'tag'   => '{user_meta:name}',
+                'group' => 'اطلاعات دناپ',
+
+                'meta_key' => 'name',
+            ],
+            [
+                'label' => 'تاریخ تولد',
+                'tag'   => '{user_meta:birth_date}',
+                'group' => 'اطلاعات دناپ',
+
+                'meta_key' => 'birth_date',
+            ],
+            [
+                'label' => 'نام پدر',
+                'tag'   => '{user_meta:father_name}',
+                'group' => 'اطلاعات دناپ',
+
+                'meta_key' => 'father_name',
+            ],
+            [
+                'label' => 'مسئولیت مدرسه',
+                'tag'   => '{user_meta:school_title}',
+                'group' => 'اطلاعات دناپ',
+
+                'meta_key' => 'school_title',
+            ],
         ];
         return $fields_to_save;
     }
 
     public function populateForm()
     {
+        // add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
+        // add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
+        
+        add_filter( 'gform_custom_merge_tags', [$this, 'add_custom_user_meta_merge_tag'], 10, 4 );
+        add_filter( 'gform_replace_merge_tags', [$this, 'replace_custom_merge_tags'], 10, 7 );
         add_action('gform_after_submission', [$this, 'save_user_meta_after_submission'], 10, 2);
-        add_filter('gform_pre_render', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_pre_validation', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_pre_submission_filter', [$this, 'populate_gravity_form_fields']);
-        add_filter('gform_admin_pre_render', [$this, 'populate_gravity_form_fields']);
+    }
+    
+    public function replace_custom_merge_tags($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format){
+        foreach ( $this->fields() as $field ) {
+            $meta_value = get_user_meta(get_current_user_id(), $field['meta_key'], true);
+            if ( strpos( $text, $field['tag'] ) !== false ) {
+                $replace_value = $meta_value ?? '';
+                if ( $url_encode ) {
+                    $replace_value = rawurlencode( $replace_value );
+                }
+                if ( $esc_html ) {
+                    $replace_value = esc_html( $replace_value );
+                }
+                if ( $nl2br ) {
+                    $replace_value = nl2br( $replace_value );
+                }
+                $text = str_replace( $field['tag'], $replace_value, $text );
+            }
+        }
+        return $text;
+    }
+
+    public function add_custom_user_meta_merge_tag( $merge_tags, $form_id, $fields, $element_id ) {
+
+        foreach ( $this->fields() as $field ) {
+            $merge_tags[] = [
+                'label' => $field['label'],
+                'tag'   => $field['tag'],
+                'group' => $field['group'],
+            ];
+        }
+    
+        return $merge_tags;
     }
 
     public function save_user_meta_after_submission($entry, $form)
     {
-        $fields_to_save = $this->fields();
-        
+        $feildsToSave = [];
+        foreach($this->fields() as $f){
+            $feildsToSave[$f['tag']] = $f['meta_key']; 
+        }
         foreach ($form['fields'] as $field) {
-            if (in_array($field->adminLabel, array_keys($fields_to_save))) {
-                $field_value = rgar($entry, $field->id);
-
+            if (in_array($field['defaultValue'],array_keys($feildsToSave))) {
+                $field_value = rgar($entry, $field['id']);
+    
                 if (!empty($field_value)) {
-                    update_user_meta(get_current_user_id(), $fields_to_save[$field->adminLabel], $field_value);
+                    update_user_meta(get_current_user_id(), $feildsToSave[$field['defaultValue']], $field_value);
                 }
             }
         }
     }
 
-    public function populate_gravity_form_fields($form)
-    {
-        $fields_to_save = $this->fields();
+//     public function populate_gravity_form_fields($form)
+//     {
+//         $fields_to_save = $this->fields();
+// foreach ($form['fields'] as $field) {
+//             appLogger('Field: '. json_encode($field));
+//         }
 
-        $user_meta = get_user_meta(get_current_user_id(), '', true);
-        foreach ($form['fields'] as &$field) {
-            if(in_array($field->adminLabel, array_keys($fields_to_save))) {
-                $field->defaultValue = isset($user_meta[$fields_to_save[$field->adminLabel]]) ? $user_meta[$fields_to_save[$field->adminLabel]] : '';
-            }
-        }
-
-        return $form;
-    }
+//         return $form;
+//     }
     /**
      * Register Gravity Flow submenu under Donap dashboard
      */

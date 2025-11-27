@@ -20,7 +20,7 @@ class SSOServiceProvider
 
     public function boot()
     {
-        // appLogger($_GET['code'] ?? 'no state');
+        appLogger($_GET['code'] ?? 'no state');
         if (isset($_GET['code'])) {
             // Prevent page caching during the SSO callback handling.
             if (!defined('DONOTCACHEPAGE')) {
@@ -30,7 +30,7 @@ class SSOServiceProvider
                 nocache_headers();
             }
 
-            // appLogger('SSO callback redirect_url: ' . $_SERVER['REQUEST_URI']);
+            appLogger('SSO callback redirect_url: ' . $_SERVER['REQUEST_URI']);
             Auth::sso()->attempt([
                 'code' => $_GET['code'],
                 'session_state' => $_GET['session_state'] ?? null,
@@ -62,6 +62,7 @@ class SSOServiceProvider
         }
         
         if(isset($query_params['state'])){
+            appLogger('SSO state param: ' . $query_params['state']);
             $decoded_state = urldecode($query_params['state']);
             if($this->isValidUrl($decoded_state)){
                 // Prevent open redirect vulnerabilities

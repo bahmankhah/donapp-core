@@ -466,7 +466,7 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
 
             .donap-entry-actions {
                 flex-direction: column;
-                gap: 4px;
+                gap: 10px;
             }
 
             .donap-action-btn {
@@ -594,7 +594,7 @@ $show_export_buttons = ($attributes['show_export_buttons'] ?? 'true') === 'true'
         <form id="bulk-action-form" class="donap-bulk-actions-form" style="margin-bottom: 15px;">
             <div style="">
                 <select id="bulk-action-select" name="bulk_action"
-                    style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px;">
+                    style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px;margin-bottom:10px;">
                     <option value="">انتخاب عملیات گروهی</option>
                     <option value="approve">تأیید</option>
                     <option value="reject">رد</option>

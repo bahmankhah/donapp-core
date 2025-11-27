@@ -146,7 +146,7 @@ class ShortcodeServiceProvider
         ];
 
         // Get entries and stats
-        $entries_result = $gravityService->getApprovedGravityFlowEntries($page, $per_page);
+        $entries_result = $gravityService->getApprovedGravityFlowEntries($page, $per_page, null, $filters);
         $stats = ($atts['show_stats'] === 'true') ? $gravityService->getApprovedEntriesStats() : [];
 
         // Check for plugin availability
