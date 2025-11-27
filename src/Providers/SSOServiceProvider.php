@@ -20,7 +20,7 @@ class SSOServiceProvider
 
     public function boot()
     {
-        // appLogger($_GET['code'] ?? 'no state');
+        appLogger($_GET['code'] ?? 'no state');
         if (isset($_GET['code'])) {
             // Prevent page caching during the SSO callback handling.
             if (!defined('DONOTCACHEPAGE')) {
