@@ -69,8 +69,8 @@ class GravityService
             // Check if this form has Gravity Flow enabled
             $form_id = $form['id'];
 
-            if(isset($filters['filter_form'])){
-                if($filters['filter_form'] != $form_id){
+            if(isset($filters['form_filter'])){
+                if($filters['form_filter'] != $form_id){
                     // appLogger('GravityService: Skipping form ID ' . $form_id . ' due to filter');
                     continue;
                 }
