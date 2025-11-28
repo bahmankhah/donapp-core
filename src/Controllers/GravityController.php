@@ -161,7 +161,7 @@ class GravityController
     /**
      * Export approved Gravity Flow entries to PDF (all entries)
      */
-    public function exportPDF()
+    public function exportApprovedEntriesPDF()
     {
         try {
             $uid = $_GET['uid'];
