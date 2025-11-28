@@ -179,12 +179,12 @@ class GravityController
             }
 
             // Get all entries without pagination
-            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000);
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000, $user);
             $entries = $all_entries_result['data'];
 
             if (empty($entries)) {
                 http_response_code(404);
-                wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
+                wp_die('هیچ داده‌ای برای خروجی یافت نشد.', 'داده یافت نشد', ['response' => 404]);
                 return;
             }
 

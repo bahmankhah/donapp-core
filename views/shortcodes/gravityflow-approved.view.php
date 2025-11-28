@@ -306,6 +306,8 @@
 }
 
 .donap-export-section {
+    display:flex;
+    gap: 10px;
     margin-bottom: 15px;
 }
 
