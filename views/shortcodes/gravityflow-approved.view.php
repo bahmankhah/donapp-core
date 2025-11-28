@@ -38,7 +38,7 @@
                         خروجی CSV
                     </a>
 
-                    <a target="_blank" href="<?php echo rest_url('dnp/v1/gravity/export-pdf?uid=' . get_current_user_id()); ?>" 
+                    <a target="_blank" href="<?php echo rest_url('dnp/v1/gravity/export-pdf?uid=' . get_current_user_id() . '&form_filter=' . urlencode($current_filters['form_filter'])); ?>" 
                        class="export-btn-main">
                         <span class="donap-icon">⬇</span>
                         خروجی PDF

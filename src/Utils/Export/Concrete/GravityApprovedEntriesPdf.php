@@ -61,7 +61,7 @@ class GravityApprovedEntriesPdf extends PdfManager implements PdfFile
     public function generateHtml(): string
     {
         $stats = $this->calculateStats();
-        $now = date('Y/m/d H:i');
+        $now = date_i18n('Y/m/d H:i', strtotime(date('Y/m/d H:i')));
 
         $html = '<!DOCTYPE html>
 <html dir="rtl" lang="fa">

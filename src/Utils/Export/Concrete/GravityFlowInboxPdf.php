@@ -68,7 +68,8 @@ class GravityFlowInboxPdf extends PdfManager implements PdfFile
     private function generateHtmlContent(): string
     {
         $stats = $this->calculateStats();
-        $current_date = date('Y/m/d H:i');
+        $current_date = date_i18n('Y/m/d H:i', strtotime(date('Y/m/d H:i')));
+
 
         $html = '<!DOCTYPE html>
 <html dir="rtl" lang="fa">

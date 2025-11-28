@@ -178,8 +178,13 @@ class GravityController
                 return;
             }
 
+            $filters = [
+                'form_filter' => $_GET['form_filter'] ?? '',
+                'start_date' => $_GET['start_date'] ?? '',
+                'end_date' => $_GET['end_date'] ?? ''
+            ];
             // Get all entries without pagination
-            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000, $user);
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000, $user, $filters);
             $entries = $all_entries_result['data'];
 
             if (empty($entries)) {
