@@ -35,18 +35,19 @@ class SSOGuard extends Adapter implements Guard
 
     public function login($user)
     {
-        // Establish current user context & auth cookies
-        wp_set_current_user($user->ID);
-        // Set persistent auth cookie (remember = true) so new tabs immediately send it
-        wp_set_auth_cookie($user->ID, true);
+        wp_signon(['user_login' => $user->user_login], false);
+        // // Establish current user context & auth cookies
+        // wp_set_current_user($user->ID);
+        // // Set persistent auth cookie (remember = true) so new tabs immediately send it
+        // wp_set_auth_cookie($user->ID, true);
 
-        // Fire core hook so other plugins (cache, security, sessions) react properly
-        do_action('wp_login', $user->user_login, $user);
+        // // Fire core hook so other plugins (cache, security, sessions) react properly
+        // do_action('wp_login', $user->user_login, $user);
 
-        // Encourage downstream layers not to cache this response
-        if (!headers_sent()) {
-            nocache_headers();
-        }
+        // // Encourage downstream layers not to cache this response
+        // if (!headers_sent()) {
+        //     nocache_headers();
+        // }
     }
 
 

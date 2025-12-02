@@ -66,8 +66,7 @@ class SSOServiceProvider
             $decoded_state = urldecode($query_params['state']);
             if($this->isValidUrl($decoded_state)){
                 // Prevent open redirect vulnerabilities
-                wp_redirect($decoded_state, 302, 'DonappSSO');
-                exit;
+                $this->finishLoginRedirect($decoded_state);
             }
             unset( $query_params['state']);
         }
@@ -81,9 +80,27 @@ class SSOServiceProvider
         $new_url = $url_parts['path'] . ($new_query_string ? '?' . $new_query_string : '');
 
     // Safe redirect after login; ensure cookies are already set
-        wp_redirect($new_url, 302, 'DonappSSO');
+        $this->finishLoginRedirect($new_url);
+    }
+
+    public function finishLoginRedirect($url)
+    {
+        // Flush output buffer
+        while (ob_get_level()) ob_end_clean();
+
+        header('Content-Type: text/html; charset=utf-8');
+        nocache_headers();
+
+        echo "<html><head>
+                <meta http-equiv='refresh' content='0;url={$url}' />
+            </head>
+            <body>
+                <script>window.location.replace('{$url}');</script>
+                Redirecting...
+            </body></html>";
         exit;
     }
+
     /**
      * Validate if a string is a valid URL
      *
