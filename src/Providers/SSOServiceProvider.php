@@ -65,6 +65,7 @@ class SSOServiceProvider
             appLogger('SSO state param: ' . $query_params['state']);
             $decoded_state = urldecode($query_params['state']);
             if($this->isValidUrl($decoded_state)){
+                appLogger('SSO decoded state param is valid URL: ' . $decoded_state);
                 // Prevent open redirect vulnerabilities
                 $this->finishLoginRedirect($decoded_state);
             }
