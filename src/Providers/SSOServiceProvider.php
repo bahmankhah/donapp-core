@@ -16,7 +16,9 @@ use Kernel\PostType;
 class SSOServiceProvider
 {
 
-    public function register() {}
+    public function register()
+    {
+    }
 
     public function boot()
     {
@@ -42,52 +44,54 @@ class SSOServiceProvider
         // Add SSO Global ID field to user profile
         add_action('edit_user_profile', [$this, 'showSSOFields'], 10);
         add_action('show_user_profile', [$this, 'showSSOFields'], 10);
-        
+
         // Save SSO fields when user profile is updated
         add_action('edit_user_profile_update', [$this, 'saveSSOFields'], 10);
         add_action('personal_options_update', [$this, 'saveSSOFields'], 10);
     }
-    
-    public function remove_code_param_redirect() {
+
+    public function remove_code_param_redirect()
+    {
         $current_url = $_SERVER['REQUEST_URI'];
 
         $url_parts = parse_url($current_url);
         parse_str($url_parts['query'] ?? '', $query_params);
 
-        if(isset($query_params['code'])){
+        if (isset($query_params['code'])) {
             unset($query_params['code']);
         }
-        if(isset($query_params['session_state'])){
-            unset( $query_params['session_state']);
+        if (isset($query_params['session_state'])) {
+            unset($query_params['session_state']);
         }
-        
-        if(isset($query_params['state'])){
+
+        if (isset($query_params['state'])) {
             appLogger('SSO state param: ' . $query_params['state']);
             $decoded_state = urldecode($query_params['state']);
-            if($this->isValidUrl($decoded_state)){
+            if ($this->isValidUrl($decoded_state)) {
                 appLogger('SSO decoded state param is valid URL: ' . $decoded_state);
                 // Prevent open redirect vulnerabilities
                 $this->finishLoginRedirect($decoded_state);
             }
-            unset( $query_params['state']);
+            unset($query_params['state']);
         }
-        
 
-        if(isset( $query_params['iss'])){
-            unset( $query_params['iss']);
+
+        if (isset($query_params['iss'])) {
+            unset($query_params['iss']);
         }
 
         $new_query_string = http_build_query($query_params);
         $new_url = $url_parts['path'] . ($new_query_string ? '?' . $new_query_string : '');
 
-    // Safe redirect after login; ensure cookies are already set
+        // Safe redirect after login; ensure cookies are already set
         $this->finishLoginRedirect($new_url);
     }
 
     public function finishLoginRedirect($url)
     {
         // Flush output buffer
-        while (ob_get_level()) ob_end_clean();
+        while (ob_get_level())
+            ob_end_clean();
 
         header('Content-Type: text/html; charset=utf-8');
         nocache_headers();
@@ -110,7 +114,23 @@ class SSOServiceProvider
      */
     public function isValidUrl($url)
     {
-        return filter_var($url, FILTER_VALIDATE_URL) !== false;
+        $parts = parse_url($url);
+        if (!$parts || !isset($parts['scheme']) || !isset($parts['host'])) {
+            return false;
+        }
+
+        // Percent-encode only the path (safe)
+        if (isset($parts['path'])) {
+            $parts['path'] = implode("/", array_map('rawurlencode', explode("/", $parts['path'])));
+        }
+
+        // Rebuild URL
+        $rebuilt = $parts['scheme'] . '://' . $parts['host'] . ($parts['path'] ?? '');
+        if (isset($parts['query'])) {
+            $rebuilt .= '?' . $parts['query'];
+        }
+
+        return filter_var($rebuilt, FILTER_VALIDATE_URL) !== false;
     }
 
 
@@ -127,30 +147,33 @@ class SSOServiceProvider
         $sso_global_id = get_user_meta($user->ID, 'sso_global_id', true);
         $sso_mobile_number = get_user_meta($user->ID, 'sso_mobile_number', true);
         $sso_national_id = get_user_meta($user->ID, 'sso_national_id', true);
-        
+
         ?>
         <h3>اطلاعات SSO</h3>
         <table class="form-table" role="presentation">
             <tr>
                 <th><label for="sso_global_id">شناسه جهانی SSO</label></th>
                 <td>
-                    <input type="text" name="sso_global_id" id="sso_global_id" value="<?php echo esc_attr($sso_global_id ?? ''); ?>" class="regular-text" />
+                    <input type="text" name="sso_global_id" id="sso_global_id"
+                        value="<?php echo esc_attr($sso_global_id ?? ''); ?>" class="regular-text" />
                     <p class="description">این شناسه منحصر به فرد از سرویس‌دهنده SSO دریافت شده.</p>
                 </td>
             </tr>
-            
+
             <tr>
                 <th><label for="sso_mobile_number">شماره موبایل SSO</label></th>
                 <td>
-                    <input type="text" name="sso_mobile_number" id="sso_mobile_number" value="<?php echo esc_attr($sso_mobile_number ?? ''); ?>" class="regular-text" />
+                    <input type="text" name="sso_mobile_number" id="sso_mobile_number"
+                        value="<?php echo esc_attr($sso_mobile_number ?? ''); ?>" class="regular-text" />
                     <p class="description">شماره موبایل دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
-            
+
             <tr>
                 <th><label for="sso_national_id">کد ملی SSO</label></th>
                 <td>
-                    <input type="text" name="sso_national_id" id="sso_national_id" value="<?php echo esc_attr($sso_national_id ?? ''); ?>" class="regular-text" />
+                    <input type="text" name="sso_national_id" id="sso_national_id"
+                        value="<?php echo esc_attr($sso_national_id ?? ''); ?>" class="regular-text" />
                     <p class="description">کد ملی دریافت شده از سرویس‌دهنده SSO.</p>
                 </td>
             </tr>
