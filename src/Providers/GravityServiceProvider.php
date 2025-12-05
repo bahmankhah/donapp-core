@@ -135,6 +135,7 @@ class GravityServiceProvider
                 'group' => $field['group'],
             ];
         }
+        appLogger('MERGE_TAGS: '.json_encode($merge_tags));
     
         return $merge_tags;
     }
