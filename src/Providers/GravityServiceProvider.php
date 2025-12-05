@@ -50,11 +50,18 @@ class GravityServiceProvider
                 'meta_key' => 'father_name',
             ],
             [
-                'label' => 'مسئولیت مدرسه',
+                'label' => 'مسئولیت ارزشیاب',
                 'tag'   => '{user_meta:school_title}',
                 'group' => 'اطلاعات دناپ',
 
                 'meta_key' => 'school_title',
+            ],
+            [
+                'label' => 'شناسه ارزشیابی',
+                'tag'   => '{user_meta:evaluation_id}',
+                'group' => 'اطلاعات دناپ',
+
+                'meta_key' => 'evaluation_id',
             ],
         ];
         return $fields_to_save;
