@@ -70,6 +70,11 @@ class WooServiceProvider
 
     public function clear_cart_ajax_handler()
     {
+        if (!WC()->cart) {
+            // Make sure the cart is initialized before calling empty_cart()
+            wc_load_cart();
+        }
+
         // Clear the WooCommerce cart
         WC()->cart->empty_cart();
 
@@ -97,7 +102,14 @@ class WooServiceProvider
                             },
                             success: function (response) {
                                 // Redirect after clearing the cart
-                                window.location.href = "https://rayman.donap.ir"; // Replace with your custom URL
+                                if (response.success) {
+                                    window.location.href = "https://rayman.donap.ir"; // Replace with your custom URL
+                                } else {
+                                    alert("خطا در انصراف از خرید. لطفاً دوباره تلاش کنید.");
+                                }
+                                error: function(xhr, status, error) {
+                                    console.log("AJAX error: " + status + "\n" + error);
+                                }
                             }
                         });
                     }
