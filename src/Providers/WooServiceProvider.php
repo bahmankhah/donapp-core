@@ -70,6 +70,7 @@ class WooServiceProvider
 
     public function clear_cart_ajax_handler()
     {
+        die('ssss');
         if (!WC()->cart) {
             // Make sure the cart is initialized before calling empty_cart()
             wc_load_cart();
