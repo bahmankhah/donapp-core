@@ -64,18 +64,43 @@ class WooServiceProvider
                 );
             }
         }
-        add_action('woocommerce_review_order_after_submit', [$this, 'add_return_button_to_checkout'], 5);
-
+        add_action('woocommerce_review_order_after_order_total', [$this, 'add_return_button_to_checkout'], 5);
+        add_action('wp_ajax_nopriv_clear_cart', [$this, 'clear_cart_ajax_handler']);
     }
 
+    public function clear_cart_ajax_handler()
+    {
+        // Clear the WooCommerce cart
+        WC()->cart->empty_cart();
+
+        // Send a success response
+        wp_send_json_success();
+    }
     public function add_return_button_to_checkout()
     {
         // Check if the query parameter is present
         if (is_checkout() && isset($_GET['dnpuser']) && !empty($_GET['dnpuser'])) {
-            // Button HTML with light green and rounded edges
-            echo '<div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">';
-            echo '<a href="https://your-redirect-url.com" class="button alt" style="background-color: #58cc02; color: #fff; padding: 12px 24px; border-radius: 30px; text-decoration: none; font-size: 16px; display: inline-block;">بازگشت به رایمن</a>';
-            echo '</div>';
+            ?>
+            <button type="button" id="cancel-purchase-btn" class="button alt" onclick="cancelPurchase()">انصراف از خرید</button>
+            <script type="text/javascript">
+                function cancelPurchase() {
+                    if (confirm("آیا از انصراف از خرید مطمئن هستید؟")) {
+                        // Clear the WooCommerce cart using AJAX
+                        jQuery.ajax({
+                            url: '<?php echo esc_url(admin_url('admin-ajax.php')); ?>',
+                            type: 'POST',
+                            data: {
+                                action: 'clear_cart'
+                            },
+                            success: function (response) {
+                                // Redirect after clearing the cart
+                                window.location.href = "https://rayman.donap.ir"; // Replace with your custom URL
+                            }
+                        });
+                    }
+                }
+            </script>
+            <?php
         }
 
     }
