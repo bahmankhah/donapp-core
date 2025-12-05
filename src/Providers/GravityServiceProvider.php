@@ -124,18 +124,13 @@ class GravityServiceProvider
 
     public function add_custom_user_meta_merge_tag( $merge_tags, $form_id, $fields, $element_id ) {
 
-        $merge_tags['donapp_core'] = [
-            'label'=> 'اطلاعات کاربر Donap',
-            'tags' => []
-        ];
         foreach ( $this->fields() as $field ) {
-            $merge_tags['donapp_core']['tags'][] = [
+            $merge_tags[] = [
                 'label' => $field['label'],
                 'tag'   => $field['tag'],
                 'group' => $field['group'],
             ];
         }
-        appLogger('MERGE_TAGS: '.json_encode($merge_tags));
     
         return $merge_tags;
     }
