@@ -81,7 +81,10 @@ class WooServiceProvider
         // Check if the query parameter is present
         if (is_checkout() && isset($_GET['dnpuser']) && !empty($_GET['dnpuser'])) {
             ?>
-            <button type="button" id="cancel-purchase-btn" class="button alt" onclick="cancelPurchase()">انصراف از خرید</button>
+            <button type="button" id="cancel-purchase-btn" class="button alt"
+                style="background-color: #f44336; color: white; padding: 10px 20px; border: none; cursor: pointer; font-size: 16px; border-radius: 12px; margin-top: 20px;"
+                onclick="cancelPurchase()">انصراف از خرید</button>
+
             <script type="text/javascript">
                 function cancelPurchase() {
                     if (confirm("آیا از انصراف از خرید مطمئن هستید؟")) {
