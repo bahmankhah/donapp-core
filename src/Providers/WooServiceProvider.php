@@ -64,19 +64,20 @@ class WooServiceProvider
                 );
             }
         }
-        add_action('woocommerce_before_checkout_form', [$this, 'add_return_button_to_checkout'], 5);
+        add_action('woocommerce_review_order_after_submit', [$this, 'add_return_button_to_checkout'], 5);
 
     }
 
     public function add_return_button_to_checkout()
     {
         // Check if the query parameter is present
-        if (isset($_GET['dnpuser']) && !empty($_GET['dnpuser'])) {
-            // Create the button HTML
-            echo '<div style="text-align: center; margin-bottom: 20px;">';
-            echo '<a href="https://rayman.donap.ir" class="button alt" style="padding: 10px 20px; background-color: #FF6600; color: white; text-decoration: none;">بازگشت به رایمن</a>';
+        if (is_checkout() && isset($_GET['dnpuser']) && !empty($_GET['dnpuser'])) {
+            // Button HTML with light green and rounded edges
+            echo '<div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">';
+            echo '<a href="https://your-redirect-url.com" class="button alt" style="background-color: #58cc02; color: #fff; padding: 12px 24px; border-radius: 30px; text-decoration: none; font-size: 16px; display: inline-block;">بازگشت به رایمن</a>';
             echo '</div>';
         }
+
     }
 
 }
