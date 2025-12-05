@@ -107,9 +107,9 @@ class WooServiceProvider
                                 } else {
                                     alert("خطا در انصراف از خرید. لطفاً دوباره تلاش کنید.");
                                 }
-                                error: function(xhr, status, error) {
-                                    console.log("AJAX error: " + status + "\n" + error);
-                                }
+                            }
+                            error: function(xhr, status, error) {
+                                console.log("AJAX error: " + status + "\n" + error);
                             }
                         });
                     }
