@@ -60,6 +60,29 @@ register_activation_hook(__FILE__, function () {
     (new AppServiceProvider())->register();
 });
 
+function securityCheck()
+{
+    remove_action('wp_head', 'wp_generator');
+    add_filter( 'pre_comment_content', 'wp_specialchars' );
+    add_filter('the_generator', '__return_empty_string');
+    if (!is_user_logged_in())
+        return;
+
+    $timeout = 120 * 60; // 120 minutes
+    $key = 'last_activity_ts';
+
+    $last = (int) get_user_meta(get_current_user_id(), $key, true);
+    $now = time();
+
+    if ($last && ($now - $last) > $timeout) {
+        wp_logout();
+        wp_redirect(wp_login_url());
+        exit;
+    }
+
+    update_user_meta(get_current_user_id(), $key, $now);
+}
+
 // Function to check and redirect login attempts
 function donapp_check_login_redirect()
 {
@@ -131,6 +154,7 @@ add_action('init', function () {
     (new HookFilterServiceProvider())->boot();
 
     // Add login redirect check in init
+    securityCheck();
     donapp_check_login_redirect();
 }, 99);
 
