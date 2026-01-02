@@ -64,8 +64,8 @@ class WooServiceProvider
                 );
             }
         }
-        add_action('woocommerce_checkout_after_order_review', [$this, 'add_return_button_to_checkout'], 5);
-        add_action('wp_ajax_nopriv_clear_cart', [$this, 'clear_cart_ajax_handler']);
+   //     add_action('woocommerce_checkout_after_order_review', [$this, 'add_return_button_to_checkout'], 5);
+   //     add_action('wp_ajax_nopriv_clear_cart', [$this, 'clear_cart_ajax_handler']);
     }
 
     public function clear_cart_ajax_handler()
