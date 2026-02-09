@@ -12,6 +12,11 @@ class SSOGuard extends Adapter implements Guard
     {
         return replacePlaceholders($this->config['login_url'], ['clientId' => $this->config['client_id'], 'redirectUrl' => $this->config['redirect_url']]);
     }
+
+    public function getLogoutUrl()
+    {
+        return replacePlaceholders($this->config['logout_url'], ['clientId' => $this->config['client_id'], 'redirectUrl' => $this->config['redirect_url']]);
+    }
     public function check(): bool
     {
         $user = wp_get_current_user();
@@ -59,7 +64,16 @@ class SSOGuard extends Adapter implements Guard
             delete_user_meta($user->ID, 'sso_expires_at');
         }
 
+        // Remove our hook to prevent recursion before calling wp_logout
+        remove_all_actions('wp_logout');
         wp_logout();
+
+        $logoutUrl = $this->getLogoutUrl();
+        appLogger('Redirecting to SSO logout URL: ' . $logoutUrl);
+        if ($logoutUrl && !headers_sent()) {
+            wp_redirect($logoutUrl);
+            exit;
+        }
     }
 
 

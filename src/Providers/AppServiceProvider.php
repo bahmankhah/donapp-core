@@ -16,6 +16,7 @@ use App\Services\WalletService;
 use App\Services\WooService;
 use Kernel\Container;
 use Kernel\Facades\App;
+use Kernel\Facades\Auth;
 
 class AppServiceProvider
 {
@@ -127,7 +128,15 @@ class AppServiceProvider
         Container::bind('GravityFlowInboxService', function () {
             return new GravityFlowInboxService();
         });
-        $this->enqueue_assets();   
+        $this->enqueue_assets();
+        $this->overrideLogout();
+    }
+
+    public function overrideLogout()
+    {
+        add_action('wp_logout', function () {
+            Auth::sso()->logout();
+        });
     }
 
     public function enqueue_assets()
