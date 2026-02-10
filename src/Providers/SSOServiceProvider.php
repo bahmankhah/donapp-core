@@ -89,13 +89,19 @@ class SSOServiceProvider
 
     public function finishLoginRedirect($url)
     {
-        // Flush output buffer
+        // Flush output buffer so headers can be sent (including auth cookies)
         while (ob_get_level())
             ob_end_clean();
 
-        header('Content-Type: text/html; charset=utf-8');
         nocache_headers();
 
+        if (!headers_sent()) {
+            wp_redirect($url);
+            exit;
+        }
+
+        // Fallback if headers already sent
+        header('Content-Type: text/html; charset=utf-8');
         echo "<html><head>
                 <meta http-equiv='refresh' content='0;url={$url}' />
             </head>
