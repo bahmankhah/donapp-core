@@ -136,9 +136,10 @@ class AppServiceProvider
     {
         add_action('wp_logout', function () {
             // Skip during SSO login callback to avoid redirect conflict
-            if (!isset($_GET['code'])) {
-                Auth::sso()->logout();
+            if (isset($_GET['code'])) {
+                return;
             }
+            Auth::sso()->logout();
         });
     }
 
