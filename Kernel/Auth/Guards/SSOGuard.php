@@ -45,6 +45,9 @@ class SSOGuard extends Adapter implements Guard
         // Set persistent auth cookie (remember = true) so new tabs immediately send it
         wp_set_auth_cookie($user->ID, true);
 
+        // Reset activity timestamp so securityCheck() doesn't expire the fresh session
+        update_user_meta($user->ID, 'last_activity_ts', time());
+
         // Fire core hook so other plugins (cache, security, sessions) react properly
         do_action('wp_login', $user->user_login, $user);
 
