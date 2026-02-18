@@ -30,8 +30,10 @@ return [
             'sso' => [
                 'context' => Kernel\Auth\Guards\SSOGuard::class,
                 'login_url' => trim(getenv('AUTH_SSO_LOGIN_URL'), '"'),
+                'logout_url' => trim(getenv('AUTH_SSO_LOGOUT_URL'), '"'),
                 'client_id' => trim(getenv('AUTH_SSO_CLIENT_ID'), '"'),
                 'redirect_url'=> trim(getenv('AUTH_SSO_REDIRECT_URL'), '"'),
+                'logout_redirect_url'=> trim(getenv('AUTH_SSO_LOGOUT_REDIRECT_URL'), '"'),
                 'validate_url'=> trim(getenv('AUTH_SSO_VALIDATE_URL'), '"'),
             ]
         ]

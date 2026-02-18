@@ -2,8 +2,8 @@
 
 
 function enqueue_waveform_player() {
-    // Enqueue WaveSurfer.js (UMD version)
-    wp_enqueue_script('wavesurfer-js', 'https://unpkg.com/wavesurfer.js', array(), null, true);
+    // Enqueue WaveSurfer.js (self-hosted)
+    wp_enqueue_script('wavesurfer-js', plugin_dir_url(__FILE__) . 'src/assets/js/wavesurfer.js', array(), '1.0', true);
 
     // Inline JavaScript for handling the waveform functionality
     $inline_js = "

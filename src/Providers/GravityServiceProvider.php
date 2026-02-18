@@ -20,43 +20,73 @@ class GravityServiceProvider
         $this->populateForm();
     }
 
-    public function fields(){
+    public function fields()
+    {
+        // All fields are grouped in a single array for easier management
         $fields_to_save = [
             [
-                'label' => 'کد ملی',
-                'tag'   => '{user_meta:national_code}',
-                'group' => 'اطلاعات دناپ',
-                'meta_key' => 'national_code',
+                'label' => 'نام ارزشیاب',
+                'tag'   => '{user_meta:evaluator_name}',
+                'meta_key' => 'evaluator_name',
             ],
             [
-                'label' => 'نام و نام خانوادگی',
-                'tag'   => '{user_meta:name}',
-                'group' => 'اطلاعات دناپ',
-
-                'meta_key' => 'name',
+                'label' => 'شناسه ملی',
+                'tag'   => '{user_meta:national_id}',
+                'meta_key' => 'national_id',
             ],
             [
-                'label' => 'تاریخ تولد',
-                'tag'   => '{user_meta:birth_date}',
-                'group' => 'اطلاعات دناپ',
-
-                'meta_key' => 'birth_date',
+                'label' => 'شناسه ارزشیابی',
+                'tag'   => '{user_meta:evaluation_id}',
+                'meta_key' => 'evaluation_id',
             ],
             [
-                'label' => 'نام پدر',
-                'tag'   => '{user_meta:father_name}',
-                'group' => 'اطلاعات دناپ',
-
-                'meta_key' => 'father_name',
+                'label' => 'تاریخ',
+                'tag'   => '{user_meta:date}',
+                'meta_key' => 'date',
             ],
             [
-                'label' => 'مسئولیت مدرسه',
-                'tag'   => '{user_meta:school_title}',
-                'group' => 'اطلاعات دناپ',
-
-                'meta_key' => 'school_title',
+                'label' => 'مسئولیت ارزشیاب',
+                'tag'   => '{user_meta:evaluator_role}',
+                'meta_key' => 'evaluator_role',
+            ],
+            [
+                'label' => 'سایر',
+                'tag'   => '{user_meta:other}',
+                'meta_key' => 'other',
+            ],
+            [
+                'label' => 'پایه تحصیلی',
+                'tag'   => '{user_meta:grade}',
+                'meta_key' => 'grade',
+            ],
+            [
+                'label' => 'نام کلاس',
+                'tag'   => '{user_meta:class_name}',
+                'meta_key' => 'class_name',
+            ],
+            [
+                'label' => 'استان',
+                'tag'   => '{user_meta:province}',
+                'meta_key' => 'province',
+            ],
+            [
+                'label' => 'شهر',
+                'tag'   => '{user_meta:city}',
+                'meta_key' => 'city',
+            ],
+            [
+                'label' => 'نام موسسه',
+                'tag'   => '{user_meta:institute_name}',
+                'meta_key' => 'institute_name',
+            ],
+            [
+                'label' => 'نام مدرسه',
+                'tag'   => '{user_meta:school_name}',
+                'meta_key' => 'school_name',
             ],
         ];
+
+        // Optionally, you can add a 'group' key to each if you want to group them in UI, but for logic, this array is enough
         return $fields_to_save;
     }
 

@@ -161,7 +161,7 @@ class GravityController
     /**
      * Export approved Gravity Flow entries to PDF (all entries)
      */
-    public function exportPDF()
+    public function exportApprovedEntriesPDF()
     {
         try {
             $uid = $_GET['uid'];
@@ -178,13 +178,18 @@ class GravityController
                 return;
             }
 
+            $filters = [
+                'form_filter' => $_GET['form_filter'] ?? '',
+                'start_date' => $_GET['start_date'] ?? '',
+                'end_date' => $_GET['end_date'] ?? ''
+            ];
             // Get all entries without pagination
-            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000);
+            $all_entries_result = $this->gravityService->getApprovedGravityFlowEntries(1, 1000, $user, $filters);
             $entries = $all_entries_result['data'];
 
             if (empty($entries)) {
                 http_response_code(404);
-                wp_die('هیچ داده‌ای برای صادرات یافت نشد.', 'داده یافت نشد', ['response' => 404]);
+                wp_die('هیچ داده‌ای برای خروجی یافت نشد.', 'داده یافت نشد', ['response' => 404]);
                 return;
             }
 

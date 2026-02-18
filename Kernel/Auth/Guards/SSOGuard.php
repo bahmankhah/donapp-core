@@ -12,6 +12,11 @@ class SSOGuard extends Adapter implements Guard
     {
         return replacePlaceholders($this->config['login_url'], ['clientId' => $this->config['client_id'], 'redirectUrl' => $this->config['redirect_url']]);
     }
+
+    public function getLogoutUrl()
+    {
+        return replacePlaceholders($this->config['logout_url'], ['clientId' => $this->config['client_id'], 'logoutRedirectUrl' => $this->config['logout_redirect_url']]);
+    }
     public function check(): bool
     {
         $user = wp_get_current_user();
@@ -40,6 +45,9 @@ class SSOGuard extends Adapter implements Guard
         // Set persistent auth cookie (remember = true) so new tabs immediately send it
         wp_set_auth_cookie($user->ID, true);
 
+        // Reset activity timestamp so securityCheck() doesn't expire the fresh session
+        update_user_meta($user->ID, 'last_activity_ts', time());
+
         // Fire core hook so other plugins (cache, security, sessions) react properly
         do_action('wp_login', $user->user_login, $user);
 
@@ -59,7 +67,16 @@ class SSOGuard extends Adapter implements Guard
             delete_user_meta($user->ID, 'sso_expires_at');
         }
 
+        // Remove our hook to prevent recursion before calling wp_logout
+        remove_all_actions('wp_logout');
         wp_logout();
+
+        $logoutUrl = $this->getLogoutUrl();
+        appLogger('Redirecting to SSO logout URL: ' . $logoutUrl);
+        if ($logoutUrl && !headers_sent()) {
+            wp_redirect($logoutUrl);
+            exit;
+        }
     }
 
 
