@@ -18,6 +18,9 @@ class AdminServiceProvider
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_styles']);
+        // Priority 100 so WooCommerce (priority 10) has already registered its
+        // Select2/selectWoo handles before we try to enqueue/extend them.
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_sso_search_assets'], 100);
         add_action('wp_ajax_donap_search_sso_users', [$this, 'ajax_search_sso_users']);
     }
 
@@ -442,42 +445,58 @@ class AdminServiceProvider
                 [],
                 '1.0.0'
             );
+        }
+    }
 
-            // Searchable SSO user dropdowns are only used on the wallets and
-            // transactions pages. Load a self-contained copy of Select2 (so the
-            // feature never depends on WooCommerce's asset load order) plus our
-            // enhancement there.
-            if (strpos($hook, 'donap-wallets') !== false || strpos($hook, 'donap-transactions') !== false) {
-                wp_enqueue_style(
-                    'donap-select2',
-                    $plugin_url . 'assets/admin/css/select2.css',
-                    [],
-                    '4.0.3'
-                );
+    /**
+     * Enqueue the searchable SSO-user dropdown assets on the wallets and
+     * transactions admin pages.
+     *
+     * Runs at a late priority so WooCommerce has already registered its
+     * Select2/selectWoo handles, whose asset URLs always resolve correctly
+     * regardless of how this plugin is mounted. The small initialiser is printed
+     * inline (read from disk) so it needs no asset URL of its own. A bundled copy
+     * of Select2 is used only if WooCommerce's handles are unavailable.
+     */
+    public function enqueue_sso_search_assets($hook)
+    {
+        if (strpos($hook, 'donap-wallets') === false && strpos($hook, 'donap-transactions') === false) {
+            return;
+        }
 
-                wp_enqueue_script(
-                    'donap-select2',
-                    $plugin_url . 'assets/admin/js/select2.full.min.js',
-                    ['jquery'],
-                    '4.0.3',
-                    true
-                );
+        $plugin_url = plugin_dir_url(dirname(dirname(__FILE__)));
 
-                wp_enqueue_script(
-                    'donap-sso-search',
-                    $plugin_url . 'assets/admin/js/donap-sso-search.js',
-                    ['jquery', 'donap-select2'],
-                    '1.0.1',
-                    true
-                );
+        // 1) The Select2 library.
+        if (wp_script_is('selectWoo', 'registered')) {
+            wp_enqueue_script('selectWoo');
+            $handle = 'selectWoo';
+        } elseif (wp_script_is('select2', 'registered')) {
+            wp_enqueue_script('select2');
+            $handle = 'select2';
+        } else {
+            wp_enqueue_script('donap-select2', $plugin_url . 'assets/admin/js/select2.full.min.js', ['jquery'], '4.0.3', true);
+            $handle = 'donap-select2';
+        }
 
-                wp_localize_script('donap-sso-search', 'donapSsoSearch', [
-                    'ajaxUrl'     => admin_url('admin-ajax.php'),
-                    'nonce'       => wp_create_nonce('donap_sso_search'),
-                    'placeholder' => 'جستجوی کاربر (نام، ایمیل یا شناسه SSO)...',
-                    'minChars'    => 0,
-                ]);
-            }
+        // 2) Select2 styling (WooCommerce's admin CSS already includes it).
+        if (wp_style_is('woocommerce_admin_styles', 'registered')) {
+            wp_enqueue_style('woocommerce_admin_styles');
+        } else {
+            wp_enqueue_style('donap-select2', $plugin_url . 'assets/admin/css/select2.css', [], '4.0.3');
+        }
+
+        // 3) Config + initialiser, printed inline (no asset URL required).
+        $config = wp_json_encode([
+            'ajaxUrl'     => admin_url('admin-ajax.php'),
+            'nonce'       => wp_create_nonce('donap_sso_search'),
+            'placeholder' => 'جستجوی کاربر (نام، ایمیل یا شناسه SSO)...',
+            'minChars'    => 0,
+        ]);
+
+        $init_js = @file_get_contents(dirname(__DIR__) . '/assets/admin/js/donap-sso-search.js');
+
+        if ($init_js !== false) {
+            wp_add_inline_script($handle, 'window.donapSsoSearch = ' . $config . ';' . "\n" . $init_js);
         }
     }
 
