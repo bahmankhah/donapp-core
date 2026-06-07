@@ -167,8 +167,8 @@ class WCDonapGateway extends \WC_Payment_Gateway {
 
             appLogger('WCDonapGateway: About to decrease credit');
             $success = $this->walletService->decreaseCredit($identifier, $amount);
-            
-            if (!$success) {
+
+            if ($success === false) {
                 appLogger('WCDonapGateway: Failed to decrease credit');
                 wc_add_notice('خطا در کسر موجودی کیف پول.', 'error');
                 return ['result' => 'failure'];
