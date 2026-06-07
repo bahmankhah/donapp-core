@@ -194,6 +194,7 @@
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
+                        <th>کاربر</th>
                         <th>شناسه کاربر</th>
                         <th>نوع کیف پول</th>
                         <th>موجودی</th>
@@ -205,6 +206,19 @@
                 <tbody>
                     <?php foreach ($wallets as $wallet): ?>
                         <tr>
+                            <td>
+                                <?php
+                                $owner = $owner_map[$wallet->identifier] ?? null;
+                                if ($owner) {
+                                    echo esc_html($owner->display_name ?: $owner->user_login);
+                                    if ($owner->user_email) {
+                                        echo '<br><small>' . esc_html($owner->user_email) . '</small>';
+                                    }
+                                } else {
+                                    echo '<span style="color:#999;">—</span>';
+                                }
+                                ?>
+                            </td>
                             <td><?php echo esc_html($wallet->identifier); ?></td>
                             <td>
                                 <span class="wallet-type wallet-type-<?php echo esc_attr($wallet->type); ?>">

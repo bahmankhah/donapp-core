@@ -150,6 +150,46 @@ class UserService
     }
 
     /**
+     * Get a map of [sso_global_id => user row] for the given SSO global ids.
+     * Used to display the owner's name next to wallet/transaction identifiers.
+     *
+     * @param array $sso_global_ids
+     * @return array Keyed by sso_global_id.
+     */
+    public function getUsersBySSOIds($sso_global_ids)
+    {
+        $wpdb = $this->userModel->getWpdb();
+
+        // Normalise to a unique, non-empty list.
+        $ids = array_values(array_unique(array_filter((array) $sso_global_ids, function ($id) {
+            return $id !== null && $id !== '';
+        })));
+
+        if (empty($ids) || !$wpdb) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($ids), '%s'));
+
+        $sql = "
+            SELECT u.ID, u.user_login, u.display_name, u.user_email, um.meta_value as sso_global_id
+            FROM {$wpdb->prefix}users u
+            INNER JOIN {$wpdb->prefix}usermeta um ON u.ID = um.user_id
+            WHERE um.meta_key = 'sso_global_id'
+            AND um.meta_value IN ($placeholders)
+        ";
+
+        $results = $wpdb->get_results($wpdb->prepare($sql, $ids));
+
+        $map = [];
+        foreach ($results ?: [] as $row) {
+            $map[$row->sso_global_id] = $row;
+        }
+
+        return $map;
+    }
+
+    /**
      * Get user by SSO global ID
      */
     public function getUserBySSOId($sso_global_id)

@@ -274,12 +274,20 @@ class AdminServiceProvider
             $userService
         );
 
+        // Resolve owner names for the listed wallets (by their SSO identifier).
+        $owner_map = $userService->getUsersBySSOIds(
+            array_map(function ($wallet) {
+                return $wallet->identifier;
+            }, $wallets_result['data'])
+        );
+
         $data = [
             'wallets' => $wallets_result['data'],
             'pagination' => $wallets_result['pagination'],
             'wallet_stats' => $walletService->getWalletStats(),
             'current_filters' => $filters,
-            'sso_users' => $sso_users_result
+            'sso_users' => $sso_users_result,
+            'owner_map' => $owner_map
         ];
         
         if (isset($message)) {
@@ -325,14 +333,22 @@ class AdminServiceProvider
             $userService
         );
 
+        // Resolve owner names for the listed transactions (by their SSO identifier).
+        $owner_map = $userService->getUsersBySSOIds(
+            array_map(function ($transaction) {
+                return $transaction->identifier;
+            }, $transactions_result['data'])
+        );
+
         $data = [
             'transactions' => $transactions_result['data'],
             'pagination' => $transactions_result['pagination'],
             'transaction_stats' => $transactionService->getTransactionStats(),
             'current_filters' => $filters,
-            'sso_users' => $sso_users_result
+            'sso_users' => $sso_users_result,
+            'owner_map' => $owner_map
         ];
-        
+
         echo view('admin/transactions', $data);
     }
 
@@ -428,15 +444,10 @@ class AdminServiceProvider
             );
 
             // Searchable SSO user dropdowns are only used on the wallets and
-            // transactions pages. Load Select2 (selectWoo) + our enhancement there.
+            // transactions pages. Load a self-contained copy of Select2 (so the
+            // feature never depends on WooCommerce's asset load order) plus our
+            // enhancement there.
             if (strpos($hook, 'donap-wallets') !== false || strpos($hook, 'donap-transactions') !== false) {
-                $deps = ['jquery'];
-                if (wp_script_is('selectWoo', 'registered')) {
-                    $deps[] = 'selectWoo';
-                } elseif (wp_script_is('select2', 'registered')) {
-                    $deps[] = 'select2';
-                }
-
                 wp_enqueue_style(
                     'donap-select2',
                     $plugin_url . 'assets/admin/css/select2.css',
@@ -445,10 +456,18 @@ class AdminServiceProvider
                 );
 
                 wp_enqueue_script(
+                    'donap-select2',
+                    $plugin_url . 'assets/admin/js/select2.full.min.js',
+                    ['jquery'],
+                    '4.0.3',
+                    true
+                );
+
+                wp_enqueue_script(
                     'donap-sso-search',
                     $plugin_url . 'assets/admin/js/donap-sso-search.js',
-                    $deps,
-                    '1.0.0',
+                    ['jquery', 'donap-select2'],
+                    '1.0.1',
                     true
                 );
 
@@ -503,9 +522,9 @@ class AdminServiceProvider
      * Prepend the SSO user matching $sso_global_id to $users if it isn't already
      * present, so a pre-selected filter value always has a matching <option>.
      *
-     * @param array       $users       List of user rows (objects with sso_global_id).
-     * @param string      $sso_global_id Currently selected SSO global id (may be empty).
-     * @param UserService $userService
+     * @param array                     $users         List of user rows (objects with sso_global_id).
+     * @param string                    $sso_global_id Currently selected SSO global id (may be empty).
+     * @param \App\Services\UserService $userService
      * @return array
      */
     private function ensureSelectedSSOUser($users, $sso_global_id, $userService)

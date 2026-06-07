@@ -90,6 +90,7 @@
                 <thead>
                     <tr>
                         <th>شناسه</th>
+                        <th>کاربر</th>
                         <th>شناسه کاربر</th>
                         <th>نوع کیف پول</th>
                         <th>نوع تراکنش</th>
@@ -105,6 +106,19 @@
                     <?php foreach ($transactions as $transaction): ?>
                         <tr>
                             <td><?php echo $transaction->id; ?></td>
+                            <td>
+                                <?php
+                                $owner = $owner_map[$transaction->identifier] ?? null;
+                                if ($owner) {
+                                    echo esc_html($owner->display_name ?: $owner->user_login);
+                                    if ($owner->user_email) {
+                                        echo '<br><small>' . esc_html($owner->user_email) . '</small>';
+                                    }
+                                } else {
+                                    echo '<span style="color:#999;">—</span>';
+                                }
+                                ?>
+                            </td>
                             <td>
                                 <strong><?php echo esc_html($transaction->identifier); ?></strong>
                             </td>
