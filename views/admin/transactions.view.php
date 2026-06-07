@@ -38,7 +38,7 @@
                 <tr>
                     <th scope="row">انتخاب کاربر SSO</th>
                     <td>
-                        <select name="user_filter" id="sso_user_select_filter" class="regular-text">
+                        <select name="user_filter" id="sso_user_select_filter" class="regular-text donap-sso-search" data-value-field="sso_id">
                             <option value="">همه کاربران...</option>
                             <?php if (!empty($sso_users)): ?>
                                 <?php foreach ($sso_users as $user): ?>

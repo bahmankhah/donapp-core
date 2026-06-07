@@ -32,7 +32,7 @@
                 <tr>
                     <th scope="row">انتخاب کاربر SSO</th>
                     <td>
-                        <select name="selected_user_id_modify" id="sso_user_select_modify" class="regular-text" required>
+                        <select name="selected_user_id_modify" id="sso_user_select_modify" class="regular-text donap-sso-search" data-value-field="id" required>
                             <option value="">کاربر مورد نظر را انتخاب کنید...</option>
                             <?php if (!empty($sso_users)): ?>
                                 <?php foreach ($sso_users as $user): ?>
@@ -92,7 +92,7 @@
                 <tr>
                     <th scope="row">انتخاب کاربر SSO</th>
                     <td>
-                        <select name="selected_user_id" id="sso_user_select" class="regular-text" required>
+                        <select name="selected_user_id" id="sso_user_select" class="regular-text donap-sso-search" data-value-field="id" required>
                             <option value="">کاربر مورد نظر را انتخاب کنید...</option>
                             <?php if (!empty($sso_users)): ?>
                                 <?php foreach ($sso_users as $user): ?>
@@ -147,7 +147,7 @@
                 <tr>
                     <th scope="row">انتخاب کاربر SSO</th>
                     <td>
-                        <select name="identifier_filter" id="sso_user_select_filter" class="regular-text">
+                        <select name="identifier_filter" id="sso_user_select_filter" class="regular-text donap-sso-search" data-value-field="sso_id">
                             <option value="">همه کاربران...</option>
                             <?php if (!empty($sso_users)): ?>
                                 <?php foreach ($sso_users as $user): ?>
@@ -273,7 +273,12 @@ function modifyWalletQuick(ssoGlobalId, walletType) {
                 break;
             }
         }
-        
+
+        // Notify Select2/selectWoo (if active) so the enhanced control updates.
+        if (window.jQuery) {
+            jQuery(modifySelect).trigger('change');
+        }
+
         // Fill the amount field
         document.querySelector('input[name="amount"]').value = amount;
         

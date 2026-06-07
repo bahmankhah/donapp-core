@@ -18,6 +18,7 @@ class AdminServiceProvider
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_styles']);
+        add_action('wp_ajax_donap_search_sso_users', [$this, 'ajax_search_sso_users']);
     }
 
     /**
@@ -264,7 +265,15 @@ class AdminServiceProvider
         
         // Get SSO users for wallet creation dropdown
         $sso_users_result = $userService->getSSOUsersForDropdown(1, 100);
-        
+
+        // Make sure the currently-selected filter user is present in the list so
+        // the dropdown shows it even when it isn't within the first 100 users.
+        $sso_users_result = $this->ensureSelectedSSOUser(
+            $sso_users_result,
+            $filters['identifier'],
+            $userService
+        );
+
         $data = [
             'wallets' => $wallets_result['data'],
             'pagination' => $wallets_result['pagination'],
@@ -307,7 +316,15 @@ class AdminServiceProvider
         
         // Get SSO users for filter dropdown
         $sso_users_result = $userService->getSSOUsersForDropdown(1, 100);
-        
+
+        // Keep the active filter user visible in the dropdown even if outside the
+        // first 100 users.
+        $sso_users_result = $this->ensureSelectedSSOUser(
+            $sso_users_result,
+            $filters['user_filter'],
+            $userService
+        );
+
         $data = [
             'transactions' => $transactions_result['data'],
             'pagination' => $transactions_result['pagination'],
@@ -409,7 +426,106 @@ class AdminServiceProvider
                 [],
                 '1.0.0'
             );
+
+            // Searchable SSO user dropdowns are only used on the wallets and
+            // transactions pages. Load Select2 (selectWoo) + our enhancement there.
+            if (strpos($hook, 'donap-wallets') !== false || strpos($hook, 'donap-transactions') !== false) {
+                $deps = ['jquery'];
+                if (wp_script_is('selectWoo', 'registered')) {
+                    $deps[] = 'selectWoo';
+                } elseif (wp_script_is('select2', 'registered')) {
+                    $deps[] = 'select2';
+                }
+
+                wp_enqueue_style(
+                    'donap-select2',
+                    $plugin_url . 'assets/admin/css/select2.css',
+                    [],
+                    '4.0.3'
+                );
+
+                wp_enqueue_script(
+                    'donap-sso-search',
+                    $plugin_url . 'assets/admin/js/donap-sso-search.js',
+                    $deps,
+                    '1.0.0',
+                    true
+                );
+
+                wp_localize_script('donap-sso-search', 'donapSsoSearch', [
+                    'ajaxUrl'     => admin_url('admin-ajax.php'),
+                    'nonce'       => wp_create_nonce('donap_sso_search'),
+                    'placeholder' => 'جستجوی کاربر (نام، ایمیل یا شناسه SSO)...',
+                    'minChars'    => 0,
+                ]);
+            }
         }
+    }
+
+    /**
+     * AJAX: search SSO users for the searchable admin dropdowns (Select2 format).
+     */
+    public function ajax_search_sso_users()
+    {
+        if (!current_user_can($this->capability)) {
+            wp_send_json_error(['message' => 'forbidden'], 403);
+        }
+
+        check_ajax_referer('donap_sso_search', 'nonce');
+
+        $term     = isset($_GET['term']) ? sanitize_text_field(wp_unslash($_GET['term'])) : '';
+        $page     = max(1, intval($_GET['page'] ?? 1));
+        $per_page = 30;
+
+        $userService = Container::resolve('UserService');
+        $result      = $userService->getAllSSOUsers($page, $per_page, $term);
+
+        $results = [];
+        foreach ($result['data'] as $user) {
+            $name = $user->display_name ?: $user->user_login;
+            $results[] = [
+                'id'     => $user->ID,
+                'sso_id' => $user->sso_global_id,
+                'text'   => $name . ' (' . $user->user_email . ') - SSO: ' . $user->sso_global_id,
+            ];
+        }
+
+        $pagination = $result['pagination'];
+        $more = ($pagination['current_page'] < $pagination['total_pages']);
+
+        wp_send_json([
+            'results'    => $results,
+            'pagination' => ['more' => $more],
+        ]);
+    }
+
+    /**
+     * Prepend the SSO user matching $sso_global_id to $users if it isn't already
+     * present, so a pre-selected filter value always has a matching <option>.
+     *
+     * @param array       $users       List of user rows (objects with sso_global_id).
+     * @param string      $sso_global_id Currently selected SSO global id (may be empty).
+     * @param UserService $userService
+     * @return array
+     */
+    private function ensureSelectedSSOUser($users, $sso_global_id, $userService)
+    {
+        if (empty($sso_global_id)) {
+            return $users;
+        }
+
+        foreach ($users as $user) {
+            if (($user->sso_global_id ?? null) === $sso_global_id) {
+                return $users;
+            }
+        }
+
+        $selected = $userService->getUserBySSOId($sso_global_id);
+        if ($selected) {
+            array_unshift($users, $selected);
+        }
+
+        return $users;
     }
 
     /**
