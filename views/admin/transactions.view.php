@@ -65,6 +65,7 @@
                             <option value="charge_gift" <?php selected($current_filters['type_filter'] ?? '', 'charge_gift'); ?>>هدیه شارژ</option>
                             <option value="admin" <?php selected($current_filters['type_filter'] ?? '', 'admin'); ?>>مدیریتی</option>
                             <option value="settlement_request" <?php selected($current_filters['type_filter'] ?? '', 'settlement_request'); ?>>درخواست تسویه</option>
+                            <option value="refund" <?php selected($current_filters['type_filter'] ?? '', 'refund'); ?>>بازگشت وجه</option>
                         </select>
                     </td>
                 </tr>
@@ -143,6 +144,7 @@
                                         case 'charge_gift': echo 'هدیه شارژ'; break;
                                         case 'admin': echo 'مدیریتی'; break;
                                         case 'settlement_request': echo 'درخواست تسویه'; break;
+                                        case 'refund': echo 'بازگشت وجه'; break;
                                         default: echo $transaction->type;
                                     }
                                     ?>

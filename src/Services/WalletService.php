@@ -69,6 +69,16 @@ class WalletService{
         return FacadesWallet::virtualCreditCash()->decreaseBalance($identifier, $amount);
     }
 
+    /**
+     * Refund a previously deducted amount back to the user's credit wallet.
+     * Used as a compensating transaction when a paid action fails after the
+     * wallet was charged (e.g. granting product access failed).
+     */
+    public function refundCredit($identifier, $amount){
+        appLogger("WalletService::refundCredit called - Identifier: {$identifier}, Amount: {$amount}");
+        return $this->updateBalance($identifier, WalletType::CREDIT, abs($amount), TransactionType::REFUND);
+    }
+
     public function updateBalance($identifier, $walletType, $amount, $transactionType = null){
         appLogger("WalletService::updateBalance called - Identifier: {$identifier}, WalletType: {$walletType}, Amount: {$amount}, TransactionType: {$transactionType}");
         

@@ -9,4 +9,5 @@ class TransactionType{
     public const CHARGE_GIFT = 'charge_gift';
     public const SETTLEMENT_REQUEST = 'settlement_request';
     public const ADMIN = 'admin';
+    public const REFUND = 'refund';
 }
