@@ -90,7 +90,13 @@ class WooService
             foreach ($productIds as $dnpuser => $products) {
                 $order = $this->createWooOrder($dnpuser, $slug, $products);
                 appLogger('Giving access to ' . $dnpuser . ' for products ' . json_encode($products));
-                Vendor::donap()->giveAccess($dnpuser, $products);
+                $granted = Vendor::donap()->giveAccess($dnpuser, $products);
+                if (!$granted) {
+                    appLogger('Free-order access grant FAILED for user ' . $dnpuser . ' (order ' . $order->get_id() . ')');
+                    $order->update_meta_data('_dnp_access_failed', 'yes');
+                    $order->add_order_note('فعال‌سازی دسترسی به محصول رایگان ناموفق بود؛ نیاز به بررسی.');
+                    $order->save();
+                }
             }
 
             // 6) Clear cart, redirect, and exit
@@ -304,7 +310,8 @@ class WooService
         $order = wc_get_order($orderId);
         $productIds = [];
         $slug = '';
-        
+        $revenueShares = [];
+
         foreach ($order->get_items() as $item_id => $item) {
             // Retrieve the 'dnpuser' metadata from the order item
             $dnpuser = $item->get_meta('dnpuser');
@@ -322,15 +329,18 @@ class WooService
                     $dnpProductId = get_post_meta($product_id, '_dnp_product_id', true);
                     $ownerId = get_post_meta($product_id, '_dnp_product_owner_identifier');
                     $isIncomeShared = get_post_meta($product_id, '_dnp_product_is_income_shared');
-                    
+
+                    // Collect revenue-sharing payouts, but only apply them once we
+                    // know the product access was actually granted (see below).
                     if ($ownerId && $isIncomeShared) {
-                        // Get product using WooCommerce function
                         $product = wc_get_product($product_id);
                         $regular_price = $product ? $product->get_regular_price() : 0;
-                        $this->walletService->updateBalance($ownerId, WalletType::CREDIT, $regular_price * (2/10), TransactionType::SHARED_INCOME);
-                        appLogger("Revenue sharing: Added {$regular_price} * 0.2 = " . ($regular_price * 0.2) . " to owner {$ownerId}");
+                        $revenueShares[] = [
+                            'owner'  => $ownerId,
+                            'amount' => $regular_price * (2 / 10),
+                        ];
                     }
-                    
+
                     if (empty($productIds[(string) $dnpuser])) {
                         $productIds[(string) $dnpuser] = [(string) $dnpProductId];
                     } else {
@@ -339,25 +349,53 @@ class WooService
                 }
             }
         }
-        
-        if (!empty($productIds)) {
-            foreach ($productIds as $dnpuser => $products) {
-                appLogger("Granting access for user {$dnpuser} to products: " . json_encode($products));
-                Vendor::donap()->giveAccess($dnpuser, $products);
+
+        if (empty($productIds)) {
+            appLogger("Order {$orderId}: no dnp products to grant access for.");
+            return;
+        }
+
+        // 1) Grant access for every user/product. Treat the order atomically:
+        //    if ANY grant fails, flag the order so the payment can be reversed.
+        $allGranted = true;
+        foreach ($productIds as $dnpuser => $products) {
+            appLogger("Granting access for user {$dnpuser} to products: " . json_encode($products));
+            $granted = Vendor::donap()->giveAccess($dnpuser, $products);
+            if (!$granted) {
+                $allGranted = false;
+                appLogger("Order {$orderId}: access grant FAILED for user {$dnpuser}.");
             }
         }
 
-        // For products with dnpuser metadata, we don't want to interrupt the checkout flow
-        // Instead, we'll let WooCommerce complete normally and handle the redirect on the thank you page
+        if (!$allGranted) {
+            // Flag the failure. The wallet gateway reads this immediately after
+            // payment_complete() and refunds the buyer; for other gateways an
+            // admin can act on the order note. Revenue sharing is intentionally
+            // skipped so owners aren't paid for a failed sale.
+            $order->update_meta_data('_dnp_access_failed', 'yes');
+            $order->add_order_note('فعال‌سازی دسترسی به محصول ناموفق بود. پرداخت باید بازگردانده شود.');
+            $order->save();
+            appLogger("Order {$orderId}: access granting failed; flagged _dnp_access_failed=yes and skipped revenue sharing.");
+            return;
+        }
+
+        // 2) Access granted for everyone — now apply the revenue-sharing payouts.
+        foreach ($revenueShares as $share) {
+            $this->walletService->updateBalance($share['owner'], WalletType::CREDIT, $share['amount'], TransactionType::SHARED_INCOME);
+            appLogger("Revenue sharing: Added {$share['amount']} to owner {$share['owner']}");
+        }
+
+        $order->update_meta_data('_dnp_access_failed', 'no');
         appLogger("Processed order {$orderId} successfully. Skipping immediate redirect to allow normal checkout flow.");
-        
+
         // Store the redirect URL in order meta for later use on thank you page
-        if (!empty($productIds) && $slug) {
+        if ($slug) {
             $redirect_url = Vendor::donap()->getPurchasedProductUrl($slug);
             $order->update_meta_data('_donap_redirect_url', $redirect_url);
-            $order->save();
             appLogger("Stored redirect URL in order meta: {$redirect_url}");
         }
+
+        $order->save();
     }
 
 

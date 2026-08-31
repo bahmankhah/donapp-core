@@ -38,7 +38,7 @@
                 <tr>
                     <th scope="row">انتخاب کاربر SSO</th>
                     <td>
-                        <select name="user_filter" id="sso_user_select_filter" class="regular-text">
+                        <select name="user_filter" id="sso_user_select_filter" class="regular-text donap-sso-search" data-value-field="sso_id">
                             <option value="">همه کاربران...</option>
                             <?php if (!empty($sso_users)): ?>
                                 <?php foreach ($sso_users as $user): ?>
@@ -65,6 +65,7 @@
                             <option value="charge_gift" <?php selected($current_filters['type_filter'] ?? '', 'charge_gift'); ?>>هدیه شارژ</option>
                             <option value="admin" <?php selected($current_filters['type_filter'] ?? '', 'admin'); ?>>مدیریتی</option>
                             <option value="settlement_request" <?php selected($current_filters['type_filter'] ?? '', 'settlement_request'); ?>>درخواست تسویه</option>
+                            <option value="refund" <?php selected($current_filters['type_filter'] ?? '', 'refund'); ?>>بازگشت وجه</option>
                         </select>
                     </td>
                 </tr>
@@ -90,6 +91,7 @@
                 <thead>
                     <tr>
                         <th>شناسه</th>
+                        <th>کاربر</th>
                         <th>شناسه کاربر</th>
                         <th>نوع کیف پول</th>
                         <th>نوع تراکنش</th>
@@ -105,6 +107,19 @@
                     <?php foreach ($transactions as $transaction): ?>
                         <tr>
                             <td><?php echo $transaction->id; ?></td>
+                            <td>
+                                <?php
+                                $owner = $owner_map[$transaction->identifier] ?? null;
+                                if ($owner) {
+                                    echo esc_html($owner->display_name ?: $owner->user_login);
+                                    if ($owner->user_email) {
+                                        echo '<br><small>' . esc_html($owner->user_email) . '</small>';
+                                    }
+                                } else {
+                                    echo '<span style="color:#999;">—</span>';
+                                }
+                                ?>
+                            </td>
                             <td>
                                 <strong><?php echo esc_html($transaction->identifier); ?></strong>
                             </td>
@@ -129,6 +144,7 @@
                                         case 'charge_gift': echo 'هدیه شارژ'; break;
                                         case 'admin': echo 'مدیریتی'; break;
                                         case 'settlement_request': echo 'درخواست تسویه'; break;
+                                        case 'refund': echo 'بازگشت وجه'; break;
                                         default: echo $transaction->type;
                                     }
                                     ?>

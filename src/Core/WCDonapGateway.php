@@ -167,16 +167,36 @@ class WCDonapGateway extends \WC_Payment_Gateway {
 
             appLogger('WCDonapGateway: About to decrease credit');
             $success = $this->walletService->decreaseCredit($identifier, $amount);
-            
-            if (!$success) {
+
+            if ($success === false) {
                 appLogger('WCDonapGateway: Failed to decrease credit');
                 wc_add_notice('خطا در کسر موجودی کیف پول.', 'error');
                 return ['result' => 'failure'];
             }
 
             appLogger('WCDonapGateway: Payment completed successfully');
+            // payment_complete() fires woocommerce_payment_complete synchronously,
+            // which is where product access is granted via the external API.
             $order->payment_complete();
             $order->add_order_note('پرداخت با کیف پول انجام شد.');
+
+            // Compensating transaction: if granting product access failed during
+            // payment_complete(), give the user their money back and fail the order.
+            $completedOrder = wc_get_order($order_id);
+            if ($completedOrder && $completedOrder->get_meta('_dnp_access_failed') === 'yes') {
+                appLogger('WCDonapGateway: Access granting failed for order ' . $order_id . ' - refunding wallet amount: ' . $amount);
+                try {
+                    $this->walletService->refundCredit($identifier, $amount);
+                    appLogger('WCDonapGateway: Wallet refunded successfully for order ' . $order_id);
+                } catch (Exception $e) {
+                    // Refund failed too - log loudly so it can be reconciled manually.
+                    appLogger('WCDonapGateway: REFUND FAILED for order ' . $order_id . ': ' . $e->getMessage());
+                    $completedOrder->add_order_note('بازگرداندن خودکار مبلغ به کیف پول ناموفق بود؛ نیاز به بررسی دستی.');
+                }
+                $completedOrder->update_status('failed', 'فعال‌سازی محصول ناموفق بود؛ مبلغ به کیف پول کاربر بازگردانده شد.');
+                wc_add_notice('خطا در فعال‌سازی محصول. مبلغ پرداختی به کیف پول شما بازگردانده شد. لطفاً دوباره تلاش کنید.', 'error');
+                return ['result' => 'failure'];
+            }
 
             $return_url = $this->get_return_url($order);
             appLogger('WCDonapGateway: Return URL: ' . $return_url);

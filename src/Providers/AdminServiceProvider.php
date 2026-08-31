@@ -18,6 +18,10 @@ class AdminServiceProvider
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_styles']);
+        // Priority 100 so WooCommerce (priority 10) has already registered its
+        // Select2/selectWoo handles before we try to enqueue/extend them.
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_sso_search_assets'], 100);
+        add_action('wp_ajax_donap_search_sso_users', [$this, 'ajax_search_sso_users']);
     }
 
     /**
@@ -264,13 +268,29 @@ class AdminServiceProvider
         
         // Get SSO users for wallet creation dropdown
         $sso_users_result = $userService->getSSOUsersForDropdown(1, 100);
-        
+
+        // Make sure the currently-selected filter user is present in the list so
+        // the dropdown shows it even when it isn't within the first 100 users.
+        $sso_users_result = $this->ensureSelectedSSOUser(
+            $sso_users_result,
+            $filters['identifier'],
+            $userService
+        );
+
+        // Resolve owner names for the listed wallets (by their SSO identifier).
+        $owner_map = $userService->getUsersBySSOIds(
+            array_map(function ($wallet) {
+                return $wallet->identifier;
+            }, $wallets_result['data'])
+        );
+
         $data = [
             'wallets' => $wallets_result['data'],
             'pagination' => $wallets_result['pagination'],
             'wallet_stats' => $walletService->getWalletStats(),
             'current_filters' => $filters,
-            'sso_users' => $sso_users_result
+            'sso_users' => $sso_users_result,
+            'owner_map' => $owner_map
         ];
         
         if (isset($message)) {
@@ -307,15 +327,31 @@ class AdminServiceProvider
         
         // Get SSO users for filter dropdown
         $sso_users_result = $userService->getSSOUsersForDropdown(1, 100);
-        
+
+        // Keep the active filter user visible in the dropdown even if outside the
+        // first 100 users.
+        $sso_users_result = $this->ensureSelectedSSOUser(
+            $sso_users_result,
+            $filters['user_filter'],
+            $userService
+        );
+
+        // Resolve owner names for the listed transactions (by their SSO identifier).
+        $owner_map = $userService->getUsersBySSOIds(
+            array_map(function ($transaction) {
+                return $transaction->identifier;
+            }, $transactions_result['data'])
+        );
+
         $data = [
             'transactions' => $transactions_result['data'],
             'pagination' => $transactions_result['pagination'],
             'transaction_stats' => $transactionService->getTransactionStats(),
             'current_filters' => $filters,
-            'sso_users' => $sso_users_result
+            'sso_users' => $sso_users_result,
+            'owner_map' => $owner_map
         ];
-        
+
         echo view('admin/transactions', $data);
     }
 
@@ -410,6 +446,124 @@ class AdminServiceProvider
                 '1.0.0'
             );
         }
+    }
+
+    /**
+     * Enqueue the searchable SSO-user dropdown assets on the wallets and
+     * transactions admin pages.
+     *
+     * Runs at a late priority so WooCommerce has already registered its
+     * Select2/selectWoo handles, whose asset URLs always resolve correctly
+     * regardless of how this plugin is mounted. The small initialiser is printed
+     * inline (read from disk) so it needs no asset URL of its own. A bundled copy
+     * of Select2 is used only if WooCommerce's handles are unavailable.
+     */
+    public function enqueue_sso_search_assets($hook)
+    {
+        if (strpos($hook, 'donap-wallets') === false && strpos($hook, 'donap-transactions') === false) {
+            return;
+        }
+
+        $plugin_url = plugin_dir_url(dirname(dirname(__FILE__)));
+
+        // 1) The Select2 library.
+        if (wp_script_is('selectWoo', 'registered')) {
+            wp_enqueue_script('selectWoo');
+            $handle = 'selectWoo';
+        } elseif (wp_script_is('select2', 'registered')) {
+            wp_enqueue_script('select2');
+            $handle = 'select2';
+        } else {
+            wp_enqueue_script('donap-select2', $plugin_url . 'assets/admin/js/select2.full.min.js', ['jquery'], '4.0.3', true);
+            $handle = 'donap-select2';
+        }
+
+        // 2) Select2 styling (WooCommerce's admin CSS already includes it).
+        if (wp_style_is('woocommerce_admin_styles', 'registered')) {
+            wp_enqueue_style('woocommerce_admin_styles');
+        } else {
+            wp_enqueue_style('donap-select2', $plugin_url . 'assets/admin/css/select2.css', [], '4.0.3');
+        }
+
+        // 3) Config + initialiser, printed inline (no asset URL required).
+        $config = wp_json_encode([
+            'ajaxUrl'     => admin_url('admin-ajax.php'),
+            'nonce'       => wp_create_nonce('donap_sso_search'),
+            'placeholder' => 'جستجوی کاربر (نام، ایمیل یا شناسه SSO)...',
+            'minChars'    => 0,
+        ]);
+
+        $init_js = @file_get_contents(dirname(__DIR__) . '/assets/admin/js/donap-sso-search.js');
+
+        if ($init_js !== false) {
+            wp_add_inline_script($handle, 'window.donapSsoSearch = ' . $config . ';' . "\n" . $init_js);
+        }
+    }
+
+    /**
+     * AJAX: search SSO users for the searchable admin dropdowns (Select2 format).
+     */
+    public function ajax_search_sso_users()
+    {
+        if (!current_user_can($this->capability)) {
+            wp_send_json_error(['message' => 'forbidden'], 403);
+        }
+
+        check_ajax_referer('donap_sso_search', 'nonce');
+
+        $term     = isset($_GET['term']) ? sanitize_text_field(wp_unslash($_GET['term'])) : '';
+        $page     = max(1, intval($_GET['page'] ?? 1));
+        $per_page = 30;
+
+        $userService = Container::resolve('UserService');
+        $result      = $userService->getAllSSOUsers($page, $per_page, $term);
+
+        $results = [];
+        foreach ($result['data'] as $user) {
+            $name = $user->display_name ?: $user->user_login;
+            $results[] = [
+                'id'     => $user->ID,
+                'sso_id' => $user->sso_global_id,
+                'text'   => $name . ' (' . $user->user_email . ') - SSO: ' . $user->sso_global_id,
+            ];
+        }
+
+        $pagination = $result['pagination'];
+        $more = ($pagination['current_page'] < $pagination['total_pages']);
+
+        wp_send_json([
+            'results'    => $results,
+            'pagination' => ['more' => $more],
+        ]);
+    }
+
+    /**
+     * Prepend the SSO user matching $sso_global_id to $users if it isn't already
+     * present, so a pre-selected filter value always has a matching <option>.
+     *
+     * @param array                     $users         List of user rows (objects with sso_global_id).
+     * @param string                    $sso_global_id Currently selected SSO global id (may be empty).
+     * @param \App\Services\UserService $userService
+     * @return array
+     */
+    private function ensureSelectedSSOUser($users, $sso_global_id, $userService)
+    {
+        if (empty($sso_global_id)) {
+            return $users;
+        }
+
+        foreach ($users as $user) {
+            if (($user->sso_global_id ?? null) === $sso_global_id) {
+                return $users;
+            }
+        }
+
+        $selected = $userService->getUserBySSOId($sso_global_id);
+        if ($selected) {
+            array_unshift($users, $selected);
+        }
+
+        return $users;
     }
 
     /**

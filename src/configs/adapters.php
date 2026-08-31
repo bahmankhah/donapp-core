@@ -8,6 +8,12 @@ return [
                 'context' => App\Adapters\Vendor\Contexts\Donap::class,
                 'key' => getenv('DONAPP_EXT_API_KEY'),
                 'access_url' => 'https://api.rayman.donap.ir/external-services/donap-payment-status/',
+                // Seconds to wait for the access-granting API before giving up.
+                // Worst-case checkout wait = access_timeout * access_retries, so
+                // keep their product modest to avoid hanging checkout on an outage.
+                'access_timeout' => 20,
+                // Total attempts for the access-granting API (initial try + retries).
+                'access_retries' => 2,
                 'purchased_redirect_url' => 'https://rayman.donap.ir/myProducts/{slug}',
                 'product_page' => 'https://rayman.donap.ir/products/details/{slug}',
                 'main_url' => 'https://rayman.donap.ir'

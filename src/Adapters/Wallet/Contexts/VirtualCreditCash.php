@@ -30,17 +30,16 @@ class VirtualCreditCash extends Wallet{
         
 
         if (($creditWallet['balance'] ?? 0) >= $amount) {
-            $updatedBalance = FacadesWallet::credit()->updateBalance($identifier, -$amount, $transactionType);
+            FacadesWallet::credit()->updateBalance($identifier, -$amount, $transactionType);
         } else {
             $creditAmount = $creditWallet['balance'] ?? 0;
-            $cashAmount = $cashWallet['balance'] ?? 0;
             $remainingAmount = $amount - $creditAmount;
             // Deduct all available credit
             FacadesWallet::credit()->updateBalance($identifier, -$creditAmount, $transactionType);
             // Deduct the rest from cash
-            $updatedBalance = FacadesWallet::cash()->updateBalance($identifier, -$remainingAmount, $transactionType);
+            FacadesWallet::cash()->updateBalance($identifier, -$remainingAmount, $transactionType);
         }
-        return intval($updatedBalance);
+        return true;
 
     }
 }
